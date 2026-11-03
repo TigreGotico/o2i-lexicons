@@ -12,6 +12,7 @@ def good_meta(**overrides):
         "licence": "CC-BY-SA-3.0",
         "build_command": "python scripts/build.py en-GB",
         "o2i_version": "7.111.21a1",
+        "stress": "rules",
         "reasons": {"colonel": "unclassified", "nato": "acronym"},
         "reason_basis": {"acronym": "the source headword is all capitals"},
     }
@@ -19,7 +20,7 @@ def good_meta(**overrides):
     return meta
 
 
-WORDS = ["colonel", "nato"]
+WORDS = {"colonel": "kɜːnəl", "nato": "neɪtəʊ"}
 
 
 def test_clean_tsv_has_no_problems():
@@ -110,3 +111,16 @@ def test_reason_classes_are_the_plan_classes_plus_unclassified():
     assert REASON_CLASSES == {
         "loanword", "proper_noun", "lexical_stress", "irregular",
         "acronym", "homograph_default", "unclassified"}
+
+
+@pytest.mark.parametrize("stress", ["", "lexicon", None])
+def test_stress_origin_must_be_named(stress):
+    assert validate_meta(good_meta(stress=stress), "en-GB", WORDS) == [
+        f"stress {stress!r} is not one of ['rules', 'source']"]
+
+
+def test_rules_stress_means_no_stress_mark_in_the_file():
+    entries = {"colonel": "ˈkɜːnəl", "nato": "neɪtəʊ"}
+    assert validate_meta(good_meta(), "en-GB", entries) == [
+        "stress is 'rules' but 1 entries carry a stress mark, the first 'colonel'"]
+    assert validate_meta(good_meta(stress="source"), "en-GB", entries) == []
