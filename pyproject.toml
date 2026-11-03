@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "o2i-lexicons"
+dynamic = ["version"]
+description = "Default residual lexicons for orthography2ipa: only the words its rules cannot reach"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "JarbasAi", email = "jarbasai@mailfence.com" }]
+requires-python = ">=3.11"
+dependencies = ["orthography2ipa>=7.111.21a1"]
+keywords = ["ipa", "lexicon", "g2p", "phonetics", "orthography2ipa"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Developers",
+    "Topic :: Text Processing :: Linguistic",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/TigreGotico/o2i-lexicons"
+Repository = "https://github.com/TigreGotico/o2i-lexicons"
+
+# One entry point per packaged language code. Each loads tsv_path, which
+# orthography2ipa calls with the entry point's name.
+[project.entry-points."orthography2ipa.lexicons"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["o2i_lexicons*"]
+
+[tool.setuptools.package-data]
+o2i_lexicons = ["data/*/*.tsv", "data/*/*.meta.json"]
+
+[tool.setuptools.dynamic]
+version = { attr = "o2i_lexicons.version.VERSION_STR" }
