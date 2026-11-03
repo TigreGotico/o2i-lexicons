@@ -1,0 +1,37 @@
+name: Prune Stale Entries
+
+# Weekly: remove the entries that the latest orthography2ipa alpha now gets
+# right, and open a draft pull request with the pruned files.
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - uses: astral-sh/setup-uv@v5
+      - name: Install the package and the latest orthography2ipa alpha
+        run: |
+          uv venv --python 3.11 .venv
+          uv pip install --python .venv --prerelease=allow --upgrade -e . orthography2ipa
+      - name: Remove stale entries
+        run: .venv/bin/python scripts/prune_check.py --write
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          base: dev
+          branch: fix/prune-stale-entries
+          draft: true
+          add-paths: o2i_lexicons/data
+          commit-message: "fix: prune entries the rules now get right"
+          title: "fix: prune entries the rules now get right"
+          body: |
+            The latest orthography2ipa alpha gets these entries right with its rules alone, so the lexicon no longer holds them. The job log of `scripts/prune_check.py` lists each removed word.

@@ -40,3 +40,14 @@ def test_each_entry_point_returns_its_own_file():
         assert provider is o2i_lexicons.tsv_path
         assert provider(ep.name) == o2i_lexicons.tsv_path(ep.name)
         assert provider(ep.name).is_file()
+
+
+def test_the_en_gb_pilot_ships_with_its_provenance():
+    # WikiPron README: the Wiktionary data has Wiktionary's own terms, which
+    # Wiktionary:Copyrights states as CC BY-SA 4.0 (and GFDL). The tier is the
+    # one orthography2ipa's benchmark registry gives the wikipron gold.
+    assert "en-GB" in o2i_lexicons.available_codes()
+    meta = o2i_lexicons.load_meta("en-GB")
+    assert (meta["source"], meta["tier"], meta["licence"]) == (
+        "wikipron", "crowd-scraped", "CC-BY-SA-4.0")
+    assert meta["source_url"].endswith("/eng_latn_uk_broad.tsv")
