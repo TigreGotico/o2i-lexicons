@@ -10,7 +10,7 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [{ name = "JarbasAi", email = "jarbasai@mailfence.com" }]
 requires-python = ">=3.11"
-dependencies = ["orthography2ipa>=7.111.21a1"]
+dependencies = ["orthography2ipa>=7.111.23a1"]
 keywords = ["ipa", "lexicon", "g2p", "phonetics", "orthography2ipa"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -30,6 +30,7 @@ Repository = "https://github.com/TigreGotico/o2i-lexicons"
 # One entry point per packaged language code. Each loads tsv_path, which
 # orthography2ipa calls with the entry point's name.
 [project.entry-points."orthography2ipa.lexicons"]
+"en-GB" = "o2i_lexicons:tsv_path"
 
 [tool.setuptools.packages.find]
 where = ["."]
