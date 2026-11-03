@@ -51,7 +51,7 @@ o2i_lexicons.load_meta("en-GB")    # its sidecar
 | :--- | :--- | :--- | :--- | :--- |
 | `en-GB` | `o2i_lexicons/data/en-GB/wikipron.tsv` | [WikiPron](https://github.com/CUNY-CL/wikipron) `eng_latn_uk_broad.tsv`, scraped from Wiktionary | crowd-scraped | CC BY-SA 4.0 |
 
-The WikiPron transcriptions carry no stress marks. The orthography2ipa stress rules mark an entry, as they mark an entry of `word_exceptions`.
+Stress on the en-GB entries comes from the orthography2ipa rules, not from the source. WikiPron scrapes Wiktionary with stress removed (`"stress": False` in its `data/scrape/lib/scrape.py`), so the published file holds no stress mark. The sidecar records this as `"stress": "rules"`, and the orthography2ipa stress rules mark each entry on output, as they mark an entry of `word_exceptions`.
 
 ## Build, measure and prune
 

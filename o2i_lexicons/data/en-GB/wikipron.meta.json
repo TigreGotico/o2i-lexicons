@@ -5135,5 +5135,6 @@
  },
  "source": "wikipron",
  "source_url": "https://raw.githubusercontent.com/CUNY-CL/wikipron/master/data/scrape/tsv/eng_latn_uk_broad.tsv",
+ "stress": "rules",
  "tier": "crowd-scraped"
 }

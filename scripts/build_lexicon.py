@@ -38,7 +38,7 @@ import o2i_harness
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from o2i_lexicons.schema import ALLOWED_TIERS  # noqa: E402
+from o2i_lexicons.schema import ALLOWED_TIERS, STRESS_MARKS  # noqa: E402
 
 #: dataset -> (loader name, licence of the gold, URL of the gold file)
 SOURCES = {
@@ -141,6 +141,8 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         "licence": licence,
         "build_command": command,
         "o2i_version": VERSION_STR,
+        "stress": "source" if any(m in ipa for ipa in entries.values()
+                                  for m in STRESS_MARKS) else "rules",
         "reasons": reasons,
         "reason_basis": {r: lb.REASON_BASIS[r] for r in sorted(used)},
     }

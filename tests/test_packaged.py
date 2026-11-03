@@ -50,4 +50,7 @@ def test_the_en_gb_pilot_ships_with_its_provenance():
     meta = o2i_lexicons.load_meta("en-GB")
     assert (meta["source"], meta["tier"], meta["licence"]) == (
         "wikipron", "crowd-scraped", "CC-BY-SA-4.0")
+    # WikiPron scrapes with stress removed ("stress": False in
+    # data/scrape/lib/scrape.py), so the stress comes from the o2i rules.
+    assert meta["stress"] == "rules"
     assert meta["source_url"].endswith("/eng_latn_uk_broad.tsv")
