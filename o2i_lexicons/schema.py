@@ -19,6 +19,11 @@ A ``<source>.meta.json`` sidecar is a JSON object with these keys:
     The command that rebuilds the file.
 ``o2i_version``
     The orthography2ipa version whose rules got each entry wrong.
+``stress``
+    Where the stress of the entries comes from: ``source`` when the entries
+    carry the stress marks of the source, ``rules`` when the source has no
+    stress marks and the orthography2ipa stress rules place the stress on
+    output. A ``rules`` file holds no stress mark.
 ``reasons``
     A map from each word in the TSV file to its reason class.
 ``reason_basis``
@@ -36,6 +41,7 @@ __all__ = [
     "REASON_CLASSES",
     "ALLOWED_TIERS",
     "REQUIRED_META_KEYS",
+    "STRESS_ORIGINS",
     "validate_tsv",
     "validate_meta",
 ]
@@ -62,8 +68,13 @@ ALLOWED_TIERS = frozenset({
 
 REQUIRED_META_KEYS = (
     "code", "source", "source_url", "tier", "licence", "build_command",
-    "o2i_version", "reasons", "reason_basis",
+    "o2i_version", "stress", "reasons", "reason_basis",
 )
+
+STRESS_ORIGINS = frozenset({"source", "rules"})
+
+#: The primary and secondary stress marks.
+STRESS_MARKS = "ˈˌ"
 
 _VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(a\d+)?$")
 _SPDX_RE = re.compile(r"^[A-Za-z0-9.+-]+$")
@@ -92,11 +103,12 @@ def validate_tsv(text: str) -> list[tuple[int, str]]:
     return problems
 
 
-def validate_meta(meta: dict, code: str, words: list[str]) -> list[str]:
+def validate_meta(meta: dict, code: str, entries: dict[str, str]) -> list[str]:
     """Return the problems in the sidecar *meta* of the TSV file for *code*.
 
-    *words* are the words of that TSV file, in file order.
+    *entries* maps each word of that TSV file to its IPA, in file order.
     """
+    words = list(entries)
     missing = [k for k in REQUIRED_META_KEYS if k not in meta]
     if missing:
         return [f"missing key: {k}" for k in missing]
@@ -112,6 +124,13 @@ def validate_meta(meta: dict, code: str, words: list[str]) -> list[str]:
         problems.append(f"licence {meta['licence']!r} is not an SPDX id")
     if not isinstance(meta["o2i_version"], str) or not _VERSION_RE.match(meta["o2i_version"]):
         problems.append(f"o2i_version {meta['o2i_version']!r} is not a release version")
+    if meta["stress"] not in STRESS_ORIGINS:
+        problems.append(f"stress {meta['stress']!r} is not one of {sorted(STRESS_ORIGINS)}")
+    elif meta["stress"] == "rules":
+        marked = [w for w, ipa in entries.items() if any(m in ipa for m in STRESS_MARKS)]
+        if marked:
+            problems.append(f"stress is 'rules' but {len(marked)} entries carry a "
+                            f"stress mark, the first {marked[0]!r}")
 
     reasons = meta["reasons"]
     if not isinstance(reasons, dict):

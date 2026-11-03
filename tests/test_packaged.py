@@ -16,9 +16,9 @@ def test_packaged_files_are_valid():
     problems = {}
     for code in o2i_lexicons.available_codes():
         text = o2i_lexicons.tsv_path(code).read_text(encoding="utf-8")
-        words = [line.split("\t", 1)[0] for line in text.splitlines() if line]
+        entries = {w: ipa for w, _, ipa in (line.partition("\t") for line in text.splitlines() if line)}
         found = [f"tsv line {n}: {r}" for n, r in validate_tsv(text)]
-        found += validate_meta(o2i_lexicons.load_meta(code), code, words)
+        found += validate_meta(o2i_lexicons.load_meta(code), code, entries)
         if found:
             problems[code] = found
     assert problems == {}
