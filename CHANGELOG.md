@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.2.1a1) (2026-11-05)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.2.0a1...0.2.1a1)
+
+**Merged pull requests:**
+
+- fix: count a nasal glide after a nasal vowel as inside the inventory [\#10](https://github.com/TigreGotico/o2i-lexicons/pull/10) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.2.0a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.2.0a1) (2026-11-05)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.1.1a1...0.2.0a1)
