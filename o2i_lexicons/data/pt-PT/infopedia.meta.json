@@ -2,7 +2,7 @@
  "build_command": "python scripts/build_lexicon.py pt-PT infopedia --min-lead 10",
  "code": "pt-PT",
  "licence": "CC-BY-SA-4.0",
- "o2i_version": "7.115.2a1",
+ "o2i_version": "7.118.5a1",
  "reason_basis": {},
  "reasons": {
   "ambisséxuo": "unclassified",
@@ -29,7 +29,6 @@
   "lobby": "unclassified",
   "meã": "unclassified",
   "montmorilonite": "unclassified",
-  "muitíssimo": "unclassified",
   "muçuã": "unclassified",
   "oosfera": "unclassified",
   "ooteca": "unclassified",

@@ -3,6 +3,8 @@
     python scripts/build_lexicon.py en-GB wikipron --cache .cache \\
         --report build-report.json
     python scripts/build_lexicon.py pt-PT infopedia --report build-report.json
+    python scripts/build_lexicon.py pt-BR nilc --nilc unitex_sample_transcribed.txt \\
+        --michaelis entries.jsonl --report build-report.json
 
 The script runs the installed orthography2ipa over every word of the gold. It
 keeps a word only when the rules get it wrong under the board's own scoring:
@@ -44,6 +46,11 @@ fails, or ``kept`` and the sources that agree with it.
 A reading with a stress mark between a consonant and the vowel after it
 places the mark inside the onset (jakˈuzɐ for jaˈkuzɐ). The build takes the
 next reading of the word, or leaves the word out.
+
+A NILC entry passes the same screen (``screen_nilc``). Its reading is first put
+in the pt-BR norm (``lexicon_build.nilc_to_pt_br``). Its second source is a
+hand-typed pt.wiktionary Brazil line, Michaelis where the correction is one that
+its notation shows, or WikiPron pt-BR where it gives the word one reading.
 
 The gold must sit on a tier that can gate a quality decision in
 orthography2ipa. A silver set or a competitor's output is refused.
@@ -87,11 +94,29 @@ PORTAL_LISBON = "pt-PT-x-lisboa"
 WIKTIONARY_REGIONS = {"pt-PT", "pt"}
 
 
-def load_wikipron(bench, code: str):
+#: The regions of the pt.wiktionary readings that can corroborate a pt-BR entry.
+#: A row with no region is not a Brazil line.
+WIKTIONARY_BR_REGIONS = {"pt-BR", "pt-BR-x-paulistano", "pt-BR-x-paulista"}
+
+#: The NILC tags of a closed-class word (DELAF), and of a line that spells out
+#: an abbreviation or an acronym or lists a prefix.
+NILC_CLOSED_TAGS = ("PREP", "CONJ", "DET", "PRO")
+NILC_SPELLED_TAGS = ("SIGL", "ABREV", "PFX")
+
+#: The tag of a verb form, and of the noun or adjective a verb form may share a
+#: spelling with.
+NILC_VERB_TAG = "V"
+NILC_NOMINAL_TAGS = ("N", "A")
+
+NILC_URL = ("https://github.com/dash219/aeiouado_g2p/blob/"
+            "92055ad7844ad7713bc115db4e6baec071ce7a9b/etc/unitex_sample_transcribed.txt")
+
+
+def load_wikipron(bench, code: str, inputs: dict[str, Path]):
     return bench.load_wikipron(code, sys.maxsize), []
 
 
-def load_infopedia(bench, code: str):
+def load_infopedia(bench, code: str, inputs: dict[str, Path]):
     """The ``(headword, reading)`` pairs of the Infopédia rows of the
     portuguese_unified gold, and the ``(headword, reason, reading)`` rows of
     the readings left out.
@@ -178,7 +203,7 @@ def infopedia_references(bench, engine, code: str):
 
 
 def screen_infopedia(bench, engine, code: str, kept: list[lb.Candidate],
-                     norm: Callable[[str], str]):
+                     norm: Callable[[str], str], inputs: dict[str, Path]):
     """The Infopédia words that pass the four tests of the module docstring,
     and one ``(candidate, rules, stage, reason)`` row per screened word."""
     closed, references = infopedia_references(bench, engine, code)
@@ -227,6 +252,152 @@ def infopedia_norm(bench, headword: str, reading: str, rules: str) -> str:
     return lb.lisbon_to_pt_pt(headword, reading, rules, bench.align)
 
 
+def nilc_tag(entry: str) -> str:
+    """The DELAF tag of a ``lemma.TAG:flexion`` entry, without the flexion."""
+    return entry.rpartition(".")[2].partition(":")[0]
+
+
+def read_nilc(path: Path) -> dict[str, dict[str, set[str]]]:
+    """word -> NILC reading -> the tags of its lines."""
+    words: dict[str, dict[str, set[str]]] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        head, _, transcription = line.rpartition(";")
+        surface, _, entry = head.partition(",")
+        if transcription:
+            word = lb.lexicon_key(surface)
+            words.setdefault(word, {}).setdefault(lb.nilc_to_ipa(transcription), set()).add(
+                nilc_tag(entry))
+    return words
+
+
+def load_nilc(bench, code: str, inputs: dict[str, Path]):
+    """The ``(headword, reading)`` pairs of the NILC training file, and the
+    ``(headword, reason, reading)`` rows of the readings left out.
+
+    An abbreviation, an acronym and a prefix are spelled out or bound, so they
+    are not word readings. Lines repeat per dictionary entry, so each word and
+    reading comes once.
+    """
+    if code != "pt-BR":
+        raise SystemExit(f"the NILC build keys its entries to pt-BR; {code} cannot take them")
+    pairs, excluded = [], []
+    for word, readings in read_nilc(inputs["nilc"]).items():
+        for reading, tags in readings.items():
+            spelled = [t for t in tags if t.startswith(NILC_SPELLED_TAGS)]
+            if spelled:
+                excluded.append((word, f"tagged {spelled[0]}", reading))
+            else:
+                pairs.append((word, reading))
+    return pairs, excluded
+
+
+def read_michaelis(path: Path | None) -> dict[str, list[str]]:
+    """The one-word headwords that Michaelis transcribes, and their readings."""
+    words: dict[str, list[str]] = {}
+    if path is None:
+        return words
+    for line in path.read_text(encoding="utf-8").splitlines():
+        row = json.loads(line)
+        headword, ipa = row.get("headword") or "", row.get("ipa")
+        if row.get("status") == "found" and ipa and lb.WORD_RE.match(headword):
+            found = words.setdefault(lb.lexicon_key(headword), [])
+            if ipa not in found:
+                found.append(ipa)
+    return words
+
+
+def nilc_references(bench, code: str, inputs: dict[str, Path]):
+    """The sources that can corroborate a NILC reading, per lexicon key.
+
+    WikiPron pt-BR is the output of the en.wiktionary ``{{pt-IPA}}`` template, so
+    it corroborates only the words for which it gives one reading. The Aeiouadô
+    lexicon is machine-generated and never takes part.
+    """
+    wiktionary: dict[str, list[str]] = {}
+    closed: set[str] = set()
+    text = bench._fetch(bench._PT_UNIFIED_URL, "portuguese_pronunciation_lexicon.jsonl")
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        word = lb.lexicon_key(row["word"])
+        if row.get("pos") in lb.CLOSED_CLASS_POS:
+            closed.add(word)
+        if (bench.pt_unified_source(row) == "wiktionary"
+                and row.get("region") in WIKTIONARY_BR_REGIONS):
+            wiktionary.setdefault(word, []).extend(
+                r.strip() for r in (row.get("ipa_narrow") or "").split(",") if r.strip())
+    wikipron: dict[str, list[str]] = {}
+    for word, ipa in bench.load_wikipron(code, sys.maxsize):
+        wikipron.setdefault(lb.lexicon_key(word), []).append("".join(ipa.split()))
+    return closed, {"wikipron": lb.single_readings(wikipron), "wiktionary": wiktionary}
+
+
+def nilc_homograph(tags: set[str], readings: list[str], michaelis: list[str],
+                   entry: str) -> str | None:
+    """Why a lexicon entry cannot stand for every use of the word, or ``None``.
+
+    A verb form and a noun or adjective with one spelling can differ in the
+    stressed mid vowel (gosto [ɔ] and [o]). So can two readings of the file, or
+    two Michaelis homographs.
+    """
+    stressed = lb.stress_position(entry)
+    mid = stressed is not None and stressed[1] in "eɛoɔ"
+    if mid and NILC_VERB_TAG in tags and tags & set(NILC_NOMINAL_TAGS):
+        return "a verb form and a noun or adjective share the spelling"
+    if len({lb.stress_position(r) for r in readings}) > 1:
+        return "two NILC readings differ in the stress or the stressed vowel"
+    if len({lb.stress_position(r) for r in michaelis}) > 1:
+        return "two Michaelis readings differ in the stress or the stressed vowel"
+    return None
+
+
+def screen_nilc(bench, engine, code: str, kept: list[lb.Candidate],
+                norm: Callable[[str], str], inputs: dict[str, Path]):
+    """The NILC words that pass the tests of the module docstring, and one
+    ``(candidate, rules, stage, reason)`` row per screened word."""
+    closed, references = nilc_references(bench, code, inputs)
+    closed |= {lb.lexicon_key(w) for w in engine.spec.stress.cliticless_words}
+    file_rows = read_nilc(inputs["nilc"])
+    michaelis = read_michaelis(inputs.get("michaelis"))
+    defects = lb.KNOWN_SOURCE_DEFECTS.get(code, {})
+
+    def form(ipa: str) -> str:
+        return lb.pt_br_form(bench.normalize(ipa, strip_stress=False, broad=False))
+
+    passed, screened = [], []
+    for c in kept:
+        rules = engine.transcribe_word(c.headword)
+        rows = file_rows[c.word]
+        tags = set().union(*rows.values())
+        readings = [lb.nilc_to_pt_br(c.headword, r, rules, bench.align) for r in rows]
+        closed_tag = next((t for t in tags if t.startswith(NILC_CLOSED_TAGS)), None)
+        sources = lb.corroborating_sources(c.word, c.ipa, references, form)
+        if lb.michaelis_agrees(rules, c.ipa, michaelis.get(c.word, ())):
+            sources.append("michaelis")
+        for stage, reason in (
+                ("same headword", lb.other_reading_reason(rules, c.ipa)),
+                ("closed class", lb.closed_class_reason(c.headword, frozenset(closed))
+                 or (f"tagged {closed_tag}" if closed_tag else None)),
+                ("homograph", nilc_homograph(tags, readings, michaelis.get(c.word, []),
+                                             c.ipa)),
+                ("known source defect", defects.get(c.word)),
+                ("uncorroborated", None if lb.PT_BR_CORROBORATING_SOURCES & set(sources)
+                 else "no second source agrees")):
+            if reason is not None:
+                screened.append((c, rules, stage, reason))
+                break
+        else:
+            passed.append(c)
+            screened.append((c, rules, "kept", "+".join(sources)))
+    return passed, screened
+
+
+def nilc_norm(bench, headword: str, reading: str, rules: str) -> str:
+    """A NILC reading in the pt-BR norm, given the rules' reading."""
+    return lb.nilc_to_pt_br(headword, reading, rules, bench.align)
+
+
 #: dataset -> (loader, licence of the gold, the board dataset that holds it,
 #: the screen of the words that pass the leads or ``None``, the map of a gold
 #: reading to the language's norm before the rules are compared or ``None``).
@@ -234,10 +405,16 @@ SOURCES = {
     "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron", None, None),
     "infopedia": (load_infopedia, "CC-BY-SA-4.0", "portuguese_unified", screen_infopedia,
                   infopedia_norm),
+    "nilc": (load_nilc, "BSD-3-Clause", "nilc", screen_nilc, nilc_norm),
 }
+
+#: The tier of a gold that no board dataset holds: dataset -> tier.
+OFF_BOARD_TIERS = {"nilc": "expert-human"}
 
 
 def gold_url(bench, dataset: str, code: str) -> str:
+    if dataset == "nilc":
+        return NILC_URL
     if dataset == "wikipron":
         return bench._WIKIPRON_BASE + bench._WIKIPRON_FILES[code]
     return bench._PT_UNIFIED_URL
@@ -260,13 +437,15 @@ def held_out_rows(leads: list[lb.Lead]) -> list[str]:
 
 def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
           command: str, held_out_file: Path | None = None,
-          screened_file: Path | None = None, excluded_file: Path | None = None) -> dict:
+          screened_file: Path | None = None, excluded_file: Path | None = None,
+          inputs: dict[str, Path] | None = None) -> dict:
     bench = o2i_harness.load_benchmark(cache)
     loader, licence, board_dataset, screen, to_norm = SOURCES[dataset]
-    tier = bench.provenance_for(board_dataset, code)
+    inputs = inputs or {}
+    tier = OFF_BOARD_TIERS.get(dataset) or bench.provenance_for(board_dataset, code)
     if tier not in ALLOWED_TIERS or not bench.can_gate_promotion(tier):
         raise SystemExit(f"{dataset}/{code} is on tier {tier!r}, which cannot supply entries")
-    pairs, dropped = loader(bench, code)
+    pairs, dropped = loader(bench, code, inputs)
     readings_excluded = Counter(reason for _, reason, _ in dropped)
 
     golds: dict[str, list[str]] = {}
@@ -340,7 +519,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     kept = [c for c in candidates if c.word not in held]
     screened: list[tuple[lb.Candidate, str, str, str]] = []
     if screen is not None:
-        kept, screened = screen(bench, engine, code, kept, norm)
+        kept, screened = screen(bench, engine, code, kept, norm, inputs)
     entries = {c.word: c.ipa for c in kept}
     reasons = {c.word: lb.reason_for(c.headword) for c in kept}
     used = set(reasons.values()) - {"unclassified"}
@@ -413,11 +592,16 @@ def main(argv=None) -> None:
                     help="write each reading and headword the build leaves out, and why, here")
     ap.add_argument("--screened", type=Path,
                     help="write each word that the source's screen tests, and its result, here")
+    ap.add_argument("--nilc", type=Path, help="the NILC unitex_sample_transcribed.txt")
+    ap.add_argument("--michaelis", type=Path, help="the entries.jsonl of the Michaelis crawl")
     args = ap.parse_args(argv)
+    files = [arg for name in ("nilc", "michaelis") if getattr(args, name)
+             for arg in (f"--{name}", getattr(args, name).name)]
     command = "python scripts/build_lexicon.py " + shlex.join(
-        [args.code, args.dataset, "--min-lead", str(args.min_lead)])
+        [args.code, args.dataset, "--min-lead", str(args.min_lead), *files])
     report = build(args.code, args.dataset, args.cache, args.min_lead, args.out, command,
-                   args.held_out, args.screened, args.excluded)
+                   args.held_out, args.screened, args.excluded,
+                   {k: v for k, v in (("nilc", args.nilc), ("michaelis", args.michaelis)) if v})
     text = json.dumps(report, ensure_ascii=False, indent=1)
     if args.report:
         args.report.write_text(text + "\n", encoding="utf-8")

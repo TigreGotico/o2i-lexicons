@@ -286,6 +286,187 @@ def lisbon_prepalatal_vowel(rules: str, reading: str, align: Callable) -> bool:
     return False
 
 
+#: The symbols of the NILC Aeiouadô converter (``_conv2ipa`` of aeiouado_g2p), in
+#: the order that it applies them, with the glides and [ã] in the spec's symbols.
+NILC_SYMBOLS = (
+    ("P", "p"), ("B", "b"), ("T", "t"), ("D", "d"), ("K", "k"), ("G", "ɡ"),
+    ("7", "t͡ʃ"), ("8", "d͡ʒ"), ("M", "m"), ("Ñ", "ɲ"), ("N", "n"), ("F", "f"),
+    ("V", "v"), ("S", "s"), ("Z", "z"), ("X", "ʃ"), ("J", "ʒ"), ("Ĺ", "ʎ"),
+    ("L", "l"), ("Ŕ", "ɾ"), ("H", "ʁ"), ("R", "ʁ"), ("Q", "ks"), ("Ŵ", "w̃"),
+    ("W", "w"), ("Ỹ", "j̃"), ("Y", "j"), ("Á", "a"), ("6", "ə"), ("É", "ɛ"),
+    ("Ê", "e"), ("Ý", "i"), ("Í", "i"), ("I", "i"), ("Ó", "ɔ"), ("Ô", "o"),
+    ("Ú", "u"), ("U", "u"), ("Ã", "ɐ̃"), ("Ẽ", "ẽ"), ("Ĩ", "ĩ"), ("Õ", "õ"),
+    ("Ũ", "ũ"),
+)
+
+
+def nilc_to_ipa(transcription: str) -> str:
+    """A NILC transcription in the symbols of the pt-BR spec, with ``.`` between
+    syllables and ``ˈ`` before the stressed one.
+
+    The file's final [ɪ ʊ] are the spec's [i u]. Its [x] and [ɣ] are one
+    posterior rhotic, which the spec writes [ʁ], in the onset and in the coda.
+    """
+    text = unicodedata.normalize("NFC", transcription)
+    for symbol, ipa in NILC_SYMBOLS:
+        text = text.replace(symbol, ipa)
+    return text.replace("-@", "ˈ").replace("@", "ˈ").replace("-", ".")
+
+
+#: A syllable boundary or the end of the reading, after a coda consonant.
+_CODA_END = r"(?=[.ˈ]|$)"
+
+#: A stop or a labial fricative that closes a syllable. The pt-BR spec writes an
+#: epenthetic [i] after it, and the NILC file leaves it in the coda.
+_STOP_CODA_RE = re.compile(rf"(?<=[aɐeɛioɔu\u0303jw])(t͡ʃ|d͡ʒ|[pbkɡfv]){_CODA_END}")
+
+#: A stressed oral vowel and the nasal vowel that pt-BR writes for it before an
+#: onset ⟨m n nh⟩. The open vowels stay oral: homem [ˈɔmẽj̃].
+_STRESSED_NASAL = {"a": "ɐ̃", "e": "ẽ", "i": "ĩ", "o": "õ", "u": "ũ"}
+_STRESSED_BEFORE_NASAL_RE = re.compile(r"(ˈ[^.ˈaeiou]*)([aeiou])(\.)(?=[mnɲ])")
+
+#: Unstressed vowels of the file and the vowel the spec writes for them. pt-BR
+#: writes pretonic [e o] with no harmony raising, and no open vowel outside the
+#: stress.
+_UNSTRESSED_FOLD = {("i", "e"), ("u", "o"), ("ɛ", "e"), ("ɔ", "o")}
+
+#: Nasal vowels of the file before an onset nasal. pt-BR keeps an unstressed
+#: vowel oral there.
+_UNSTRESSED_NASAL_FOLD = {("õ", "o"), ("ẽ", "e"), ("ĩ", "i"), ("ũ", "u")}
+
+_NASAL_ONSETS = frozenset("mnɲ")
+_READING_VOWELS = frozenset("aɐeɛioɔu")
+
+
+def _fold_to_rules(reading: str, rules: str, align: Callable) -> str:
+    """*reading* with the allophones that the spec does not write in the
+    segment that the rules read at that place.
+
+    The file's word-internal coda rhotic is a fricative, and the spec's is the
+    tap. An unstressed vowel of ``_UNSTRESSED_FOLD`` takes the rules' vowel, and so does a nasal
+    vowel of ``_UNSTRESSED_NASAL_FOLD`` before an onset nasal.
+    """
+    letters, stressed_at, stressed = [], [], False
+    for i, ch in enumerate(reading):
+        if ch == "ˈ":
+            stressed = True
+        elif ch == ".":
+            stressed = False
+        else:
+            letters.append(i)
+            stressed_at.append(stressed)
+    bare = "".join(reading[i] for i in letters)
+    out = list(reading)
+    k = 0
+    for g, h in align(bare, "".join(c for c in rules if c not in STRESS_MARKS)):
+        if g is None:
+            continue
+        after = bare[k + 1] if k + 1 < len(bare) else ""
+        coda = after not in _READING_VOWELS
+        coda_tap = g == "ʁ" and coda and h == "ɾ"
+        unstressed = not stressed_at[k] and ((g, h) in _UNSTRESSED_FOLD or (
+            (g, h) in _UNSTRESSED_NASAL_FOLD and after in _NASAL_ONSETS))
+        if coda_tap or unstressed:
+            out[letters[k]] = h
+        k += 1
+    return "".join(out)
+
+
+def nilc_to_pt_br(word: str, reading: str, rules: str, align: Callable) -> str:
+    """A NILC reading (``nilc_to_ipa``) in the norm of the pt-BR spec.
+
+    The file transcribes São Paulo city speech. Each step writes one of its
+    choices as the spec does (``docs/languages/pt-BR.md`` of orthography2ipa):
+
+    - A word-initial pretonic ⟨es⟩ before a coda sibilant is [is], and ⟨en em⟩
+      is [ĩ], where the file has [es ẽ] (``BR_INITIAL_ES_RAISE``,
+      ``BR_INITIAL_EN_RAISE``).
+    - A stop that closes a syllable takes the epenthetic [i], where the file
+      keeps it in the coda: advogado [ad͡ʒivoˈɡadu].
+    - A coda sibilant stays alveolar before [t͡ʃ d͡ʒ], where the file has
+      [ʃt͡ʃ ʒd͡ʒ].
+    - A stressed vowel before an onset nasal is nasal (``BR_NASAL_STRESSED_*``).
+    - The file's [ə] is [ɐ] at the end of a word and [a] elsewhere.
+    - A word-final sibilant is [s], where the file has [z] for ⟨z⟩: a citation
+      form stands before a pause.
+    - A word-final rhotic is [ɾ] where the rules keep it, and goes where the
+      rules drop a final ⟨r⟩, as they do in an infinitive.
+    - The word-internal coda rhotic and the unstressed vowels follow
+      ``_fold_to_rules``.
+
+    The result has no syllable marks.
+    """
+    spelling = lexicon_key(word)
+    if spelling.startswith("es"):
+        reading = re.sub(rf"^e(?=[szʃʒ]{_CODA_END})", "i", reading)
+    if re.match("e[nm]", spelling):
+        reading = re.sub(rf"^ẽ{_CODA_END}", "ĩ", reading)
+    reading = re.sub(r"ʃ(?=[.ˈ]?t͡ʃ)", "s", reading)
+    reading = re.sub(r"ʒ(?=[.ˈ]?d͡ʒ)", "z", reading)
+    reading = _STOP_CODA_RE.sub(r"\1i", reading)
+    reading = _STRESSED_BEFORE_NASAL_RE.sub(
+        lambda m: m[1] + _STRESSED_NASAL[m[2]] + m[3], reading)
+    reading = re.sub(r"ə(?=s?$)", "ɐ", reading).replace("ə", "a")
+    reading = re.sub(r"z$", "s", reading)
+    if reading.endswith("ʁ"):
+        reading = reading[:-1] + ("ɾ" if rules.endswith("ɾ") else "")
+    reading = _fold_to_rules(reading, rules, align)
+    return unicodedata.normalize("NFC", reading.replace(".", ""))
+
+
+#: The notation that differs between the Brazilian sources and carries no
+#: lexical fact: the unstressed [a ɐ] of a broad transcription, the near-close
+#: vowels, and every posterior rhotic.
+_BR_FOLD = {"ɐ": "a", "ə": "a", "ɪ": "i", "ʊ": "u", "x": "ʁ", "ɣ": "ʁ", "h": "ʁ",
+            "ɦ": "ʁ", "χ": "ʁ", "r": "ʁ", "y": "j"}
+_BR_CODA_TAP_RE = re.compile(r"ɾ(?=[^aeiouɛɔ\u0303ˈ.]|$)")
+
+
+def pt_br_form(ipa: str) -> str:
+    """*ipa* for a comparison between Brazilian sources, with the stress kept.
+
+    The sources write the coda rhotic by accent, so a coda tap counts as the
+    rhotic. A nasal glide counts as a glide, because the nasal vowel before it
+    already shows the nasality.
+    """
+    text = unicodedata.normalize("NFD", ipa.replace("'", "ˈ"))
+    text = "".join(_BR_FOLD.get(c, c) for c in text if c not in TIE_BARS and c != ".")
+    text = _BR_CODA_TAP_RE.sub("ʁ", text)
+    return unicodedata.normalize("NFC", text.replace("j\u0303", "j").replace("w\u0303", "w"))
+
+
+#: The vowels whose quality Michaelis shows and the letter they fold to when a
+#: comparison asks what else differs.
+MID_VOWEL_FOLD = {"ɛ": "e", "ɔ": "o"}
+
+
+def stress_position(ipa: str) -> Optional[tuple[int, str]]:
+    """``(nuclei after the stressed one, the stressed vowel)``, or ``None``."""
+    letters = [c for c in unicodedata.normalize("NFD", ipa)
+               if c in VOWELS or c == "ˈ"]
+    if "ˈ" not in letters:
+        return None
+    i = letters.index("ˈ")
+    rest = [c for c in letters[i + 1:] if c != "ˈ"]
+    return (len(rest) - 1, rest[0]) if rest else None
+
+
+def michaelis_can_show(rules: str, entry: str) -> bool:
+    """Whether *entry* differs from *rules* only in the stress or the quality of
+    a mid vowel, the two features of the Michaelis notation."""
+    def bare(ipa: str) -> str:
+        return "".join(MID_VOWEL_FOLD.get(c, c) for c in pt_br_form(ipa) if c != "ˈ")
+    return bare(rules) == bare(entry)
+
+
+def michaelis_agrees(rules: str, entry: str, readings: Iterable[str]) -> bool:
+    """Whether a Michaelis reading has the stress and the stressed vowel of
+    *entry*, for an entry whose correction Michaelis can show."""
+    want = stress_position(entry)
+    return (want is not None and michaelis_can_show(rules, entry)
+            and any(stress_position(r) == want for r in readings))
+
+
 def misplaced_stress(ipa: str) -> bool:
     """Whether a stress mark stands between a consonant and the vowel after it.
 
@@ -338,15 +519,17 @@ def outside_inventory(tokens: list[str], inventory: frozenset[str]) -> list[str]
 
     A spec emits a nasal glide only as the second half of a nasal diphthong
     (pt-PT mãe ˈmɐ̃j̃, pão ˈpɐ̃w̃, põe ˈpõj̃), so the glide is not a token of its
-    own. A nasal glide after a nasal vowel is inside the inventory when an
-    inventory token ends in that glide: muito ˈmũj̃tu tokenises as ũ j̃.
+    own. A nasal glide is inside the inventory only after a nasal vowel, and
+    only when an inventory token ends in that glide: muito ˈmũj̃tu tokenises as
+    ũ j̃. A spec that lists the bare glide changes neither condition.
     """
     nasal_glides = {t[-2:] for t in inventory
                     if len(t) > 2 and t.endswith(NASAL) and t[-2] in GLIDES}
+    def after_nasal_vowel(i: int) -> bool:
+        return i > 0 and unicodedata.normalize("NFD", tokens[i - 1]).endswith(NASAL)
+
     return [t for i, t in enumerate(tokens)
-            if t not in inventory
-            and not (t in nasal_glides and i
-                     and unicodedata.normalize("NFD", tokens[i - 1]).endswith(NASAL))]
+            if not (after_nasal_vowel(i) if t in nasal_glides else t in inventory)]
 NON_SYLLABIC = "̯"
 #: The vowels that European Portuguese deletes ([ɨ], [u]) or turns into a
 #: glide ([i], [u]) in unstressed syllables.
@@ -552,6 +735,11 @@ def corroborating_sources(word: str, reading: str, references: dict[str, dict[st
 #: reading, so it is not independent. Their agreement is recorded, but it keeps
 #: no entry on its own.
 CORROBORATING_SOURCES = frozenset({"wikipron", "wiktionary"})
+
+#: The sources whose agreement keeps a pt-BR entry. WikiPron pt-BR is template
+#: output too, so it counts only as it does for pt-PT. The Aeiouadô lexicon is
+#: machine-generated and never counts.
+PT_BR_CORROBORATING_SOURCES = CORROBORATING_SOURCES | {"michaelis"}
 
 
 def single_readings(readings: dict[str, list[str]]) -> dict[str, list[str]]:

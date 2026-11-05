@@ -1,0 +1,18 @@
+{
+ "build_command": "python scripts/build_lexicon.py pt-BR nilc --min-lead 10 --nilc unitex_sample_transcribed.txt --michaelis michaelis-snapshot.jsonl",
+ "code": "pt-BR",
+ "licence": "BSD-3-Clause",
+ "o2i_version": "7.118.5a1",
+ "reason_basis": {},
+ "reasons": {
+  "exu": "unclassified",
+  "joga": "unclassified",
+  "sintaxe": "unclassified",
+  "transação": "unclassified",
+  "tórax": "unclassified"
+ },
+ "source": "nilc",
+ "source_url": "https://github.com/dash219/aeiouado_g2p/blob/92055ad7844ad7713bc115db4e6baec071ce7a9b/etc/unitex_sample_transcribed.txt",
+ "stress": "source",
+ "tier": "expert-human"
+}
