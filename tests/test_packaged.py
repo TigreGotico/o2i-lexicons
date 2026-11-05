@@ -71,6 +71,28 @@ def test_the_pt_pt_lexicon_ships_with_its_provenance():
         "portuguese_pronunciation_lexicon.jsonl")
 
 
+def test_the_pt_br_lexicon_ships_with_its_provenance():
+    # The NILC training file: BSD 3-Clause, Copyright (c) 2014, Gustavo Mendonça.
+    assert "pt-BR" in o2i_lexicons.available_codes()
+    assert o2i_lexicons.tsv_path("pt-BR").name == "nilc.tsv"
+    meta = o2i_lexicons.load_meta("pt-BR")
+    assert (meta["source"], meta["tier"], meta["licence"]) == (
+        "nilc", "expert-human", "BSD-3-Clause")
+    assert meta["stress"] == "source"
+    assert meta["source_url"].endswith("/etc/unitex_sample_transcribed.txt")
+    notice = (o2i_lexicons.DATA_DIR / "pt-BR" / "LICENSE.nilc").read_text(encoding="utf-8")
+    assert "Copyright (c) 2014, Gustavo Mendonça" in notice
+
+
+def test_the_pt_br_entries_use_the_spec_symbols():
+    text = o2i_lexicons.tsv_path("pt-BR").read_text(encoding="utf-8")
+    assert text
+    # the file writes [ɪ ʊ ə y], the fricative rhotics, and the spec does not
+    readings = "".join(line.split("\t")[1] for line in text.splitlines())
+    assert set(readings) & set("ɪʊəyɣ") == set()
+    assert "x" not in readings.replace("ks", "")
+
+
 def test_the_pt_pt_entries_use_the_spec_symbols():
     # Infopédia writes exame iˈzɐm(ə), rap ˈʀɛp and bisbilhotar bəʒbiʎuˈtar.
     # The pt-PT spec writes the reduced vowel ɨ, the strong rhotic ʁ and the
@@ -156,7 +178,7 @@ def test_no_pt_pt_entry_rests_on_a_merged_row_alone():
 
 
 def test_a_pt_pt_entry_may_end_a_nasal_diphthong_in_a_nasal_glide():
-    # Infopédia muitíssimo [mũj̃ˈtisimu], with WikiPron as the second source.
+    # Infopédia proibição [pɾuibiˈsɐ̃w̃].
     text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
     entries = dict(line.split("\t") for line in text.splitlines())
-    assert entries["muitíssimo"] == "mũj̃ˈtisimu"
+    assert entries["proibição"] == "pɾuibiˈsɐ̃w̃"

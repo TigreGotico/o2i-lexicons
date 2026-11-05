@@ -396,3 +396,102 @@ def test_the_pt_pt_rules_read_the_mapped_nasal_diphthong(word, reading):
     import orthography2ipa
 
     assert orthography2ipa.G2P("pt-PT").transcribe_word(word) == lb.infopedia_to_spec(reading)
+
+
+@pytest.mark.parametrize("transcription, ipa", [
+    ("KÁ-@DÊY-Ŕ6S", "kaˈdej.ɾəs"),
+    ("TŔÔW-@SÉ-ŔÃŴ", "tɾowˈsɛ.ɾɐ̃w̃"),
+    ("@HÍ7-MU", "ˈʁit͡ʃ.mu"),
+    ("@TÁR-8I", "ˈtaʁ.d͡ʒi"),
+    ("@FÍ-QU", "ˈfi.ksu"),
+])
+def test_nilc_symbols_are_the_spec_symbols(transcription, ipa):
+    assert lb.nilc_to_ipa(transcription) == ipa
+
+
+@pytest.mark.parametrize("word, transcription, rules, expected", [
+    # the fricative coda is the tap of the spec, and the file's [ə] is [ɐ] at the end
+    ("porta", "@PÓH-T6", "ˈpoɾtɐ", "ˈpɔɾtɐ"),
+    ("tarde", "@TÁR-8I", "ˈtaɾd͡ʒi", "ˈtaɾd͡ʒi"),
+    # a final rhotic goes where the rules drop it, and stays a tap where they keep it
+    ("falar", "FÁ-@LÁH", "faˈla", "faˈla"),
+    ("fizer", "FÍ-@ZÉH", "fiˈze", "fiˈzɛ"),
+    ("mar", "@MÁH", "ˈmaɾ", "ˈmaɾ"),
+    # the strong rhotic stays
+    ("carro", "@KÁ-HU", "ˈkaʁu", "ˈkaʁu"),
+    # initial ⟨es en⟩ raise, and an onset sibilant or a stressed vowel does not
+    ("escola", "ÊS-@KÓ-L6", "isˈkolɐ", "isˈkɔlɐ"),
+    ("essencial", "Ê-SẼ-SÍ-@ÁW", "esẽsiˈaw", "esẽsiˈaw"),
+    ("este", "@ÊS-7I", "ˈest͡ʃi", "ˈest͡ʃi"),
+    ("entregar", "Ẽ-TŔÊ-@GÁH", "ĩtɾeˈɡa", "ĩtɾeˈɡa"),
+    # ⟨ex⟩ takes no raising: the spec keeps [e], so the sibilant is the only change
+    ("explica", "ÊS-@PLÍ-K6", "eʃˈplikɐ", "esˈplikɐ"),
+    # the epenthetic [i] after a stop in the coda
+    ("ritmo", "@HÍ7-MU", "ˈʁitmu", "ˈʁit͡ʃimu"),
+    ("advogado", "Á8-VÔ-@GÁ-DU", "ad͡ʒivoˈɡadu", "ad͡ʒivoˈɡadu"),
+    ("compacta", "KÕ-@PÁK-T6", "kõˈpakitɐ", "kõˈpakitɐ"),
+    # a coda sibilant stays alveolar before [t͡ʃ]
+    ("vestindo", "VÊX-@7Ĩ-DU", "vesˈt͡ʃĩdu", "vesˈt͡ʃĩdu"),
+    # a stressed vowel before an onset nasal is nasal, an open one is not
+    ("crime", "@KŔÍ-MI", "ˈkɾĩmi", "ˈkɾĩmi"),
+    ("tema", "@TÉ-M6", "ˈtẽmɐ", "ˈtɛmɐ"),
+    # pretonic [e o] are not raised or opened, and a non-final [ə] is [a]
+    ("vestido", "VÍS-@7Í-DU", "vesˈt͡ʃidu", "vesˈt͡ʃidu"),
+    ("costura", "KÓS-@TÚ-Ŕ6", "kosˈtuɾɐ", "kosˈtuɾɐ"),
+    ("açúcar", "6-@SÚ-KÁH", "aˈsukaɾ", "aˈsukaɾ"),
+    # an unstressed nasal vowel before an onset nasal is oral, elsewhere it stays
+    ("comida", "KÕ-@MÍ-D6", "koˈmidɐ", "koˈmidɐ"),
+    ("corrida", "KÕ-@HÍ-D6", "koˈʁidɐ", "kõˈʁidɐ"),
+    # a word-final sibilant is [s]
+    ("acidez", "Á-SÍ-@DÊZ", "asiˈdes", "asiˈdes"),
+    # the stressed mid vowel is what the rules cannot reach, so it stays
+    ("sete", "@SÉ-7I", "ˈset͡ʃi", "ˈsɛt͡ʃi"),
+])
+def test_nilc_reading_in_the_pt_br_norm(word, transcription, rules, expected):
+    reading = lb.nilc_to_ipa(transcription)
+    assert lb.nilc_to_pt_br(word, reading, rules, edit_align) == expected
+
+
+@pytest.mark.parametrize("left, right", [
+    ("ˈkaʁu", "ˈkaxʊ"),                # a notation of the strong rhotic
+    ("ˈpɔɾtɐ", "ˈpɔʁta"),              # the coda rhotic and the final [ɐ a]
+    ("ˈmɐ̃w̃", "ˈmɐ̃w"),                 # the nasal mark of a glide
+    ("ad͡ʒivoˈɡadu", "adʒivoˈɡadu"),    # the tie bar
+])
+def test_pt_br_form_folds_notation(left, right):
+    assert lb.pt_br_form(left) == lb.pt_br_form(right)
+
+
+@pytest.mark.parametrize("left, right", [
+    ("ˈsɛt͡ʃi", "ˈset͡ʃi"),             # a mid vowel is lexical
+    ("ˈtɔɾaks", "ˈtɔɾaʃ"),              # the value of ⟨x⟩
+    ("ˈkaɾu", "ˈkaʁu"),                # the tap between vowels is not the rhotic
+])
+def test_pt_br_form_keeps_lexical_differences(left, right):
+    assert lb.pt_br_form(left) != lb.pt_br_form(right)
+
+
+@pytest.mark.parametrize("ipa, position", [
+    ("ˈsɛt͡ʃi", (1, "ɛ")),
+    ("kaˈfɛ", (0, "ɛ")),
+    ("ˈlɐ̃padɐ", (2, "ɐ")),
+    ("mesa", None),
+])
+def test_stress_position(ipa, position):
+    assert lb.stress_position(ipa) == position
+
+
+def test_michaelis_counts_only_for_what_its_notation_shows():
+    # sete: the correction is the stressed mid vowel, and Michaelis prints it
+    assert lb.michaelis_agrees("ˈset͡ʃi", "ˈsɛt͡ʃi", ["ˈsɛti"])
+    # a broad [t] and [ə] do not stop the agreement, and a close vowel does
+    assert not lb.michaelis_agrees("ˈset͡ʃi", "ˈsɛt͡ʃi", ["ˈseti"])
+    # a stress correction is one it shows too
+    assert lb.michaelis_agrees("ˈtɾɐ̃zitu", "tɾɐ̃ˈzitu", ["tɾɐ̃ˈzitu"])
+    # tórax: the correction is the value of ⟨x⟩, which is outside its two features
+    assert not lb.michaelis_agrees("ˈtɔɾɐʃ", "ˈtɔɾaks", ["ˈtɔɾaks"])
+    assert not lb.michaelis_agrees("ˈset͡ʃi", "ˈsɛt͡ʃi", [])
+
+
+def test_the_aeiouado_lexicon_never_corroborates():
+    assert lb.PT_BR_CORROBORATING_SOURCES == {"wikipron", "wiktionary", "michaelis"}

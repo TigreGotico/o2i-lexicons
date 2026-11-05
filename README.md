@@ -51,6 +51,7 @@ o2i_lexicons.load_meta("en-GB")    # its sidecar
 | :--- | :--- | :--- | :--- | :--- |
 | `en-GB` | `o2i_lexicons/data/en-GB/wikipron.tsv` | [WikiPron](https://github.com/CUNY-CL/wikipron) `eng_latn_uk_broad.tsv`, scraped from Wiktionary | crowd-scraped | CC BY-SA 4.0 |
 | `pt-PT` | `o2i_lexicons/data/pt-PT/infopedia.tsv` | The Infopédia rows of [portuguese-unified-pronunciation-lexicon](https://huggingface.co/datasets/TigreGotico/portuguese-unified-pronunciation-lexicon), from the Porto Editora dictionary | lexicon-derived | CC BY-SA 4.0 |
+| `pt-BR` | `o2i_lexicons/data/pt-BR/nilc.tsv` | The training file of the NILC Aeiouadô transcriber (`etc/unitex_sample_transcribed.txt`), human-revised by one research team and not independently verified | expert-human | BSD 3-Clause |
 
 Stress on the en-GB entries comes from the orthography2ipa rules, not from the source. WikiPron scrapes Wiktionary with stress removed (`"stress": False` in its `data/scrape/lib/scrape.py`), so the published file holds no stress mark. The sidecar records this as `"stress": "rules"`, and the orthography2ipa stress rules mark each entry on output, as they mark an entry of `word_exceptions`.
 
@@ -79,7 +80,7 @@ Infopédia marks the nasality of a nasal diphthong once, on the glide (trem `ˈt
 
 The build compares the rules with the mapped reading, so a word whose only difference was [ɐj] against [ej] is not a rules miss. A reading with a stress mark between a consonant and the vowel after it (yakuza `jakˈuzɐ` for `jaˈkuzɐ`) places the mark inside the onset, and the build takes the next reading of the word or leaves the word out.
 
-Each token of an entry must be in the spec's token inventory. A nasal glide after a nasal vowel counts as inside it when the spec emits that glide in a nasal diphthong (mãe `ˈmɐ̃j̃`), so muitíssimo `mũj̃ˈtisimu` can be an entry. `build_lexicon.py --excluded` lists each reading and headword that the build leaves out, with the reason.
+Each token of an entry must be in the spec's token inventory. A nasal glide after a nasal vowel counts as inside it when the spec emits that glide in a nasal diphthong (mãe `ˈmɐ̃j̃`), so proibição `pɾuibiˈsɐ̃w̃` can be an entry. `build_lexicon.py --excluded` lists each reading and headword that the build leaves out, with the reason.
 
 A word that the rules get wrong, and that no lead holds out, must pass four more tests before it becomes a pt-PT entry. `build_lexicon.py --screened` lists each word with the test it fails, or with the sources that agree with it.
 
@@ -95,6 +96,8 @@ The scripts run the installed orthography2ipa. They score with the board harness
 ```bash
 python scripts/build_lexicon.py en-GB wikipron --report build-report.json
 python scripts/build_lexicon.py pt-PT infopedia --report build-report.json
+python scripts/build_lexicon.py pt-BR nilc --nilc unitex_sample_transcribed.txt \
+    --michaelis entries.jsonl --report build-report.json
 python scripts/measure.py en-GB ipadict:en-GB cmudict:en
 python scripts/measure.py pt-PT wikipron:pt-PT
 python scripts/prune_check.py
@@ -106,6 +109,26 @@ python scripts/prune_check.py
 
 `prune_check.py` exits with status 1 when the rules alone now get an entry right. CI runs it on each pull request, and a weekly job removes the stale entries and opens a draft pull request.
 
+## The pt-BR lexicon
+
+The NILC file transcribes the speech of São Paulo city, so the entries could go under `pt-BR` or under `pt-BR-x-sp`. The file's features fit neither spec without a map:
+
+| Feature | NILC file | `pt-BR` | `pt-BR-x-sp` |
+| :--- | :--- | :--- | :--- |
+| Strong rhotic | [x] | [ʁ] | [x], [ɣ] between voiced sounds |
+| Coda rhotic | [x], [ɣ] before a voiced sound | [ɾ] | [ɾ] |
+| Final ⟨r⟩ of an infinitive | kept | dropped | dropped |
+| Yod before a final /S/ | none | none | a stressed vowel takes it |
+| Final vowels | [ɪ ʊ ə] | [i u ɐ] | [i u ɐ] |
+
+The entries go under `pt-BR`. What the rules cannot reach is lexical: the quality of a stressed mid vowel and the value of ⟨x⟩. Those facts are not São Paulo facts, and the `pt-BR-x-sp` yod contradicts the file. A lexicon on `pt-BR` does not reach its child lects.
+
+`lexicon_build.nilc_to_pt_br` writes each reading in the `pt-BR` norm before the comparison with the rules. A word that differs from the rules only in the São Paulo features is rules-right, so it never becomes an entry.
+
+A word that the rules get wrong, and that no lead holds out, must pass the tests of `screen_nilc`. It reads the same headword as the rules, it is not a closed-class word, and it is no homograph: a verb form and a noun or adjective with one spelling can differ in the stressed mid vowel. A second independent source must then give the same reading. That source is a hand-typed pt.wiktionary Brazil line, Michaelis, or WikiPron pt-BR where it gives the word one reading. WikiPron pt-BR is the output of the `{{pt-IPA}}` template, so it counts only as it does for pt-PT. Michaelis prints a broad notation, so it counts only for an entry that differs from the rules in the stress or the quality of a mid vowel. The published Aeiouadô lexicon is machine-generated and never counts.
+
+The Michaelis readings are "all rights reserved" and stay out of this repository. A Michaelis agreement keeps an entry, and the entry holds the reading of the NILC file.
+
 ## Licence
 
-The code is Apache-2.0. Each data file keeps the licence of its source, which its `.meta.json` sidecar states. The `en-GB` file is CC BY-SA 4.0, the licence of the Wiktionary text it comes from. The `pt-PT` file is CC BY-SA 4.0, the licence that the card of the portuguese-unified dataset states.
+The code is Apache-2.0. Each data file keeps the licence of its source, which its `.meta.json` sidecar states. The `en-GB` file is CC BY-SA 4.0, the licence of the Wiktionary text it comes from. The `pt-PT` file is CC BY-SA 4.0, the licence that the card of the portuguese-unified dataset states. The `pt-BR` file is BSD 3-Clause, Copyright (c) 2014, Gustavo Mendonça, and `o2i_lexicons/data/pt-BR/LICENSE.nilc` holds the licence text.

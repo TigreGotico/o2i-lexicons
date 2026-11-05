@@ -32,13 +32,14 @@ Repository = "https://github.com/TigreGotico/o2i-lexicons"
 [project.entry-points."orthography2ipa.lexicons"]
 "en-GB" = "o2i_lexicons:tsv_path"
 "pt-PT" = "o2i_lexicons:tsv_path"
+"pt-BR" = "o2i_lexicons:tsv_path"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["o2i_lexicons*"]
 
 [tool.setuptools.package-data]
-o2i_lexicons = ["data/*/*.tsv", "data/*/*.meta.json"]
+o2i_lexicons = ["data/*/*.tsv", "data/*/*.meta.json", "data/*/LICENSE.*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "o2i_lexicons.version.VERSION_STR" }
