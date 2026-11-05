@@ -51,6 +51,16 @@ def stale_entries(code: str, entries: dict[str, str], bench) -> list[str]:
     return sorted(stale)
 
 
+def forget(meta: dict, words: list[str]) -> None:
+    """Remove from the sidecar *meta* each record of *words*."""
+    for word in words:
+        del meta["reasons"][word]
+    used = set(meta["reasons"].values())
+    meta["reason_basis"] = {r: b for r, b in meta["reason_basis"].items() if r in used}
+    if "wiktionary_readings" in meta:
+        meta["wiktionary_readings"] = [w for w in meta["wiktionary_readings"] if w not in words]
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--cache", type=Path, default=ROOT / ".cache")
@@ -73,9 +83,7 @@ def main(argv=None) -> int:
             meta = o2i_lexicons.load_meta(code)
             for word in stale:
                 del entries[word]
-                del meta["reasons"][word]
-            used = set(meta["reasons"].values())
-            meta["reason_basis"] = {r: b for r, b in meta["reason_basis"].items() if r in used}
+            forget(meta, stale)
             meta["o2i_version"] = VERSION_STR
             lb.write_lexicon(tsv.parent, tsv.stem, entries, meta)
     if args.report:

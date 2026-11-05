@@ -41,3 +41,23 @@ def test_a_process_wide_lexicon_does_not_reach_the_check(tmp_path):
         assert prune_check.stale_entries("en-GB", entries, BENCH) == []
     finally:
         orthography2ipa.clear_lexicons()
+
+
+def test_a_pruned_word_leaves_every_record_of_the_sidecar():
+    meta = {
+        "reasons": {"gel": "open", "bege": "open", "hotel": "final"},
+        "reason_basis": {"open": "a", "final": "b"},
+        "wiktionary_readings": ["bege", "gel"],
+    }
+    prune_check.forget(meta, ["gel", "hotel"])
+    assert meta == {
+        "reasons": {"bege": "open"},
+        "reason_basis": {"open": "a"},
+        "wiktionary_readings": ["bege"],
+    }
+
+
+def test_a_sidecar_without_mined_words_needs_no_such_field():
+    meta = {"reasons": {"sal": "x"}, "reason_basis": {}}
+    prune_check.forget(meta, ["sal"])
+    assert meta == {"reasons": {}, "reason_basis": {}}

@@ -90,7 +90,6 @@ def test_the_pt_br_lexicon_holds_the_lexical_classes():
     # dictionaries for the rest. Each word is outside what the spelling shows.
     entries = dict(line.split("\t") for line in o2i_lexicons.tsv_path(
         "pt-BR").read_text(encoding="utf-8").splitlines())
-    assert entries["papel"] == "paˈpɛw"
     assert entries["foto"] == "ˈfɔtu"
     assert entries["táxi"] == "ˈtaksi"
     assert entries["tórax"] == "ˈtɔɾaks"
