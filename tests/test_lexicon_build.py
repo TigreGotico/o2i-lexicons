@@ -240,3 +240,13 @@ def test_corroborating_sources():
     # A stress on another vowel is a disagreement when both mark it.
     assert lb.corroborating_sources("exame", "ˈizɐmɨ", refs, form) == ["wikipron"]
     assert lb.corroborating_sources("casa", "ˈkazɐ", refs, form) == []
+
+
+def test_wikipron_corroborates_only_a_single_reading():
+    readings = {"cupé": ["k u p e", "k u p ɛ"], "casa": ["k a z ɐ"], "asno": ["a ʒ n u", "a ʒ n u"]}
+    assert lb.single_readings(readings) == {"casa": ["k a z ɐ"], "asno": ["a ʒ n u", "a ʒ n u"]}
+
+
+def test_the_portal_keeps_no_entry_on_its_own():
+    assert "portal_lisbon" not in lb.CORROBORATING_SOURCES
+    assert lb.CORROBORATING_SOURCES == {"wikipron", "wiktionary"}

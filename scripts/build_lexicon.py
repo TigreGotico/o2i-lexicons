@@ -26,9 +26,11 @@ An Infopédia entry must pass four tests, in this order:
    reading is a citation form or a letter name
    (``lexicon_build.closed_class_reason``).
 3. Its only difference from the rules is not an open orthography2ipa rule
-   defect (``lexicon_build.OPEN_RULE_BUGS``).
-4. A second source gives the same reading: WikiPron pt-PT, a pt.wiktionary
-   reading, or the Portal da Língua Portuguesa Lisbon reading.
+   defect (``lexicon_build.OPEN_RULE_BUGS``), and a hand check did not find
+   the reading wrong (``lexicon_build.KNOWN_SOURCE_DEFECTS``).
+4. A second source gives the same reading: a pt.wiktionary reading, or
+   WikiPron pt-PT where it gives the word one reading. The Portal da Língua
+   Portuguesa Lisbon reading is recorded, but it keeps no entry on its own.
 
 ``--screened`` lists every word that reaches the screen, with the test it
 fails, or ``kept`` and the sources that agree with it.
@@ -127,6 +129,7 @@ def infopedia_references(bench, engine, code: str):
     """The closed-class words of the language, and the readings of the
     sources that can corroborate an Infopédia reading, per lexicon key.
 
+    WikiPron corroborates only the words for which it gives one reading.
     A closed-class word is one that the spec reads unstressed
     (``stress.cliticless_words``), or that a portuguese_unified row tags with
     a closed-class part of speech (``lexicon_build.CLOSED_CLASS_POS``). A row
@@ -156,8 +159,10 @@ def infopedia_references(bench, engine, code: str):
         else:
             continue
         references[name].setdefault(word, []).extend(readings)
+    wikipron: dict[str, list[str]] = {}
     for word, ipa in bench.load_wikipron(code, sys.maxsize):
-        references["wikipron"].setdefault(lb.lexicon_key(word), []).append(ipa)
+        wikipron.setdefault(lb.lexicon_key(word), []).append(ipa)
+    references["wikipron"] = lb.single_readings(wikipron)
     return frozenset(closed), references
 
 
@@ -173,6 +178,7 @@ def screen_infopedia(bench, engine, code: str, kept: list[lb.Candidate],
     def form(ipa: str) -> str:
         return bench.normalize(ipa, strip_stress=False, broad=True)
 
+    defects = lb.KNOWN_SOURCE_DEFECTS.get(code, {})
     passed, screened = [], []
     for c in kept:
         rules = engine.transcribe_word(c.headword)
@@ -182,7 +188,9 @@ def screen_infopedia(bench, engine, code: str, kept: list[lb.Candidate],
                 ("same headword", lb.other_reading_reason(rules, c.ipa)),
                 ("closed class", lb.closed_class_reason(c.headword, closed)),
                 ("open rule bug", ", ".join(f"o2i#{n}" for n in issues) or None),
-                ("uncorroborated", None if sources else "no second source agrees")):
+                ("known source defect", defects.get(c.word)),
+                ("uncorroborated", None if lb.CORROBORATING_SOURCES & set(sources)
+                 else "Portal Lisbon only" if sources else "no second source agrees")):
             if reason is not None:
                 screened.append((c, rules, stage, reason))
                 break

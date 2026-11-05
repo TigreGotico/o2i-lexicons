@@ -422,6 +422,33 @@ def corroborating_sources(word: str, reading: str, references: dict[str, dict[st
             if any(readings_agree(reading, r, form) for r in readings.get(word, ()))]
 
 
+#: The sources whose agreement keeps an entry. The Portal Lisbon readings are
+#: generator output, a comparison and not a gold, so a Portal agreement is
+#: recorded but keeps no entry on its own.
+CORROBORATING_SOURCES = frozenset({"wikipron", "wiktionary"})
+
+
+def single_readings(readings: dict[str, list[str]]) -> dict[str, list[str]]:
+    """The words of *readings* that have exactly one distinct reading.
+
+    WikiPron pt comes from the en.wiktionary ``{{pt-IPA}}`` template, which
+    lists several variants for many words (cupé: [kupe] and [kupɛ]). A match
+    against one of several variants is no evidence for the reading.
+    """
+    return {word: rs for word, rs in readings.items() if len(set(rs)) == 1}
+
+
+#: Source readings that a hand check found wrong, per language: headword ->
+#: the defect. Each is a candidate for the orthography2ipa corrections overlay.
+KNOWN_SOURCE_DEFECTS = {
+    "pt-PT": {
+        "armazém": "intervocalic ⟨z⟩ is [z], not [ʒ]",
+        "cupé": "the acute marks [ɛ], not [e]",
+        "deve": "the final [ɨ] is dropped",
+    },
+}
+
+
 def first_usable(golds: list[str], usable: Callable[[str], Optional[str]]) -> Optional[str]:
     """The first gold reading, in source order, that *usable* accepts.
 
