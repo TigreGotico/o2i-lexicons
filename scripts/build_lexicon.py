@@ -88,12 +88,13 @@ WIKTIONARY_REGIONS = {"pt-PT", "pt"}
 
 
 def load_wikipron(bench, code: str):
-    return bench.load_wikipron(code, sys.maxsize), Counter()
+    return bench.load_wikipron(code, sys.maxsize), []
 
 
 def load_infopedia(bench, code: str):
     """The ``(headword, reading)`` pairs of the Infopédia rows of the
-    portuguese_unified gold, and the readings left out, by reason.
+    portuguese_unified gold, and the ``(headword, reason, reading)`` rows of
+    the readings left out.
 
     Infopédia transcribes the European Portuguese standard, so only pt-PT
     takes them. A row that the board's corrections overlay lists is left out:
@@ -111,7 +112,7 @@ def load_infopedia(bench, code: str):
                if r["region"] == region and r["field"] == "ipa_narrow"}
     text = bench._fetch(bench._PT_UNIFIED_URL, "portuguese_pronunciation_lexicon.jsonl")
     readings: dict[str, list[str]] = {}
-    excluded = Counter()
+    excluded: list[tuple[str, str, str]] = []
     for line in text.splitlines():
         if not line.strip():
             continue
@@ -123,11 +124,12 @@ def load_infopedia(bench, code: str):
         if not word or not ipa:
             continue
         if (word, source, row.get("pos") or "", row.get("ipa_narrow")) in overlay:
-            excluded["listed by the board's corrections overlay"] += 1
+            excluded.append((word, "listed by the board's corrections overlay", ipa))
             continue
         for reading in filter(None, (r.strip() for r in ipa.split(","))):
             if lb.strong_r_is_ambiguous(word, reading):
-                excluded["[r] where the spelling has the strong rhotic"] += 1
+                excluded.append((word, "[r] where the spelling has the strong rhotic",
+                                 reading))
                 continue
             readings.setdefault(word, []).append(reading)
     pairs = [(word, lb.infopedia_to_spec(reading)) for word, group in readings.items()
@@ -258,13 +260,14 @@ def held_out_rows(leads: list[lb.Lead]) -> list[str]:
 
 def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
           command: str, held_out_file: Path | None = None,
-          screened_file: Path | None = None) -> dict:
+          screened_file: Path | None = None, excluded_file: Path | None = None) -> dict:
     bench = o2i_harness.load_benchmark(cache)
     loader, licence, board_dataset, screen, to_norm = SOURCES[dataset]
     tier = bench.provenance_for(board_dataset, code)
     if tier not in ALLOWED_TIERS or not bench.can_gate_promotion(tier):
         raise SystemExit(f"{dataset}/{code} is on tier {tier!r}, which cannot supply entries")
-    pairs, readings_excluded = loader(bench, code)
+    pairs, dropped = loader(bench, code)
+    readings_excluded = Counter(reason for _, reason, _ in dropped)
 
     golds: dict[str, list[str]] = {}
     for headword, gold in pairs:
@@ -281,12 +284,18 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     def norm(ipa: str) -> str:
         return bench.normalize(ipa, strip_stress=True, broad=True, extra_strip=extra)
 
+    def outside(ipa: str) -> list[str]:
+        return lb.outside_inventory(inventory_tokenize(ipa, spec), inventory)
+
     def usable(gold: str):
         for ipa in lb.storage_forms(gold):
-            if is_ipa_string(ipa) and all(
-                    t in inventory for t in inventory_tokenize(ipa, spec)):
+            if is_ipa_string(ipa) and not outside(ipa):
                 return ipa
         return None
+
+    def exclude(headword: str, reason: str, detail: str = "") -> None:
+        excluded[reason] += 1
+        dropped.append((headword, reason, detail))
 
     excluded = Counter()
     candidates: list[lb.Candidate] = []
@@ -294,10 +303,10 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     for headword, readings in golds.items():
         word = lb.lexicon_key(headword)
         if not lb.WORD_RE.match(headword):
-            excluded["not a single word"] += 1
+            exclude(headword, "not a single word")
             continue
         if len(casings[word]) > 1:
-            excluded["two source headwords differ only in case"] += 1
+            exclude(headword, "two source headwords differ only in case")
             continue
         try:
             rules = engine.transcribe_word(headword)
@@ -305,7 +314,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
             rules = ""
         hyp = norm(rules)
         if not hyp:
-            excluded["the engine gives no output"] += 1
+            exclude(headword, "the engine gives no output")
             continue
         if to_norm is not None:
             readings = [to_norm(bench, headword, g, rules) for g in readings]
@@ -315,11 +324,14 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
             continue
         placed = [g for g in readings if not lb.misplaced_stress(g)]
         if not placed:
-            excluded["every reading has a stress mark inside an onset"] += 1
+            exclude(headword, "every reading has a stress mark inside an onset",
+                    ", ".join(readings))
             continue
         ipa = lb.first_usable(placed, usable)
         if ipa is None:
-            excluded["no gold reading is IPA-only and inside the inventory"] += 1
+            exclude(headword, "no gold reading is IPA-only and inside the inventory",
+                    ", ".join(f"{g} ({' '.join(outside(lb.storage_ipa(g))) or 'not IPA'})"
+                              for g in placed))
             continue
         candidates.append(lb.Candidate(headword, word, hyp, norm(ipa), ipa))
 
@@ -348,6 +360,10 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     tsv, meta_file = lb.write_lexicon(out_root / code, dataset, entries, meta)
     if held_out_file is not None:
         held_out_file.write_text("\n".join(held_out_rows(leads)) + "\n", encoding="utf-8")
+    if excluded_file is not None:
+        excluded_file.write_text("word\treason\tdetail\n" + "".join(
+            f"{word}\t{reason}\t{detail}\n" for word, reason, detail in sorted(dropped)),
+            encoding="utf-8")
     if screened_file is not None:
         screened_file.write_text("word\tstage\treason\trules\treading\n" + "".join(
             f"{c.word}\t{stage}\t{why}\t{rules}\t{c.ipa}\n"
@@ -393,13 +409,15 @@ def main(argv=None) -> None:
     ap.add_argument("--report", type=Path, help="write the build report here")
     ap.add_argument("--held-out", type=Path,
                     help="write each held-out word and its largest lead here")
+    ap.add_argument("--excluded", type=Path,
+                    help="write each reading and headword the build leaves out, and why, here")
     ap.add_argument("--screened", type=Path,
                     help="write each word that the source's screen tests, and its result, here")
     args = ap.parse_args(argv)
     command = "python scripts/build_lexicon.py " + shlex.join(
         [args.code, args.dataset, "--min-lead", str(args.min_lead)])
     report = build(args.code, args.dataset, args.cache, args.min_lead, args.out, command,
-                   args.held_out, args.screened)
+                   args.held_out, args.screened, args.excluded)
     text = json.dumps(report, ensure_ascii=False, indent=1)
     if args.report:
         args.report.write_text(text + "\n", encoding="utf-8")

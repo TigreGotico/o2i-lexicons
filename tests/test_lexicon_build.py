@@ -337,3 +337,42 @@ def test_lisbon_prepalatal_vowel(rules, reading, lisbon):
 
 def test_pola_is_a_homograph():
     assert "pola" in lb.HOMOGRAPHS["pt-PT"]
+
+
+@pytest.fixture(scope="module")
+def pt_pt_tokens():
+    import orthography2ipa
+    from orthography2ipa.inventory import phoneme_inventory, tokenize
+
+    spec = orthography2ipa.G2P("pt-PT").spec
+    return phoneme_inventory(spec), lambda ipa: tokenize(ipa, spec)
+
+
+@pytest.mark.parametrize("word", ["mãe", "pão", "põe"])
+def test_the_pt_pt_rules_emit_nasal_diphthongs(pt_pt_tokens, word):
+    import orthography2ipa
+
+    inventory, tokens = pt_pt_tokens
+    rules = orthography2ipa.G2P("pt-PT").transcribe_word(word)
+    assert any(t.endswith(("j̃", "w̃")) for t in tokens(rules))
+    assert lb.outside_inventory(tokens(rules), inventory) == []
+
+
+@pytest.mark.parametrize("reading, outside", [
+    # muito: the nasal glide follows a nasal vowel, as in the rules' [ɐ̃j̃].
+    ("ˈmũj̃tu", []),
+    ("ˈmũw̃", []),
+    # A nasal glide after an oral vowel, or at the start, is not spec output.
+    ("ˈnuvɐj̃", ["j̃"]),
+    ("j̃a", ["j̃"]),
+    ("ˈføn", ["ø"]),
+])
+def test_a_nasal_glide_after_a_nasal_vowel_is_inside_the_inventory(
+        pt_pt_tokens, reading, outside):
+    inventory, tokens = pt_pt_tokens
+    assert lb.outside_inventory(tokens(reading), inventory) == outside
+
+
+def test_a_spec_with_no_nasal_diphthong_has_no_nasal_glide():
+    inventory = frozenset({"ˈ", "m", "ũ", "t", "u"})
+    assert lb.outside_inventory(["ˈ", "m", "ũ", "j̃", "t", "u"], inventory) == ["j̃"]
