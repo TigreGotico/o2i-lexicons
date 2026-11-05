@@ -153,3 +153,10 @@ def test_no_pt_pt_entry_rests_on_a_merged_row_alone():
                    "coibir", "cânon", "flirt", "jazz", "soufflé", "tweed",
                    "êxito", "óptico"}
     assert entries & merged_only == set()
+
+
+def test_a_pt_pt_entry_may_end_a_nasal_diphthong_in_a_nasal_glide():
+    # Infopédia muitíssimo [mũj̃ˈtisimu], with WikiPron as the second source.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    entries = dict(line.split("\t") for line in text.splitlines())
+    assert entries["muitíssimo"] == "mũj̃ˈtisimu"

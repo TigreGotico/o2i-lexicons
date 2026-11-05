@@ -319,6 +319,23 @@ def full_form_first(readings: list[str]) -> list[str]:
 #: non-syllabic mark follows it.
 VOWELS = frozenset("aɐeɛəɨioɔuʊɪæyøœɑɒʌɜɘɯ")
 GLIDES = frozenset("jwɥ")
+NASAL = "\u0303"
+
+
+def outside_inventory(tokens: list[str], inventory: frozenset[str]) -> list[str]:
+    """The tokens of a reading that are not in the spec's token *inventory*.
+
+    A spec emits a nasal glide only as the second half of a nasal diphthong
+    (pt-PT mãe ˈmɐ̃j̃, pão ˈpɐ̃w̃, põe ˈpõj̃), so the glide is not a token of its
+    own. A nasal glide after a nasal vowel is inside the inventory when an
+    inventory token ends in that glide: muito ˈmũj̃tu tokenises as ũ j̃.
+    """
+    nasal_glides = {t[-2:] for t in inventory
+                    if len(t) > 2 and t.endswith(NASAL) and t[-2] in GLIDES}
+    return [t for i, t in enumerate(tokens)
+            if t not in inventory
+            and not (t in nasal_glides and i
+                     and unicodedata.normalize("NFD", tokens[i - 1]).endswith(NASAL))]
 NON_SYLLABIC = "̯"
 #: The vowels that European Portuguese deletes ([ɨ], [u]) or turns into a
 #: glide ([i], [u]) in unstressed syllables.
