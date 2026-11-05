@@ -376,3 +376,23 @@ def test_a_nasal_glide_after_a_nasal_vowel_is_inside_the_inventory(
 def test_a_spec_with_no_nasal_diphthong_has_no_nasal_glide():
     inventory = frozenset({"ˈ", "m", "ũ", "t", "u"})
     assert lb.outside_inventory(["ˈ", "m", "ũ", "j̃", "t", "u"], inventory) == ["j̃"]
+
+
+@pytest.mark.parametrize("reading, spec", [
+    # Infopédia marks the nasality of [ɐ̃j̃] and [ɐ̃w̃] once, on the glide.
+    ("ˈtɾɐj̃", "ˈtɾɐ̃j̃"),
+    ("tẽˈsɐw̃", "tẽˈsɐ̃w̃"),
+    ("ˈmɐ̃j̃", "ˈmɐ̃j̃"),
+    # An oral [ɐj] and a nasal glide after another vowel stay as they are.
+    ("bɐjˈʃaɾ", "bɐjˈʃaɾ"),
+    ("ɐˈɾaw̃", "ɐˈɾaw̃"),
+])
+def test_infopedia_nasal_diphthong_takes_a_nasal_nucleus(reading, spec):
+    assert lb.infopedia_to_spec(reading) == spec
+
+
+@pytest.mark.parametrize("word, reading", [("trem", "ˈtɾɐj̃"), ("tensão", "tẽˈsɐw̃")])
+def test_the_pt_pt_rules_read_the_mapped_nasal_diphthong(word, reading):
+    import orthography2ipa
+
+    assert orthography2ipa.G2P("pt-PT").transcribe_word(word) == lb.infopedia_to_spec(reading)
