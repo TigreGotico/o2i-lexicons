@@ -440,31 +440,169 @@ def pt_br_form(ipa: str) -> str:
 MID_VOWEL_FOLD = {"ɛ": "e", "ɔ": "o"}
 
 
-def stress_position(ipa: str) -> Optional[tuple[int, str]]:
-    """``(nuclei after the stressed one, the stressed vowel)``, or ``None``."""
-    letters = [c for c in unicodedata.normalize("NFD", ipa)
-               if c in VOWELS or c == "ˈ"]
-    if "ˈ" not in letters:
-        return None
-    i = letters.index("ˈ")
-    rest = [c for c in letters[i + 1:] if c != "ˈ"]
-    return (len(rest) - 1, rest[0]) if rest else None
+#: One letter per vowel notation of the Brazilian sources, with the height kept.
+_VOWEL_NOTATION = {"ɐ": "a", "ə": "a", "ʌ": "a", "ɪ": "i", "ʊ": "u", "ɨ": "i"}
+
+
+def stressed_vowel(ipa: str) -> Optional[str]:
+    """The letter of the stressed vowel of *ipa*, without nasality, or ``None``."""
+    marked = False
+    for ch in unicodedata.normalize("NFD", ipa):
+        if ch == "ˈ":
+            marked = True
+        elif marked and ch in VOWELS:
+            return _VOWEL_NOTATION.get(ch, ch)
+    return None
+
+
+def _sounds(ipa: str) -> tuple[list[str], Optional[int]]:
+    """The sounds of *ipa*, and the index of its stressed vowel or ``None``.
+
+    Combining marks drop, a tie bar keeps an affricate as one sound, and vowel
+    height folds, because this comparison asks where the stress falls.
+    """
+    out: list[str] = []
+    stressed, marked, tied = None, False, False
+    for ch in unicodedata.normalize("NFD", ipa):
+        if ch == "ˈ":
+            marked = True
+        elif ch in TIE_BARS:
+            tied = True
+        elif not unicodedata.combining(ch) and ch != ".":
+            if tied:
+                out[-1] += ch
+                tied = False
+                continue
+            letter = _VOWEL_NOTATION.get(ch, ch)
+            out.append(MID_VOWEL_FOLD.get(letter, letter))
+            if marked and ch in VOWELS:
+                stressed, marked = len(out) - 1, False
+    return out, stressed
+
+
+def _pair_cost(a: str, b: str) -> float:
+    """A vowel pairs with a vowel or a glide, and a consonant with a consonant.
+    A vowel against a consonant costs more than two gaps, so it never pairs."""
+    if a == b:
+        return 0.0
+    vocalic = VOWELS | GLIDES
+    return 0.5 if (a in vocalic) == (b in vocalic) else 3.0
+
+
+def _alignment_cost(a: list[str], b: list[str]) -> float:
+    row = [float(j) for j in range(len(b) + 1)]
+    for i, x in enumerate(a, 1):
+        last, row[0] = row[0], float(i)
+        for j, y in enumerate(b, 1):
+            last, row[j] = row[j], min(row[j] + 1, row[j - 1] + 1, last + _pair_cost(x, y))
+    return row[-1]
+
+
+def same_stress(left: str, right: str) -> bool:
+    """Whether two readings put the stress on the same vowel of the word.
+
+    The sources differ in notation after the stress: a glide against a hiatus
+    (vácuo [ˈvakwu], [ˈvakuu]), an epenthetic [i] (pacto [ˈpaktu], [ˈpakitu]), a
+    dropped infinitive ⟨r⟩. A count of nuclei reads each of those as a stress
+    difference. So the readings are aligned sound by sound, and the stress
+    agrees when a cheapest alignment pairs the two stressed vowels.
+    """
+    a, i = _sounds(left)
+    b, j = _sounds(right)
+    if i is None or j is None:
+        return False
+    through = (_alignment_cost(a[:i], b[:j]) + _pair_cost(a[i], b[j])
+               + _alignment_cost(a[i + 1:], b[j + 1:]))
+    return through <= _alignment_cost(a, b)
+
+
+def same_stressed_vowel(left: str, right: str) -> bool:
+    """Whether two readings stress the same vowel, and with the same height."""
+    return same_stress(left, right) and stressed_vowel(left) == stressed_vowel(right)
+
+
+def _plain(ipa: str) -> str:
+    return pt_br_form(ipa).replace("ˈ", "")
 
 
 def michaelis_can_show(rules: str, entry: str) -> bool:
     """Whether *entry* differs from *rules* only in the stress or the quality of
     a mid vowel, the two features of the Michaelis notation."""
     def bare(ipa: str) -> str:
-        return "".join(MID_VOWEL_FOLD.get(c, c) for c in pt_br_form(ipa) if c != "ˈ")
+        return "".join(MID_VOWEL_FOLD.get(c, c) for c in _plain(ipa))
     return bare(rules) == bare(entry)
 
 
 def michaelis_agrees(rules: str, entry: str, readings: Iterable[str]) -> bool:
-    """Whether a Michaelis reading has the stress and the stressed vowel of
-    *entry*, for an entry whose correction Michaelis can show."""
-    want = stress_position(entry)
-    return (want is not None and michaelis_can_show(rules, entry)
-            and any(stress_position(r) == want for r in readings))
+    """Whether a Michaelis reading stresses the vowel that *entry* stresses, with
+    the same height, for an entry whose correction Michaelis can show."""
+    return michaelis_can_show(rules, entry) and any(
+        same_stressed_vowel(entry, r) for r in readings)
+
+
+#: A ⟨qu gu⟩ before ⟨e i⟩, where the spelling cannot show whether [w] follows.
+_QU_GU_RE = re.compile(r"[qg][uü][eiéíêî]")
+
+
+def lexical_class(word: str, rules: str, entry: str) -> Optional[str]:
+    """The classes of lexical fact that alone separate *entry* from *rules*, or
+    ``None`` when anything else differs.
+
+    The spelling does not show the height of a stressed mid vowel (o2i#1824),
+    whether ⟨x⟩ is [ks] (táxi, fixo), or whether ⟨qu gu⟩ before ⟨e i⟩ has [w]
+    (frequente). So a word that differs in these only is a residual word and
+    not a rule lead.
+    """
+    def bare(ipa: str) -> str:
+        text = "".join(MID_VOWEL_FOLD.get(c, c) for c in _plain(ipa))
+        if "x" in word:
+            text = text.replace("ks", "ʃ")
+        if _QU_GU_RE.search(word):
+            text = text.replace("kw", "k").replace("ɡw", "ɡ")
+        return text
+
+    if not same_stress(rules, entry) or bare(rules) != bare(entry):
+        return None
+    classes = []
+    if stressed_vowel(rules) != stressed_vowel(entry):
+        classes.append("stressed mid vowel")
+    if _plain(entry).count("ks") > _plain(rules).count("ks"):
+        classes.append("⟨x⟩ as [ks]")
+    if re.findall("[kɡ]w", _plain(entry)) != re.findall("[kɡ]w", _plain(rules)):
+        classes.append("⟨qu gu⟩ with [w]")
+    return "+".join(classes) or None
+
+
+def cited_rule_reason(word: str, entry: str, listed: frozenset[str]) -> Optional[str]:
+    """The cited pt-BR rule that decides the height of the stressed vowel of
+    *word*, or ``None``. *listed* holds the words of the height rules ``PT_LEX_CLOSE_*``
+    and ``PT_LEX_OPEN_*``.
+
+    A word under such a rule stays a lead: the spec settles it, so a source
+    that disagrees is a question for the spec and not an entry.
+    """
+    if lexicon_key(word) in listed:
+        return "a PT_LEX height rule lists the word"
+    if re.search("[éêóô]", word):
+        return "a written accent gives the height"
+    if re.search("[ɛɔ](?:[mnɲ]|\u0303)", unicodedata.normalize("NFD", entry)):
+        return "BR_NASAL_STRESSED closes a vowel before a nasal"
+    return None
+
+
+def with_stressed_vowel(rules: str, vowel: str) -> str:
+    """*rules* with *vowel* as the letter of its stressed mid vowel."""
+    mark = rules.index("ˈ")
+    at = next(i for i in range(mark, len(rules)) if rules[i] in VOWELS)
+    return rules[:at] + vowel + rules[at + 1:]
+
+
+def wiktionary_to_ipa(reading: str) -> str:
+    """A hand-typed pt.wiktionary reading without its typing variants: the
+    apostrophe for the stress mark, the secondary stress, optional sounds in
+    brackets, and the letter ⟨g⟩."""
+    text = re.sub(r"\([^)]*\)", "", reading).replace("'", "ˈ").replace("ˌ", "")
+    return text.replace("g", "ɡ")
 
 
 def misplaced_stress(ipa: str) -> bool:

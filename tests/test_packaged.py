@@ -72,16 +72,36 @@ def test_the_pt_pt_lexicon_ships_with_its_provenance():
 
 
 def test_the_pt_br_lexicon_ships_with_its_provenance():
-    # The NILC training file: BSD 3-Clause, Copyright (c) 2014, Gustavo Mendonça.
+    # The NILC training file is BSD 3-Clause, Copyright (c) 2014, Gustavo Mendonça.
+    # The pt.wiktionary readings are CC BY-SA 4.0, so the file takes that licence.
     assert "pt-BR" in o2i_lexicons.available_codes()
     assert o2i_lexicons.tsv_path("pt-BR").name == "nilc.tsv"
     meta = o2i_lexicons.load_meta("pt-BR")
     assert (meta["source"], meta["tier"], meta["licence"]) == (
-        "nilc", "expert-human", "BSD-3-Clause")
+        "nilc", "expert-human", "CC-BY-SA-4.0")
     assert meta["stress"] == "source"
     assert meta["source_url"].endswith("/etc/unitex_sample_transcribed.txt")
     notice = (o2i_lexicons.DATA_DIR / "pt-BR" / "LICENSE.nilc").read_text(encoding="utf-8")
     assert "Copyright (c) 2014, Gustavo Mendonça" in notice
+
+
+def test_the_pt_br_lexicon_holds_the_lexical_classes():
+    # Expected readings: Barbosa & Albano 2004 for sete, and the standard
+    # dictionaries for the rest. Each word is outside what the spelling shows.
+    entries = dict(line.split("\t") for line in o2i_lexicons.tsv_path(
+        "pt-BR").read_text(encoding="utf-8").splitlines())
+    assert entries["papel"] == "paˈpɛw"
+    assert entries["foto"] == "ˈfɔtu"
+    assert entries["táxi"] == "ˈtaksi"
+    assert entries["tórax"] == "ˈtɔɾaks"
+
+
+def test_a_wiktionary_reading_is_named_in_the_sidecar():
+    meta = o2i_lexicons.load_meta("pt-BR")
+    entries = o2i_lexicons.tsv_path("pt-BR").read_text(encoding="utf-8")
+    words = {line.split("\t")[0] for line in entries.splitlines()}
+    assert "deboche" in meta["wiktionary_readings"]
+    assert set(meta["wiktionary_readings"]) <= words
 
 
 def test_the_pt_br_entries_use_the_spec_symbols():

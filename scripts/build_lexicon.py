@@ -4,7 +4,8 @@
         --report build-report.json
     python scripts/build_lexicon.py pt-PT infopedia --report build-report.json
     python scripts/build_lexicon.py pt-BR nilc --nilc unitex_sample_transcribed.txt \\
-        --michaelis entries.jsonl --report build-report.json
+        --michaelis entries.jsonl --homographs heterophonic_homographs.csv \\
+        --report build-report.json
 
 The script runs the installed orthography2ipa over every word of the gold. It
 keeps a word only when the rules get it wrong under the board's own scoring:
@@ -50,7 +51,10 @@ next reading of the word, or leaves the word out.
 A NILC entry passes the same screen (``screen_nilc``). Its reading is first put
 in the pt-BR norm (``lexicon_build.nilc_to_pt_br``). Its second source is a
 hand-typed pt.wiktionary Brazil line, Michaelis where the correction is one that
-its notation shows, or WikiPron pt-BR where it gives the word one reading.
+its notation shows, or WikiPron pt-BR where it gives the word one reading. A word
+that differs from the rules only in a fact that the spelling cannot show never
+joins a lead (``lexicon_build.lexical_class``). ``mine_wiktionary`` adds the words
+of Michaelis and pt.wiktionary that the file lacks.
 
 The gold must sit on a tier that can gate a quality decision in
 orthography2ipa. A silver set or a competitor's output is refused.
@@ -58,12 +62,13 @@ orthography2ipa. A silver set or a competitor's output is refused.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import shlex
 import sys
 from collections import Counter
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -333,23 +338,89 @@ def nilc_references(bench, code: str, inputs: dict[str, Path]):
     return closed, {"wikipron": lb.single_readings(wikipron), "wiktionary": wiktionary}
 
 
-def nilc_homograph(tags: set[str], readings: list[str], michaelis: list[str],
-                   entry: str) -> str | None:
+def read_homographs(path: Path | None) -> frozenset[str]:
+    """The words of a heterophonic homograph list (bifonia), by lexicon key."""
+    if path is None:
+        return frozenset()
+    with path.open(encoding="utf-8", newline="") as f:
+        return frozenset(lb.lexicon_key(row["word"]) for row in csv.DictReader(f))
+
+
+def nilc_homograph(word: str, tags: set[str], readings: list[str], others: list[str],
+                   entry: str, listed: frozenset[str]) -> str | None:
     """Why a lexicon entry cannot stand for every use of the word, or ``None``.
 
     A verb form and a noun or adjective with one spelling can differ in the
-    stressed mid vowel (gosto [ɔ] and [o]). So can two readings of the file, or
-    two Michaelis homographs.
+    stressed mid vowel (gosto [ɔ] and [o]). A homograph list can say so, and so
+    can two readings of the file or of another source (*others*).
     """
-    stressed = lb.stress_position(entry)
-    mid = stressed is not None and stressed[1] in "eɛoɔ"
+    mid = lb.stressed_vowel(entry) in tuple("eɛoɔ")
     if mid and NILC_VERB_TAG in tags and tags & set(NILC_NOMINAL_TAGS):
         return "a verb form and a noun or adjective share the spelling"
-    if len({lb.stress_position(r) for r in readings}) > 1:
-        return "two NILC readings differ in the stress or the stressed vowel"
-    if len({lb.stress_position(r) for r in michaelis}) > 1:
-        return "two Michaelis readings differ in the stress or the stressed vowel"
+    if mid and word in listed:
+        return "the homograph list holds the word"
+    for name, found in (("NILC", readings), ("other source", others)):
+        if any(not lb.same_stressed_vowel(found[0], r) for r in found[1:]):
+            return f"two {name} readings differ in the stress or the stressed vowel"
     return None
+
+
+def nilc_residual(engine, c: lb.Candidate, listed: frozenset[str]):
+    """``(class, cited rule)`` of a candidate. A class names the lexical facts
+    that alone separate it from the rules. A cited rule keeps it a lead."""
+    rules = engine.transcribe_word(c.headword)
+    found = lb.lexical_class(c.word, rules, c.ipa)
+    if found is None or "stressed mid vowel" not in found:
+        return found, None
+    return found, lb.cited_rule_reason(c.word, c.ipa, listed)
+
+
+def spec_listed_words(engine) -> frozenset[str]:
+    """The words that the stressed-height rules of the spec name."""
+    return frozenset(lb.lexicon_key(w) for rule in engine.spec.allophone_rules
+                     if rule.id.startswith(("PT_LEX_CLOSE", "PT_LEX_OPEN")) for w in rule.word)
+
+
+def mine_wiktionary(engine, words: Iterable[str], wiktionary: dict[str, list[str]],
+                    michaelis: dict[str, list[str]], closed: frozenset[str],
+                    homographs: frozenset[str], listed: frozenset[str], norm):
+    """The words that Michaelis and a hand-typed pt.wiktionary Brazil line hold
+    and the NILC file does not.
+
+    The reading comes from the pt.wiktionary line. Michaelis only corroborates
+    it, so the line may differ from the rules only in the height of the stressed
+    vowel, and the entry is the rules' reading with that height: an entry in
+    the norm by construction. Returns the entries and one
+    ``(candidate, rules, stage, reason)`` row per word.
+    """
+    passed, rows = [], []
+    for word in sorted(words):
+        rules = engine.transcribe_word(word)
+        lines = [lb.wiktionary_to_ipa(r) for r in wiktionary[word]]
+        shown = [r for r in lines if lb.michaelis_can_show(rules, r) and lb.same_stress(rules, r)]
+        heights = {lb.stressed_vowel(r) for r in shown}
+        changed = heights - {lb.stressed_vowel(rules)}
+        entry = lb.with_stressed_vowel(rules, min(changed)) if len(heights) == 1 and changed else rules
+        c = lb.Candidate(word, word, norm(rules), norm(entry), entry)
+        for stage, reason in (
+                ("mined: no reading", None if lines else "the pt.wiktionary row has no reading"),
+                ("mined: Michaelis cannot show", None if shown else
+                 "the line differs from the rules in more than the stressed vowel height"),
+                ("mined: two heights", "the lines give two heights" if len(heights) > 1 else None),
+                ("mined: rules right", None if changed else "the line has the rules' height"),
+                ("mined: closed class", lb.closed_class_reason(word, closed)),
+                ("mined: cited rule", lb.cited_rule_reason(word, entry, listed)),
+                ("mined: homograph", nilc_homograph(word, set(), lines, michaelis[word], entry,
+                                                    homographs)),
+                ("mined: uncorroborated", None if lb.michaelis_agrees(rules, entry, michaelis[word])
+                 else "Michaelis gives another stressed vowel")):
+            if reason is not None:
+                rows.append((c, rules, stage, reason))
+                break
+        else:
+            passed.append(c)
+            rows.append((c, rules, "mined", "wiktionary+michaelis"))
+    return passed, rows
 
 
 def screen_nilc(bench, engine, code: str, kept: list[lb.Candidate],
@@ -360,7 +431,9 @@ def screen_nilc(bench, engine, code: str, kept: list[lb.Candidate],
     closed |= {lb.lexicon_key(w) for w in engine.spec.stress.cliticless_words}
     file_rows = read_nilc(inputs["nilc"])
     michaelis = read_michaelis(inputs.get("michaelis"))
+    homographs = read_homographs(inputs.get("homographs"))
     defects = lb.KNOWN_SOURCE_DEFECTS.get(code, {})
+    wiktionary = references["wiktionary"]
 
     def form(ipa: str) -> str:
         return lb.pt_br_form(bench.normalize(ipa, strip_stress=False, broad=False))
@@ -379,8 +452,9 @@ def screen_nilc(bench, engine, code: str, kept: list[lb.Candidate],
                 ("same headword", lb.other_reading_reason(rules, c.ipa)),
                 ("closed class", lb.closed_class_reason(c.headword, frozenset(closed))
                  or (f"tagged {closed_tag}" if closed_tag else None)),
-                ("homograph", nilc_homograph(tags, readings, michaelis.get(c.word, []),
-                                             c.ipa)),
+                ("homograph", nilc_homograph(
+                    c.word, tags, readings,
+                    michaelis.get(c.word, []) + wiktionary.get(c.word, []), c.ipa, homographs)),
                 ("known source defect", defects.get(c.word)),
                 ("uncorroborated", None if lb.PT_BR_CORROBORATING_SOURCES & set(sources)
                  else "no second source agrees")):
@@ -390,7 +464,10 @@ def screen_nilc(bench, engine, code: str, kept: list[lb.Candidate],
         else:
             passed.append(c)
             screened.append((c, rules, "kept", "+".join(sources)))
-    return passed, screened
+    mined, rows = mine_wiktionary(
+        engine, (set(michaelis) & set(wiktionary)) - set(file_rows), wiktionary, michaelis,
+        frozenset(closed), homographs, spec_listed_words(engine), norm)
+    return passed + mined, screened + rows
 
 
 def nilc_norm(bench, headword: str, reading: str, rules: str) -> str:
@@ -398,14 +475,17 @@ def nilc_norm(bench, headword: str, reading: str, rules: str) -> str:
     return lb.nilc_to_pt_br(headword, reading, rules, bench.align)
 
 
-#: dataset -> (loader, licence of the gold, the board dataset that holds it,
+#: dataset -> (loader, licence of the entries, the board dataset that holds it,
 #: the screen of the words that pass the leads or ``None``, the map of a gold
-#: reading to the language's norm before the rules are compared or ``None``).
+#: reading to the language's norm before the rules are compared or ``None``,
+#: the test that takes a lexical word out of the leads or ``None``). The nilc
+#: file is BSD 3-Clause. Its entries ship beside pt.wiktionary readings, so the
+#: file takes CC BY-SA 4.0 and keeps the BSD notice.
 SOURCES = {
-    "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron", None, None),
+    "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron", None, None, None),
     "infopedia": (load_infopedia, "CC-BY-SA-4.0", "portuguese_unified", screen_infopedia,
-                  infopedia_norm),
-    "nilc": (load_nilc, "BSD-3-Clause", "nilc", screen_nilc, nilc_norm),
+                  infopedia_norm, None),
+    "nilc": (load_nilc, "CC-BY-SA-4.0", "nilc", screen_nilc, nilc_norm, nilc_residual),
 }
 
 #: The tier of a gold that no board dataset holds: dataset -> tier.
@@ -440,7 +520,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
           screened_file: Path | None = None, excluded_file: Path | None = None,
           inputs: dict[str, Path] | None = None) -> dict:
     bench = o2i_harness.load_benchmark(cache)
-    loader, licence, board_dataset, screen, to_norm = SOURCES[dataset]
+    loader, licence, board_dataset, screen, to_norm, residual = SOURCES[dataset]
     inputs = inputs or {}
     tier = OFF_BOARD_TIERS.get(dataset) or bench.provenance_for(board_dataset, code)
     if tier not in ALLOWED_TIERS or not bench.can_gate_promotion(tier):
@@ -514,7 +594,18 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
             continue
         candidates.append(lb.Candidate(headword, word, hyp, norm(ipa), ipa))
 
-    leads = lb.find_leads(candidates, bench.align, min_lead)
+    lexical: dict[str, str] = {}
+    cited: dict[str, str] = {}
+    if residual is not None:
+        listed = spec_listed_words(engine)
+        for c in candidates:
+            found, rule = residual(engine, c, listed)
+            if rule is not None:
+                cited[c.word] = rule
+            elif found is not None:
+                lexical[c.word] = found
+
+    leads = lb.find_leads([c for c in candidates if c.word not in lexical], bench.align, min_lead)
     held = lb.held_out_words(leads)
     kept = [c for c in candidates if c.word not in held]
     screened: list[tuple[lb.Candidate, str, str, str]] = []
@@ -536,6 +627,9 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         "reasons": reasons,
         "reason_basis": {r: lb.REASON_BASIS[r] for r in sorted(used)},
     }
+    wiktionary_words = sorted(c.word for c, _, stage, _ in screened if stage == "mined")
+    if wiktionary_words:
+        meta["wiktionary_readings"] = wiktionary_words
     tsv, meta_file = lb.write_lexicon(out_root / code, dataset, entries, meta)
     if held_out_file is not None:
         held_out_file.write_text("\n".join(held_out_rows(leads)) + "\n", encoding="utf-8")
@@ -568,6 +662,8 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         "leads": [{"pattern": l.pattern, "position": l.position, "engine": l.engine,
                    "gold": l.gold, "size": len(l.words), "examples": l.words[:LEAD_EXAMPLES]}
                   for l in leads],
+        "lexical_words": lexical,
+        "cited_rule_words": cited,
         "held_out_words": len(held),
         "screen": {stage: dict(reasons) for stage, reasons in stages.items()},
         "entries": len(entries),
@@ -594,14 +690,16 @@ def main(argv=None) -> None:
                     help="write each word that the source's screen tests, and its result, here")
     ap.add_argument("--nilc", type=Path, help="the NILC unitex_sample_transcribed.txt")
     ap.add_argument("--michaelis", type=Path, help="the entries.jsonl of the Michaelis crawl")
+    ap.add_argument("--homographs", type=Path, help="the heterophonic_homographs.csv of bifonia")
     args = ap.parse_args(argv)
-    files = [arg for name in ("nilc", "michaelis") if getattr(args, name)
+    names = ("nilc", "michaelis", "homographs")
+    files = [arg for name in names if getattr(args, name)
              for arg in (f"--{name}", getattr(args, name).name)]
     command = "python scripts/build_lexicon.py " + shlex.join(
         [args.code, args.dataset, "--min-lead", str(args.min_lead), *files])
     report = build(args.code, args.dataset, args.cache, args.min_lead, args.out, command,
                    args.held_out, args.screened, args.excluded,
-                   {k: v for k, v in (("nilc", args.nilc), ("michaelis", args.michaelis)) if v})
+                   {name: getattr(args, name) for name in names if getattr(args, name)})
     text = json.dumps(report, ensure_ascii=False, indent=1)
     if args.report:
         args.report.write_text(text + "\n", encoding="utf-8")
