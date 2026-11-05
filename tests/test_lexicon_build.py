@@ -6,6 +6,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
+import build_lexicon as bl  # noqa: E402
 import lexicon_build as lb  # noqa: E402
 
 
@@ -471,14 +472,46 @@ def test_pt_br_form_keeps_lexical_differences(left, right):
     assert lb.pt_br_form(left) != lb.pt_br_form(right)
 
 
-@pytest.mark.parametrize("ipa, position", [
-    ("ˈsɛt͡ʃi", (1, "ɛ")),
-    ("kaˈfɛ", (0, "ɛ")),
-    ("ˈlɐ̃padɐ", (2, "ɐ")),
+@pytest.mark.parametrize("ipa, vowel", [
+    ("ˈsɛt͡ʃi", "ɛ"),
+    ("kaˈfɛ", "ɛ"),
+    ("ˈlɐ̃padɐ", "a"),
     ("mesa", None),
 ])
-def test_stress_position(ipa, position):
-    assert lb.stress_position(ipa) == position
+def test_stressed_vowel(ipa, vowel):
+    assert lb.stressed_vowel(ipa) == vowel
+
+
+@pytest.mark.parametrize("left, right", [
+    ("ˈvakwu", "ˈvakuu"),            # vácuo: a post-tonic glide against a hiatus
+    ("ˈɔlju", "ˈɔleu"),              # óleo
+    ("siˈẽsjə", "siˈẽsiɐ"),          # ciência
+    ("aˈdɛptu", "aˈdepitu"),         # adepto: the epenthetic [i] after the stress
+    ("ˈpaktu", "ˈpakitu"),           # pacto
+    ("eˈʒipsju", "eˈʒipisiu"),       # egípcio: epenthesis and a hiatus together
+    ("faˈlaɾ", "faˈla"),             # falar: a dropped infinitive ⟨r⟩
+    ("ad͡ʒivoˈɡadu", "advoˈɡadu"),    # advogado: the epenthesis before the stress
+    ("ˈtaksi", "ˈtaʃi"),             # táxi: the value of ⟨x⟩
+    ("ˈvou", "ˈvoo"),                # a repeated vowel leaves a tie
+    ("ˈɛlɐ", "ˈelɐ"),                # height is no stress difference
+])
+def test_notation_is_no_stress_difference(left, right):
+    assert lb.same_stress(left, right)
+    assert lb.same_stress(right, left)
+
+
+@pytest.mark.parametrize("left, right", [
+    ("saˈidɐ", "ˈsajdɐ"),            # saída
+    ("paˈpa", "ˈpapa"),
+    ("abadiˈa", "abaˈd͡ʒiɐ"),         # abadia: Michaelis against the rules
+    ("owˈzadiə", "owzaˈd͡ʒiɐ"),       # ousadia
+    ("iɾakũˈdu", "iɾaˈkũdu"),        # iracundo
+    ("aˈlastɾaɾ", "alasˈtɾa"),       # alastrar
+    ("baˈu", "ˈbaw"),                # baú against a falling diphthong
+])
+def test_a_true_stress_difference_stays(left, right):
+    assert not lb.same_stress(left, right)
+    assert not lb.same_stress(right, left)
 
 
 def test_michaelis_counts_only_for_what_its_notation_shows():
@@ -493,5 +526,117 @@ def test_michaelis_counts_only_for_what_its_notation_shows():
     assert not lb.michaelis_agrees("ˈset͡ʃi", "ˈsɛt͡ʃi", [])
 
 
+def test_michaelis_agrees_through_its_notation():
+    # adepto: the epenthetic [i] changes the nuclei after the stress, not the stress
+    assert lb.michaelis_agrees("aˈdepitu", "aˈdɛpitu", ["aˈdɛptu"])
+    # chato [ʃa′tu]: a misplaced Michaelis mark is no agreement
+    assert not lb.michaelis_agrees("ˈʃatu", "ˈʃɔtu", ["ʃɔˈtu"])
+
+
+@pytest.mark.parametrize("word, rules, entry, expected", [
+    ("sete", "ˈset͡ʃi", "ˈsɛt͡ʃi", "stressed mid vowel"),
+    ("foto", "ˈfotu", "ˈfɔtu", "stressed mid vowel"),
+    ("táxi", "ˈtaʃi", "ˈtaksi", "⟨x⟩ as [ks]"),
+    ("tórax", "ˈtɔɾɐʃ", "ˈtɔɾaks", "⟨x⟩ as [ks]"),
+    ("reflexo", "ʁeˈfleʃu", "ʁeˈflɛksu", "stressed mid vowel+⟨x⟩ as [ks]"),
+    ("frequente", "fɾeˈkẽt͡ʃi", "fɾeˈkwẽt͡ʃi", "⟨qu gu⟩ with [w]"),
+    ("sequestro", "seˈkestɾu", "seˈkwɛstɾu", "stressed mid vowel+⟨qu gu⟩ with [w]"),
+    ("linguiça", "lĩˈɡisɐ", "lĩˈɡwisɐ", "⟨qu gu⟩ with [w]"),
+])
+def test_a_lexical_difference_is_a_residual_word(word, rules, entry, expected):
+    assert lb.lexical_class(word, rules, entry) == expected
+
+
+@pytest.mark.parametrize("word, rules, entry", [
+    ("exclama", "eʃˈklɐ̃mɐ", "esˈklɐ̃mɐ"),     # coda ⟨x⟩ as [s]: a rule lead
+    ("nascer", "naˈse", "nasˈse"),            # ⟨sc⟩
+    ("gato", "ˈɡatu", "ˈɡatu"),               # no difference
+    ("sete", "ˈset͡ʃi", "seˈt͡ʃi"),             # a stress difference is no height
+    ("sete", "ˈset͡ʃi", "ˈsɛti"),              # height and something else
+])
+def test_anything_else_stays_out_of_the_lexical_classes(word, rules, entry):
+    assert lb.lexical_class(word, rules, entry) is None
+
+
+def test_a_w_that_the_spelling_cannot_hide_is_not_lexical():
+    # ⟨qua⟩ always has [w], so [k] against [kw] there is no ⟨qu gu⟩ fact
+    assert lb.lexical_class("quatro", "ˈkatɾu", "ˈkwatɾu") is None
+
+
+@pytest.mark.parametrize("word, entry, reason", [
+    ("sobre", "ˈsɔbɾi", "a PT_LEX height rule lists the word"),
+    ("avô", "aˈvɔ", "a written accent gives the height"),
+    ("tema", "ˈtɛmɐ", "BR_NASAL_STRESSED closes a vowel before a nasal"),
+    ("sete", "ˈsɛt͡ʃi", None),
+])
+def test_a_cited_rule_keeps_a_word_a_lead(word, entry, reason):
+    assert lb.cited_rule_reason(word, entry, frozenset({"sobre"})) == reason
+
+
+def test_with_stressed_vowel_changes_only_the_stressed_vowel():
+    assert lb.with_stressed_vowel("deˈbose", "ɔ") == "deˈbɔse"
+    assert lb.with_stressed_vowel("ˈʒew", "ɛ") == "ˈʒɛw"
+
+
+@pytest.mark.parametrize("reading, expected", [
+    ("foˈdeɾ", "foˈdeɾ"),
+    ("fo'deɾ", "foˈdeɾ"),
+    ("ˈa(j)ʃkʊ", "ˈaʃkʊ"),
+    ("pˌet͡ʃiˈsɐ̃w̃", "pet͡ʃiˈsɐ̃w̃"),
+    ("iˈglu", "iˈɡlu"),
+])
+def test_wiktionary_typing_variants(reading, expected):
+    assert lb.wiktionary_to_ipa(reading) == expected
+
+
 def test_the_aeiouado_lexicon_never_corroborates():
     assert lb.PT_BR_CORROBORATING_SOURCES == {"wikipron", "wiktionary", "michaelis"}
+
+
+class FakeSpec:
+    allophone_rules = ()
+
+
+class FakeEngine:
+    """The rules' readings of the mining test."""
+    spec = FakeSpec()
+    rules = {"deboche": "deˈboʃi", "gato": "ˈɡatu", "bola": "ˈbolɐ", "asco": "ˈasku",
+             "seco": "ˈseku", "sala": "ˈsalɐ", "sobre": "ˈsobɾi", "pele": "ˈpeli"}
+
+    def transcribe_word(self, word):
+        return self.rules[word]
+
+
+def test_mining_takes_the_reading_from_wiktionary_and_never_from_michaelis():
+    wiktionary = {
+        "deboche": ["deˈbɔʃi"],          # an entry in the norm, with the rules' [i]
+        "gato": ["ˈɡatʊ"],               # the rules read it right
+        "bola": ["ˈbɔlɐ"],               # Michaelis prints the close vowel
+        "asco": ["ˈaʃkʊ"],               # the difference is one Michaelis cannot show
+        "seco": ["ˈseku", "ˈsɛku"],      # the line gives two heights
+        "sala": [],
+        "sobre": ["ˈsɔbɾi"],             # the spec lists the word
+        "pele": ["ˈpɛli"],               # the homograph list holds the word
+    }
+    michaelis = {"deboche": ["deˈbɔʃi"], "gato": ["ˈɡatu"], "bola": ["ˈbolə"],
+                 "asco": ["ˈasku"], "seco": ["ˈseku"], "sala": ["ˈsalə"],
+                 "sobre": ["ˈsɔbɾi"], "pele": ["ˈpɛli"]}
+    passed, rows = bl.mine_wiktionary(
+        FakeEngine(), wiktionary, wiktionary, michaelis, frozenset(), frozenset({"pele"}),
+        frozenset({"sobre"}), lambda ipa: ipa)
+    assert [c.ipa for c in passed] == ["deˈbɔʃi"]
+    assert {c.word: stage for c, _, stage, _ in rows} == {
+        "deboche": "mined", "gato": "mined: rules right", "bola": "mined: uncorroborated",
+        "asco": "mined: Michaelis cannot show", "seco": "mined: two heights",
+        "sala": "mined: no reading", "sobre": "mined: cited rule", "pele": "mined: homograph"}
+
+
+def test_a_homograph_needs_a_mid_vowel_or_a_second_reading():
+    assert bl.nilc_homograph("gosto", {"V", "N"}, ["ˈɡɔstu"], [], "ˈɡɔstu", frozenset())
+    assert bl.nilc_homograph("gosto", set(), ["ˈɡɔstu"], [], "ˈɡɔstu", frozenset({"gosto"}))
+    assert bl.nilc_homograph("sede", set(), ["ˈsedi", "ˈsɛdi"], [], "ˈsɛdi", frozenset())
+    assert bl.nilc_homograph("sede", set(), ["ˈsɛdi"], ["ˈsɛd͡ʒi", "ˈsedi"], "ˈsɛdi", frozenset())
+    assert bl.nilc_homograph("vaca", {"V", "N"}, ["ˈvakɐ"], [], "ˈvakɐ", frozenset()) is None
+    # a notation difference between two readings is no homograph
+    assert bl.nilc_homograph("pacto", set(), ["ˈpakitu", "ˈpaktu"], [], "ˈpakitu",
+                             frozenset()) is None

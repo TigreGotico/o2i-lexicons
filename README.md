@@ -51,7 +51,7 @@ o2i_lexicons.load_meta("en-GB")    # its sidecar
 | :--- | :--- | :--- | :--- | :--- |
 | `en-GB` | `o2i_lexicons/data/en-GB/wikipron.tsv` | [WikiPron](https://github.com/CUNY-CL/wikipron) `eng_latn_uk_broad.tsv`, scraped from Wiktionary | crowd-scraped | CC BY-SA 4.0 |
 | `pt-PT` | `o2i_lexicons/data/pt-PT/infopedia.tsv` | The Infopédia rows of [portuguese-unified-pronunciation-lexicon](https://huggingface.co/datasets/TigreGotico/portuguese-unified-pronunciation-lexicon), from the Porto Editora dictionary | lexicon-derived | CC BY-SA 4.0 |
-| `pt-BR` | `o2i_lexicons/data/pt-BR/nilc.tsv` | The training file of the NILC Aeiouadô transcriber (`etc/unitex_sample_transcribed.txt`), human-revised by one research team and not independently verified | expert-human | BSD 3-Clause |
+| `pt-BR` | `o2i_lexicons/data/pt-BR/nilc.tsv` | The training file of the NILC Aeiouadô transcriber (`etc/unitex_sample_transcribed.txt`), human-revised by one research team and not independently verified, with some readings from hand-typed pt.wiktionary lines | expert-human | CC BY-SA 4.0 |
 
 Stress on the en-GB entries comes from the orthography2ipa rules, not from the source. WikiPron scrapes Wiktionary with stress removed (`"stress": False` in its `data/scrape/lib/scrape.py`), so the published file holds no stress mark. The sidecar records this as `"stress": "rules"`, and the orthography2ipa stress rules mark each entry on output, as they mark an entry of `word_exceptions`.
 
@@ -97,7 +97,8 @@ The scripts run the installed orthography2ipa. They score with the board harness
 python scripts/build_lexicon.py en-GB wikipron --report build-report.json
 python scripts/build_lexicon.py pt-PT infopedia --report build-report.json
 python scripts/build_lexicon.py pt-BR nilc --nilc unitex_sample_transcribed.txt \
-    --michaelis entries.jsonl --report build-report.json
+    --michaelis entries.jsonl --homographs heterophonic_homographs.csv \
+    --report build-report.json
 python scripts/measure.py en-GB ipadict:en-GB cmudict:en
 python scripts/measure.py pt-PT wikipron:pt-PT
 python scripts/prune_check.py
@@ -125,10 +126,16 @@ The entries go under `pt-BR`. What the rules cannot reach is lexical: the qualit
 
 `lexicon_build.nilc_to_pt_br` writes each reading in the `pt-BR` norm before the comparison with the rules. A word that differs from the rules only in the São Paulo features is rules-right, so it never becomes an entry.
 
-A word that the rules get wrong, and that no lead holds out, must pass the tests of `screen_nilc`. It reads the same headword as the rules, it is not a closed-class word, and it is no homograph: a verb form and a noun or adjective with one spelling can differ in the stressed mid vowel. A second independent source must then give the same reading. That source is a hand-typed pt.wiktionary Brazil line, Michaelis, or WikiPron pt-BR where it gives the word one reading. WikiPron pt-BR is the output of the `{{pt-IPA}}` template, so it counts only as it does for pt-PT. Michaelis prints a broad notation, so it counts only for an entry that differs from the rules in the stress or the quality of a mid vowel. The published Aeiouadô lexicon is machine-generated and never counts.
+Three kinds of word are residual words, because the spelling cannot show the fact: the height of a stressed mid vowel (orthography2ipa#1824), ⟨x⟩ as [ks] (táxi, fixo), and ⟨qu gu⟩ with [w] before ⟨e i⟩ (frequente). `lexical_class` finds a word that differs from the rules in these only, and that word never joins a lead. A word under a cited rule stays a lead: a word that a `PT_LEX_CLOSE_*` or `PT_LEX_OPEN_*` rule lists, a written accent, and a vowel before a nasal, which `BR_NASAL_STRESSED_*` closes. Every other shared miss is a rule lead for the specs.
 
-The Michaelis readings are "all rights reserved" and stay out of this repository. A Michaelis agreement keeps an entry, and the entry holds the reading of the NILC file.
+A word that the rules get wrong, and that no lead holds out, must pass the tests of `screen_nilc`. It reads the same headword as the rules, and it is not a closed-class word. It is no homograph: a verb form and a noun or adjective with one spelling can differ in the stressed mid vowel, and a word in the bifonia list of heterophonic homographs is out for the same reason. A second independent source must then give the same reading. That source is a hand-typed pt.wiktionary Brazil line, Michaelis, or WikiPron pt-BR where it gives the word one reading. WikiPron pt-BR is the output of the `{{pt-IPA}}` template, so it counts only as it does for pt-PT. The published Aeiouadô lexicon is machine-generated and never counts.
+
+Michaelis prints a broad notation, so it counts only for the stress and the height of the stressed vowel. `same_stress` aligns two readings sound by sound and asks whether their stressed vowels pair, so a post-tonic glide against a hiatus, the epenthetic [i] and a dropped infinitive ⟨r⟩ are no stress difference. Michaelis is editor-made and its method is unstated, and it has defects of its own. Some entries put the stress mark on the wrong vowel (chato [ʃa′tu], ousadia [owz′adiә]), and some print the reading of another word (erótico [eroz′ivu]). So a Michaelis reading never stands alone, and it never supplies an entry.
+
+The build also mines the words that Michaelis and a hand-typed pt.wiktionary Brazil line hold and the NILC file does not. The reading comes from the pt.wiktionary line, and Michaelis corroborates it. So such a line may differ from the rules only in the height of the stressed vowel, and the entry is the rules' reading with that height. The sidecar field `wiktionary_readings` names these words.
+
+The Michaelis readings are "all rights reserved" and stay out of this repository. A Michaelis agreement keeps an entry, and the entry holds a reading of the NILC file or of pt.wiktionary.
 
 ## Licence
 
-The code is Apache-2.0. Each data file keeps the licence of its source, which its `.meta.json` sidecar states. The `en-GB` file is CC BY-SA 4.0, the licence of the Wiktionary text it comes from. The `pt-PT` file is CC BY-SA 4.0, the licence that the card of the portuguese-unified dataset states. The `pt-BR` file is BSD 3-Clause, Copyright (c) 2014, Gustavo Mendonça, and `o2i_lexicons/data/pt-BR/LICENSE.nilc` holds the licence text.
+The code is Apache-2.0. Each data file keeps the licence of its source, which its `.meta.json` sidecar states. The `en-GB` file is CC BY-SA 4.0, the licence of the Wiktionary text it comes from. The `pt-PT` file is CC BY-SA 4.0, the licence that the card of the portuguese-unified dataset states. The `pt-BR` file is CC BY-SA 4.0, because it holds pt.wiktionary readings beside the NILC readings. The NILC readings are BSD 3-Clause, Copyright (c) 2014, Gustavo Mendonça, and `o2i_lexicons/data/pt-BR/LICENSE.nilc` holds that notice.
