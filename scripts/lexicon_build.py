@@ -195,9 +195,20 @@ INFOPEDIA_NOTATION = {"ə": "ɨ", "r": "ɾ", "ʀ": "ʁ"}
 STRONG_R_RE = re.compile(r"(?<![^\W\d_])r|rr|(?<=[nls])r")
 
 
+#: The nucleus of a nasal diphthong that Infopédia writes oral: it marks the
+#: nasality once, on the glide (trem ˈtɾɐj̃, tensão tẽˈsɐw̃).
+INFOPEDIA_ORAL_NASAL_NUCLEUS_RE = re.compile("ɐ(?=[jw]\u0303)")
+
+
 def infopedia_to_spec(reading: str) -> str:
-    """An Infopédia reading in the symbols of the pt-PT spec."""
-    return "".join(INFOPEDIA_NOTATION.get(c, c) for c in reading)
+    """An Infopédia reading in the symbols of the pt-PT spec.
+
+    The spec writes the nasal diphthongs [ɐ̃j̃] and [ɐ̃w̃] with a nasal nucleus
+    (Mateus & d'Andrade 2000: ch.4 'The nasal diphthongs'), so an [ɐ] before a
+    nasal glide takes the nasal mark too.
+    """
+    reading = "".join(INFOPEDIA_NOTATION.get(c, c) for c in reading)
+    return INFOPEDIA_ORAL_NASAL_NUCLEUS_RE.sub("ɐ\u0303", reading)
 
 
 #: Spellings whose [ɐj] is not the Lisbon diphthong: an unstressed ⟨ai⟩ or

@@ -75,6 +75,8 @@ Infopédia transcribes the Lisbon (Estremenho) speech, and the `pt-PT` spec mode
 | ⟨ou⟩ | [o] | [o] | nothing to do |
 | the strong rhotic and the reduced vowel | [ʀ], [ə] | [ʁ], [ɨ] | writes the spec symbols |
 
+Infopédia marks the nasality of a nasal diphthong once, on the glide (trem `ˈtɾɐj̃`, tensão `tẽˈsɐw̃`). The spec writes the nucleus nasal too, [ɐ̃j̃] and [ɐ̃w̃] (Mateus & d'Andrade 2000), so the build writes `ɐj̃` as `ɐ̃j̃` and `ɐw̃` as `ɐ̃w̃`.
+
 The build compares the rules with the mapped reading, so a word whose only difference was [ɐj] against [ej] is not a rules miss. A reading with a stress mark between a consonant and the vowel after it (yakuza `jakˈuzɐ` for `jaˈkuzɐ`) places the mark inside the onset, and the build takes the next reading of the word or leaves the word out.
 
 Each token of an entry must be in the spec's token inventory. A nasal glide after a nasal vowel counts as inside it when the spec emits that glide in a nasal diphthong (mãe `ˈmɐ̃j̃`), so muitíssimo `mũj̃ˈtisimu` can be an entry. `build_lexicon.py --excluded` lists each reading and headword that the build leaves out, with the reason.
