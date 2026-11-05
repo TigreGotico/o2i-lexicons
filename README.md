@@ -25,17 +25,15 @@ Only a gold that can gate a quality decision in orthography2ipa can supply entri
 
 ## How orthography2ipa uses a lexicon
 
-The package declares one entry point per language code in the group `orthography2ipa.lexicons`. Each entry point loads `o2i_lexicons.tsv_path`, and orthography2ipa calls it with the code. The entry point only makes the lexicon discoverable. The transcription is a function of the spec and the input, never of the environment, so the caller enables the lexicon in code:
+The package declares one entry point per language code in the group `orthography2ipa.lexicons`. Each entry point loads `o2i_lexicons.tsv_path`, and orthography2ipa calls it with the code. The entry point only makes the lexicon discoverable. The transcription is a function of the spec and the input, never of the environment, so the caller passes the lexicon to the engine:
 
 ```python
-import orthography2ipa as o2i
+from orthography2ipa import G2P, Pipeline, packaged_lexicon
 
-o2i.use_packaged_lexicons()            # every installed packaged lexicon
-o2i.use_packaged_lexicons(["en-GB"])   # only these
-o2i.clear_lexicons()                   # disable them again
+engine = G2P("en-GB", pipeline=Pipeline(lexicon=packaged_lexicon("en-GB")))
 ```
 
-A lexicon that the caller registers with `register_lexicon` or `set_lexicon_dir` wins over a packaged one. The `word_exceptions` of a spec win over both. The package's own API:
+The lexicon belongs to that engine. Another engine in the process does not see it, and an engine with no pipeline runs on the rules. The `word_exceptions` of a spec win over the lexicon. The package's own API:
 
 ```python
 import o2i_lexicons

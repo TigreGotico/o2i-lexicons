@@ -2,10 +2,11 @@
 
     python scripts/measure.py en-GB ipadict:en-GB cmudict:en
 
-Each ``dataset:tag`` gold is scored twice with the board's own scorer (broad,
-stress-free PER): with the rules only, and with the rules and the packaged
-lexicon for *code*. The report also gives the PER on the overlap, the gold
-words that the lexicon holds, because only there can the lexicon act.
+Each ``dataset:tag`` gold is scored twice with the board's own normalisation
+and distance (broad, stress-free PER): with the rules only, and with the rules
+and the packaged lexicon for *code*. The report also gives the PER on the
+overlap, the gold words that the lexicon holds, because only there can the
+lexicon act.
 
 A lexicon is never scored on the gold it came from: the ``source`` in the
 lexicon's sidecar, the board dataset that holds it, and that dataset with its
@@ -20,7 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from orthography2ipa import g2p as g2p_module
+from orthography2ipa import G2P, Pipeline
 from orthography2ipa.lexicon import parse_lexicon_text
 from orthography2ipa.registry import resolve
 from orthography2ipa.version import VERSION_STR
@@ -34,12 +35,30 @@ import o2i_lexicons  # noqa: E402
 
 
 def score(bench, pairs, tag: str, lexicon: dict[str, str]) -> tuple[int, float]:
-    """``(covered words, PER)`` of *pairs* with *lexicon* as the only lexicon."""
-    target = resolve(tag)
-    g2p_module.get_lexicon = lambda code: lexicon if code == target else {}
-    _n, covered, _pers, per, _wer = bench.evaluate_words(
-        pairs, tag, strip_stress=True, broad=True)
-    return covered, per
+    """``(covered words, PER)`` of *pairs* with *lexicon* as the only lexicon.
+
+    ``bench.evaluate_words`` builds its own engine and takes no pipeline, so
+    this loop repeats its 1-best scoring: each word against the best of its golds.
+    """
+    engine = G2P(tag, expose_ambiguous_endings=False, pipeline=Pipeline(lexicon=lexicon))
+    extra = bench._prosody_marks(tag)
+
+    def norm(ipa: str) -> str:
+        return bench.normalize(ipa, strip_stress=True, broad=True, extra_strip=extra)
+
+    golds: dict[str, list[str]] = {}
+    for word, gold in pairs:
+        golds.setdefault(word, []).append(norm(gold))
+    pers = []
+    for word, refs in golds.items():
+        transcribe = engine.transcribe if bench._is_multiword(word) else engine.transcribe_word
+        try:
+            hyp = norm(transcribe(word))
+        except Exception:
+            continue
+        if hyp:
+            pers.append(min(bench.levenshtein(hyp, ref) / max(len(ref), 1) for ref in refs))
+    return len(pers), sum(pers) / len(pers) if pers else 1.0
 
 
 def supplying_datasets(source: str) -> set[str]:

@@ -3,8 +3,8 @@
     python scripts/prune_check.py            # exit 1 when an entry is stale
     python scripts/prune_check.py --write    # remove stale entries in place
 
-Each entry is transcribed with every lexicon disabled, so the check sees the
-rules alone, and compared with the entry's IPA under the board's broad,
+Each entry is transcribed by an engine with an empty lexicon, so the check sees
+the rules alone, and compared with the entry's IPA under the board's broad,
 stress-free normalisation. An entry that now matches is stale: the rules reach
 it, so the lexicon must not hold it.
 
@@ -20,8 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import orthography2ipa
-from orthography2ipa import g2p as g2p_module
+from orthography2ipa import G2P, Pipeline
 from orthography2ipa.lexicon import parse_lexicon_text
 from orthography2ipa.version import VERSION_STR
 
@@ -35,7 +34,7 @@ import o2i_lexicons  # noqa: E402
 
 def stale_entries(code: str, entries: dict[str, str], bench) -> list[str]:
     """The words of *entries* that the rules alone now transcribe right."""
-    engine = orthography2ipa.G2P(code, expose_ambiguous_endings=False)
+    engine = G2P(code, expose_ambiguous_endings=False, pipeline=Pipeline(lexicon={}))
     extra = bench._prosody_marks(code)
 
     def norm(ipa: str) -> str:
@@ -60,8 +59,6 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
 
     bench = o2i_harness.load_benchmark(args.cache)
-    # The rules alone: neither this package nor any other lexicon may answer.
-    g2p_module.get_lexicon = lambda _code: {}
     report = {"o2i_version": VERSION_STR, "codes": {}}
     for code in o2i_lexicons.available_codes():
         tsv = o2i_lexicons.tsv_path(code)
