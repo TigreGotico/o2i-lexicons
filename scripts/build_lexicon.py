@@ -16,6 +16,13 @@ lead is a question for the linguistic literature, not a rule. Its words stay
 out of the lexicon until a cited source settles the pattern, and the build
 report lists every lead.
 
+For a source whose rows can transcribe a neighbouring headword (Infopédia),
+a kept entry must also read as a correction of the rules' reading of the same
+word: same first onset, nearly the same consonants, the same number of
+syllables up to one deleted vowel or formed glide, and the same end (see
+``lexicon_build.other_reading_reason``). ``--dropped`` lists the entries that
+fail it.
+
 The gold must sit on a tier that can gate a quality decision in
 orthography2ipa. A silver set or a competitor's output is refused.
 """
@@ -96,10 +103,13 @@ def load_infopedia(bench, code: str):
     return pairs, excluded
 
 
-#: dataset -> (loader, licence of the gold, the board dataset that holds it)
+#: dataset -> (loader, licence of the gold, the board dataset that holds it,
+#: whether a kept entry must pass ``lexicon_build.other_reading_reason``).
+#: Infopédia rows can transcribe a neighbouring headword, so its entries must
+#: read as a correction of the rules' reading of the same word.
 SOURCES = {
-    "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron"),
-    "infopedia": (load_infopedia, "CC-BY-SA-4.0", "portuguese_unified"),
+    "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron", False),
+    "infopedia": (load_infopedia, "CC-BY-SA-4.0", "portuguese_unified", True),
 }
 
 
@@ -125,9 +135,10 @@ def held_out_rows(leads: list[lb.Lead]) -> list[str]:
 
 
 def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
-          command: str, held_out_file: Path | None = None) -> dict:
+          command: str, held_out_file: Path | None = None,
+          dropped_file: Path | None = None) -> dict:
     bench = o2i_harness.load_benchmark(cache)
-    loader, licence, board_dataset = SOURCES[dataset]
+    loader, licence, board_dataset, same_word_filter = SOURCES[dataset]
     tier = bench.provenance_for(board_dataset, code)
     if tier not in ALLOWED_TIERS or not bench.can_gate_promotion(tier):
         raise SystemExit(f"{dataset}/{code} is on tier {tier!r}, which cannot supply entries")
@@ -186,6 +197,17 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     leads = lb.find_leads(candidates, bench.align, min_lead)
     held = lb.held_out_words(leads)
     kept = [c for c in candidates if c.word not in held]
+    dropped: list[tuple[lb.Candidate, str, str]] = []
+    if same_word_filter:
+        passed = []
+        for c in kept:
+            rules = engine.transcribe_word(c.headword)
+            why = lb.other_reading_reason(rules, c.ipa)
+            if why is None:
+                passed.append(c)
+            else:
+                dropped.append((c, rules, why))
+        kept = passed
     entries = {c.word: c.ipa for c in kept}
     reasons = {c.word: lb.reason_for(c.headword) for c in kept}
     used = set(reasons.values()) - {"unclassified"}
@@ -205,6 +227,10 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     tsv, meta_file = lb.write_lexicon(out_root / code, dataset, entries, meta)
     if held_out_file is not None:
         held_out_file.write_text("\n".join(held_out_rows(leads)) + "\n", encoding="utf-8")
+    if dropped_file is not None:
+        dropped_file.write_text("word\treason\trules\treading\n" + "".join(
+            f"{c.word}\t{why}\t{rules}\t{c.ipa}\n"
+            for c, rules, why in sorted(dropped, key=lambda d: d[0].word)), encoding="utf-8")
     return {
         "code": code,
         "dataset": dataset,
@@ -223,6 +249,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
                    "gold": l.gold, "size": len(l.words), "examples": l.words[:LEAD_EXAMPLES]}
                   for l in leads],
         "held_out_words": len(held),
+        "dropped_as_another_reading": dict(Counter(why for _, _, why in dropped)),
         "entries": len(entries),
         "entries_per_reason": dict(Counter(reasons.values())),
         "tsv": str(tsv.relative_to(ROOT)) if tsv.is_relative_to(ROOT) else str(tsv),
@@ -241,11 +268,13 @@ def main(argv=None) -> None:
     ap.add_argument("--report", type=Path, help="write the build report here")
     ap.add_argument("--held-out", type=Path,
                     help="write each held-out word and its largest lead here")
+    ap.add_argument("--dropped", type=Path,
+                    help="write each entry that fails the same-headword filter here")
     args = ap.parse_args(argv)
     command = "python scripts/build_lexicon.py " + shlex.join(
         [args.code, args.dataset, "--min-lead", str(args.min_lead)])
     report = build(args.code, args.dataset, args.cache, args.min_lead, args.out, command,
-                   args.held_out)
+                   args.held_out, args.dropped)
     text = json.dumps(report, ensure_ascii=False, indent=1)
     if args.report:
         args.report.write_text(text + "\n", encoding="utf-8")

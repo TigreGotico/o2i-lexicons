@@ -219,6 +219,107 @@ def full_form_first(readings: list[str]) -> list[str]:
             for r in sorted(group, key=lambda r: -r.count("ə"))]
 
 
+#: The vowel letters of the readings, each a syllable nucleus unless a
+#: non-syllabic mark follows it.
+VOWELS = frozenset("aɐeɛəɨioɔuʊɪæyøœɑɒʌɜɘɯ")
+GLIDES = frozenset("jwɥ")
+NON_SYLLABIC = "̯"
+#: The vowels that European Portuguese deletes ([ɨ], [u]) or turns into a
+#: glide ([i], [u]) in unstressed syllables.
+REDUCIBLE = frozenset("ɨəiu")
+#: Consonants that one Portuguese spelling stands for in different positions
+#: share a class: ⟨s x z⟩ read [s z ʃ ʒ] by position, ⟨r⟩ reads the tap or
+#: the strong rhotic and its allophones, ⟨l⟩ is [l] or [ɫ], and a stop has a
+#: spirant allophone. A consonant outside the map is its own class.
+CONSONANT_CLASS = {
+    **dict.fromkeys("szʃʒ", "S"), **dict.fromkeys("ɾrʁʀhɦχ", "R"),
+    **dict.fromkeys("lɫʎ", "L"), **dict.fromkeys("mnɲŋ", "N"),
+    **dict.fromkeys("pbβ", "P"), **dict.fromkeys("tdð", "T"),
+    **dict.fromkeys("kɡgɣx", "K"), **dict.fromkeys("fvɸ", "F"),
+}
+_SKIP = set("ˈˌːˑ.·‿") | set(TIE_BARS)
+
+
+def segments(ipa: str) -> list[tuple[str, str]]:
+    """``(kind, letter)`` per segment of *ipa*: kind ``V`` for a nucleus,
+    ``G`` for a glide, ``C`` for a consonant. Stress, length and the other
+    combining marks are not segments."""
+    out: list[tuple[str, str]] = []
+    for ch in unicodedata.normalize("NFD", ipa):
+        if ch in _SKIP:
+            continue
+        if unicodedata.combining(ch):
+            if ch == NON_SYLLABIC and out and out[-1][0] == "V":
+                out[-1] = ("G", out[-1][1])
+            continue
+        kind = "V" if ch in VOWELS else "G" if ch in GLIDES else "C"
+        out.append((kind, ch))
+    return out
+
+
+def skeleton(segs: list[tuple[str, str]]) -> list[str]:
+    """The consonant classes of *segs*, in order."""
+    return [CONSONANT_CLASS.get(c, c) for kind, c in segs if kind == "C"]
+
+
+def edit_distance(a: list[str], b: list[str]) -> int:
+    prev = list(range(len(b) + 1))
+    for i, x in enumerate(a, 1):
+        cur = [i]
+        for j, y in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (x != y)))
+        prev = cur
+    return prev[-1]
+
+
+def onset_class(segs: list[tuple[str, str]]) -> Optional[str]:
+    """The class of the first consonant before the first nucleus, if any."""
+    for kind, c in segs:
+        if kind == "V":
+            return None
+        if kind == "C":
+            return CONSONANT_CLASS.get(c, c)
+    return None
+
+
+def other_reading_reason(rules: str, reading: str) -> Optional[str]:
+    """Why *reading* is not a correction of the rules' reading *rules* of the
+    same headword, or ``None`` when it can be one.
+
+    A correction changes how the rules read a few graphemes. It keeps the
+    word's consonants, its syllables and its end:
+
+    1. The first syllable starts with a consonant of the same class, or both
+       start with a vowel. The consonant classes differ by at most one edit
+       plus one per four consonants: a misread grapheme costs one edit (a
+       substitution, the extra [k] of ⟨x⟩ = [ks], a silent letter), and a
+       long word may hold a second one.
+    2. The number of nuclei is equal, or differs by one where the longer
+       reading has a vowel that deletes or turns into a glide, or where the
+       shorter one has more glides.
+    3. The reading ends on the same consonant class as the rules' reading,
+       and keeps a final coda when the rules' reading has one.
+    """
+    r_segs, g_segs = segments(rules), segments(reading)
+    if onset_class(r_segs) != onset_class(g_segs):
+        return "first-syllable onset"
+    r_skel, g_skel = skeleton(r_segs), skeleton(g_segs)
+    if edit_distance(r_skel, g_skel) > 1 + max(len(r_skel), len(g_skel)) // 4:
+        return "consonant skeleton"
+    (long_nuclei, long_glides), (short_nuclei, short_glides) = sorted(
+        (([c for k, c in s if k == "V"], sum(k == "G" for k, _ in s))
+         for s in (r_segs, g_segs)),
+        key=lambda pair: -len(pair[0]))
+    diff = len(long_nuclei) - len(short_nuclei)
+    if diff > 1 or (diff == 1 and short_glides <= long_glides
+                    and not REDUCIBLE & set(long_nuclei)):
+        return "syllable count"
+    if r_skel[-1:] != g_skel[-1:] or (
+            r_segs and r_segs[-1][0] == "C" and (not g_segs or g_segs[-1][0] != "C")):
+        return "truncated end"
+    return None
+
+
 def first_usable(golds: list[str], usable: Callable[[str], Optional[str]]) -> Optional[str]:
     """The first gold reading, in source order, that *usable* accepts.
 

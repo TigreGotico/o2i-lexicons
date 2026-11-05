@@ -81,3 +81,12 @@ def test_the_pt_pt_entries_use_the_spec_symbols():
     assert entries["enredo"] == "ẽˈʁedu"
     assert entries["gorgorejo"] == "ɡuɾɡuˈɾɐjʒu"
     assert [w for w, ipa in entries.items() if set(ipa) & set("əʀr")] == []
+
+
+def test_the_pt_pt_lexicon_holds_no_reading_of_another_headword():
+    # Infopédia rows that transcribe another word: augustinista reads
+    # vjuliˈniʃtɐ, aquilombado reads mɐɾõˈbadu, cucaracho reads mɐmɐˈɾaʃu and
+    # blitz reads blitzkrieg. The rules read each of them better.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    words = {line.split("\t")[0] for line in text.splitlines()}
+    assert words & {"augustinista", "aquilombado", "cucaracho", "blitz"} == set()

@@ -149,3 +149,26 @@ def test_full_form_of_an_optional_vowel_comes_first():
     assert lb.full_form_first(["pɐˈsjẽt", "pɐˈsjẽtə"]) == ["pɐˈsjẽtə", "pɐˈsjẽt"]
     # Two readings that differ in more than the optional vowel keep their order.
     assert lb.full_form_first(["ajfəˈljɐnu", "ɐjfəˈljɐnu"]) == ["ajfəˈljɐnu", "ɐjfəˈljɐnu"]
+
+
+@pytest.mark.parametrize("rules, reading, reason", [
+    # paciente: the glide forms and one nucleus goes; same consonants.
+    ("pɐsiˈẽtɨ", "pɐˈsjẽtɨ", None),
+    # exame: the rules misread ⟨x⟩ and the vowels; same consonant classes.
+    ("eˈʃamɨ", "iˈzɐmɨ", None),
+    # augustinista read as another word: a vowel onset against [v].
+    ("awɡuʃtiˈniʃtɐ", "vjuliˈniʃtɐ", "first-syllable onset"),
+    # despampanadeira cut after its second syllable: classes T S P P N T R
+    # against T S P P, three edits for seven consonants (limit 1 + 7 // 4).
+    ("dɨʃpɐ̃pɐnɐˈdejɾɐ", "dɨʃˈpɐ̃pɐ", "consonant skeleton"),
+    # one nucleus more, of [a], which neither deletes nor glides.
+    ("ˈbaba", "ˈbababa", "syllable count"),
+    # carapotós without its final [ʃ].
+    ("kɐɾɐpuˈtɔʃ", "kɐɾɐpuˈtɔ", "truncated end"),
+])
+def test_other_reading_reason(rules, reading, reason):
+    assert lb.other_reading_reason(rules, reading) == reason
+
+
+def test_a_non_syllabic_mark_makes_a_glide():
+    assert lb.segments("ai̯") == [("V", "a"), ("G", "i")]

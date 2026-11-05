@@ -66,6 +66,8 @@ The entries carry the stress marks of Infopédia (`"stress": "source"`). Infopé
 
 A reading that writes `r` where the spelling has the strong rhotic (an initial `r`, `rr`, or `r` after `n`, `l` or `s`) is left out, because there `r` is not the tap. Infopédia writes an optional vowel as `(ə)`. The dataset gives both forms, and the entry takes the full form, as the spec writes the vowel. The rows that the corrections overlay of the orthography2ipa board lists are left out: they contradict a written accent, lack the stress mark, or transcribe another headword.
 
+An Infopédia row can transcribe a neighbouring headword or a cut reading, so a pt-PT entry must also read as a correction of the rules' reading of the same word. The first syllable starts with a consonant of the same class, and the consonants differ by at most one edit plus one per four consonants. The syllable count is the same, or differs by one where a vowel deletes or a glide forms. The reading ends on the same consonant class and keeps a final coda. `build_lexicon.py --dropped` lists the entries that fail this test. The test also drops some correct loanwords, such as *kiwi* and *pipeline*.
+
 ## Build, measure and prune
 
 The scripts run the installed orthography2ipa. They score with the board harness of orthography2ipa at the git tag of that version, which they check out once under `.cache/o2i-harness/`. They read gold files from `.cache/gold/`.
