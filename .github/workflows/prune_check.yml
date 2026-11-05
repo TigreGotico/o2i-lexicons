@@ -1,0 +1,21 @@
+name: Prune Check
+
+# Fails when the latest orthography2ipa alpha gets a packaged entry right,
+# so a stale entry cannot merge.
+on:
+  pull_request:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  prune_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install the package and the latest orthography2ipa alpha
+        run: |
+          uv venv --python 3.11 .venv
+          uv pip install --python .venv --prerelease=allow --upgrade -e . orthography2ipa
+      - name: Check every entry against the rules
+        run: .venv/bin/python scripts/prune_check.py
