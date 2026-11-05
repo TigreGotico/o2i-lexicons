@@ -54,3 +54,30 @@ def test_the_en_gb_pilot_ships_with_its_provenance():
     # data/scrape/lib/scrape.py), so the stress comes from the o2i rules.
     assert meta["stress"] == "rules"
     assert meta["source_url"].endswith("/eng_latn_uk_broad.tsv")
+
+
+def test_the_pt_pt_lexicon_ships_with_its_provenance():
+    # The Infopédia rows of portuguese-unified: the dataset card gives
+    # cc-by-sa-4.0, and the orthography2ipa benchmark registry gives the
+    # portuguese_unified gold the lexicon-derived tier.
+    assert "pt-PT" in o2i_lexicons.available_codes()
+    assert o2i_lexicons.tsv_path("pt-PT").name == "infopedia.tsv"
+    meta = o2i_lexicons.load_meta("pt-PT")
+    assert (meta["source"], meta["tier"], meta["licence"]) == (
+        "infopedia", "lexicon-derived", "CC-BY-SA-4.0")
+    assert meta["stress"] == "source"
+    assert meta["source_url"].endswith(
+        "/portuguese-unified-pronunciation-lexicon/resolve/main/"
+        "portuguese_pronunciation_lexicon.jsonl")
+
+
+def test_the_pt_pt_entries_use_the_spec_symbols():
+    # Infopédia writes exame iˈzɐm(ə), enredo ẽˈʀedu and gorgorejo ɡurɡuˈrɐjʒu.
+    # The pt-PT spec writes the reduced vowel ɨ, the strong rhotic ʁ and the
+    # tap ɾ, and the full form of an optional vowel.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    entries = dict(line.split("\t") for line in text.splitlines())
+    assert entries["exame"] == "iˈzɐmɨ"
+    assert entries["enredo"] == "ẽˈʁedu"
+    assert entries["gorgorejo"] == "ɡuɾɡuˈɾɐjʒu"
+    assert [w for w, ipa in entries.items() if set(ipa) & set("əʀr")] == []

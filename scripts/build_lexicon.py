@@ -2,12 +2,14 @@
 
     python scripts/build_lexicon.py en-GB wikipron --cache .cache \\
         --report build-report.json
+    python scripts/build_lexicon.py pt-PT infopedia --report build-report.json
 
 The script runs the installed orthography2ipa over every word of the gold. It
 keeps a word only when the rules get it wrong under the board's own scoring:
 the PER against every gold reading of the word is above zero, after the
 board's broad, stress-free normalisation. The entry is the first gold reading,
-in source order, that is IPA-only and inside the spec's phoneme inventory.
+in the order the loader of the source gives, that is IPA-only and inside the
+spec's phoneme inventory.
 
 Words that share a spelling pattern and the same error at it form a lead. A
 lead is a question for the linguistic literature, not a rule. Its words stay
@@ -40,17 +42,71 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from o2i_lexicons.schema import ALLOWED_TIERS, STRESS_MARKS  # noqa: E402
 
-#: dataset -> (loader name, licence of the gold, URL of the gold file)
+#: The sources of the portuguese_unified gold that are Infopédia rows: an
+#: Infopédia entry, and an entry with the same reading in Infopédia and in
+#: Wiktionary.
+INFOPEDIA_SOURCES = {"infopedia", "infopedia+wiktionary"}
+
+
+def load_wikipron(bench, code: str):
+    return bench.load_wikipron(code, sys.maxsize), Counter()
+
+
+def load_infopedia(bench, code: str):
+    """The ``(headword, reading)`` pairs of the Infopédia rows of the
+    portuguese_unified gold, and the readings left out, by reason.
+
+    Infopédia transcribes the European Portuguese standard, so only pt-PT
+    takes them. A row that the board's corrections overlay lists is left out:
+    its reading contradicts a written accent, lacks the stress mark, or
+    transcribes another headword. A row with several readings, separated by
+    commas, gives each of them in order. Each reading is put in the spec's
+    symbols (``lexicon_build.INFOPEDIA_NOTATION``), except one that writes
+    [r] where the spelling has the strong rhotic: there [r] is not the tap.
+    """
+    if code != "pt-PT":
+        raise SystemExit(f"Infopédia transcribes European Portuguese; {code} cannot take it")
+    region = bench._PT_UNIFIED_REGIONS[code]
+    overlay = {(r["word"], r["source"], r["pos"], r["original_reading"])
+               for r in bench.read_pt_unified_corrections()
+               if r["region"] == region and r["field"] == "ipa_narrow"}
+    text = bench._fetch(bench._PT_UNIFIED_URL, "portuguese_pronunciation_lexicon.jsonl")
+    readings: dict[str, list[str]] = {}
+    excluded = Counter()
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        source = bench.pt_unified_source(row)
+        if row.get("region") != region or source not in INFOPEDIA_SOURCES:
+            continue
+        word, ipa = row["word"], (row.get("ipa_narrow") or "").strip()
+        if not word or not ipa:
+            continue
+        if (word, source, row.get("pos") or "", row.get("ipa_narrow")) in overlay:
+            excluded["listed by the board's corrections overlay"] += 1
+            continue
+        for reading in filter(None, (r.strip() for r in ipa.split(","))):
+            if lb.strong_r_is_ambiguous(word, reading):
+                excluded["[r] where the spelling has the strong rhotic"] += 1
+                continue
+            readings.setdefault(word, []).append(reading)
+    pairs = [(word, lb.infopedia_to_spec(reading)) for word, group in readings.items()
+             for reading in lb.full_form_first(group)]
+    return pairs, excluded
+
+
+#: dataset -> (loader, licence of the gold, the board dataset that holds it)
 SOURCES = {
-    "wikipron": ("load_wikipron", "CC-BY-SA-4.0",
-                 "https://github.com/CUNY-CL/wikipron/tree/master/data/scrape/tsv"),
+    "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron"),
+    "infopedia": (load_infopedia, "CC-BY-SA-4.0", "portuguese_unified"),
 }
 
 
 def gold_url(bench, dataset: str, code: str) -> str:
     if dataset == "wikipron":
         return bench._WIKIPRON_BASE + bench._WIKIPRON_FILES[code]
-    return SOURCES[dataset][2]
+    return bench._PT_UNIFIED_URL
 
 
 #: Words listed per lead in the report; ``--held-out`` lists every word.
@@ -71,11 +127,11 @@ def held_out_rows(leads: list[lb.Lead]) -> list[str]:
 def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
           command: str, held_out_file: Path | None = None) -> dict:
     bench = o2i_harness.load_benchmark(cache)
-    tier = bench.provenance_for(dataset, code)
+    loader, licence, board_dataset = SOURCES[dataset]
+    tier = bench.provenance_for(board_dataset, code)
     if tier not in ALLOWED_TIERS or not bench.can_gate_promotion(tier):
         raise SystemExit(f"{dataset}/{code} is on tier {tier!r}, which cannot supply entries")
-    loader_name, licence, _ = SOURCES[dataset]
-    pairs = getattr(bench, loader_name)(code, sys.maxsize)
+    pairs, readings_excluded = loader(bench, code)
 
     golds: dict[str, list[str]] = {}
     for headword, gold in pairs:
@@ -157,6 +213,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         "o2i_version": VERSION_STR,
         "harness_sha256": o2i_harness.harness_sha256(cache),
         "gold_rows": len(pairs),
+        "gold_readings_excluded": dict(readings_excluded),
         "gold_headwords": len(golds),
         "rules_right": right,
         "excluded": dict(excluded),

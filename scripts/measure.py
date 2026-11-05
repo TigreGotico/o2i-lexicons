@@ -7,8 +7,9 @@ stress-free PER): with the rules only, and with the rules and the packaged
 lexicon for *code*. The report also gives the PER on the overlap, the gold
 words that the lexicon holds, because only there can the lexicon act.
 
-A lexicon is never scored on the gold it came from: a dataset equal to the
-``source`` in the lexicon's sidecar is refused.
+A lexicon is never scored on the gold it came from: the ``source`` in the
+lexicon's sidecar, the board dataset that holds it, and that dataset with its
+corrections overlay are refused.
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ from orthography2ipa.registry import resolve
 from orthography2ipa.version import VERSION_STR
 
 import o2i_harness
+from build_lexicon import SOURCES
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -40,13 +42,20 @@ def score(bench, pairs, tag: str, lexicon: dict[str, str]) -> tuple[int, float]:
     return covered, per
 
 
+def supplying_datasets(source: str) -> set[str]:
+    """The board datasets that hold the rows of *source*: the source itself,
+    the board dataset it is read from, and that dataset with its corrections."""
+    board = SOURCES[source][2] if source in SOURCES else source
+    return {source, board, f"{board}_corrected"}
+
+
 def measure(code: str, golds: list[tuple[str, str]], cache: Path) -> dict:
     bench = o2i_harness.load_benchmark(cache)
     meta = o2i_lexicons.load_meta(code)
     lexicon = parse_lexicon_text(o2i_lexicons.tsv_path(code).read_text(encoding="utf-8"))
     rows = []
     for dataset, tag in golds:
-        if dataset == meta["source"]:
+        if dataset in supplying_datasets(meta["source"]):
             raise SystemExit(f"{dataset} supplied the {code} lexicon; score it on another gold")
         if resolve(tag) != code:
             raise SystemExit(f"{tag} resolves to {resolve(tag)}, not {code}")

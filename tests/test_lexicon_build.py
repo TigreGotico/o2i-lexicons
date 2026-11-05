@@ -120,3 +120,32 @@ def test_nearly_identical_groups_collapse_to_the_most_specific():
     words = [cand(s + "tion", "x" * len(s) + "tiɒn", "x" * len(s) + "ʃən") for s in stems]
     leads = lb.find_leads(words, naive_align, min_size=10)
     assert [(l.pattern, l.position) for l in leads] == [("tion", "final")]
+
+
+@pytest.mark.parametrize("infopedia, spec", [
+    ("ɐˈmor", "ɐˈmoɾ"),        # amor: the tap
+    ("ˈkaʀu", "ˈkaʁu"),        # carro: the strong rhotic
+    ("pəˈsoɐ", "pɨˈsoɐ"),      # pessoa: the reduced vowel
+    ("ˈkazɐ", "ˈkazɐ"),        # casa: nothing to map
+])
+def test_infopedia_reading_takes_the_spec_symbols(infopedia, spec):
+    assert lb.infopedia_to_spec(infopedia) == spec
+
+
+@pytest.mark.parametrize("word, reading, ambiguous", [
+    ("acarreja", "ɐkɐˈrɐʒɐ", True),     # ⟨rr⟩ written [r]
+    ("rapidamente", "rapidɐˈmẽt", True),  # initial ⟨r⟩ written [r]
+    ("carro", "ˈkaʀu", False),
+    ("caro", "ˈkaru", False),
+    ("honra", "ˈõʀɐ", False),
+    ("Israel", "iʒʀɐˈɛɫ", False),
+])
+def test_strong_r_written_as_r_is_ambiguous(word, reading, ambiguous):
+    assert lb.strong_r_is_ambiguous(word, reading) is ambiguous
+
+
+def test_full_form_of_an_optional_vowel_comes_first():
+    # paciente is pɐˈsjẽt(ə) in Infopédia: short form first in the dataset.
+    assert lb.full_form_first(["pɐˈsjẽt", "pɐˈsjẽtə"]) == ["pɐˈsjẽtə", "pɐˈsjẽt"]
+    # Two readings that differ in more than the optional vowel keep their order.
+    assert lb.full_form_first(["ajfəˈljɐnu", "ɐjfəˈljɐnu"]) == ["ajfəˈljɐnu", "ɐjfəˈljɐnu"]

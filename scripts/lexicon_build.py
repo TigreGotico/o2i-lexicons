@@ -183,6 +183,42 @@ def write_lexicon(out_dir: Path, source: str, entries: dict[str, str],
     return tsv, meta_file
 
 
+#: Infopédia symbol -> the pt-PT spec's symbol for the same sound. Infopédia
+#: writes the reduced vowel [ə], the tap [r] and the strong rhotic [ʀ]; the
+#: spec writes [ɨ] (with [ə] as its allophone), [ɾ] and [ʁ].
+INFOPEDIA_NOTATION = {"ə": "ɨ", "r": "ɾ", "ʀ": "ʁ"}
+
+#: A spelling position where European Portuguese has the strong rhotic: a
+#: word-initial ⟨r⟩, ⟨rr⟩, and ⟨r⟩ after ⟨n⟩, ⟨l⟩ or ⟨s⟩.
+STRONG_R_RE = re.compile(r"(?<![^\W\d_])r|rr|(?<=[nls])r")
+
+
+def infopedia_to_spec(reading: str) -> str:
+    """An Infopédia reading in the symbols of the pt-PT spec."""
+    return "".join(INFOPEDIA_NOTATION.get(c, c) for c in reading)
+
+
+def strong_r_is_ambiguous(word: str, reading: str) -> bool:
+    """Whether *reading* writes [r] where the spelling of *word* has the strong
+    rhotic, so that its [r] cannot be read as the tap."""
+    return len(STRONG_R_RE.findall(word.lower())) > reading.count("ʀ")
+
+
+def full_form_first(readings: list[str]) -> list[str]:
+    """*readings* with the full form of each optional [ə] first.
+
+    Infopédia writes an optional vowel as ``(ə)``, and the dataset gives the
+    short form and the full form as two readings, the short one first. The
+    spec writes the vowel, so the full form leads its pair. Other readings
+    keep their source order.
+    """
+    groups: dict[str, list[str]] = {}
+    for reading in readings:
+        groups.setdefault(reading.replace("ə", ""), []).append(reading)
+    return [r for group in groups.values()
+            for r in sorted(group, key=lambda r: -r.count("ə"))]
+
+
 def first_usable(golds: list[str], usable: Callable[[str], Optional[str]]) -> Optional[str]:
     """The first gold reading, in source order, that *usable* accepts.
 
