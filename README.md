@@ -50,8 +50,39 @@ o2i_lexicons.load_meta("en-GB")    # its sidecar
 | Code | File | Source | Tier | Licence |
 | :--- | :--- | :--- | :--- | :--- |
 | `en-GB` | `o2i_lexicons/data/en-GB/wikipron.tsv` | [WikiPron](https://github.com/CUNY-CL/wikipron) `eng_latn_uk_broad.tsv`, scraped from Wiktionary | crowd-scraped | CC BY-SA 4.0 |
+| `pt-PT` | `o2i_lexicons/data/pt-PT/infopedia.tsv` | The Infopédia rows of [portuguese-unified-pronunciation-lexicon](https://huggingface.co/datasets/TigreGotico/portuguese-unified-pronunciation-lexicon), from the Porto Editora dictionary | lexicon-derived | CC BY-SA 4.0 |
 
 Stress on the en-GB entries comes from the orthography2ipa rules, not from the source. WikiPron scrapes Wiktionary with stress removed (`"stress": False` in its `data/scrape/lib/scrape.py`), so the published file holds no stress mark. The sidecar records this as `"stress": "rules"`, and the orthography2ipa stress rules mark each entry on output, as they mark an entry of `word_exceptions`.
+
+The pt-PT entries are the Infopédia rows of the dataset: the rows with an `infopedia_url`, including the rows that Infopédia and Wiktionary share with the same reading. Infopédia transcribes the European Portuguese standard, and the orthography2ipa `pt-PT` spec models that standard. A lexicon on `pt-PT` does not reach its child lects, such as `pt-PT-x-lisbon`.
+
+The entries carry the stress marks of Infopédia (`"stress": "source"`). Infopédia writes three sounds with other symbols than the spec does, and the build writes the spec's symbols:
+
+| Infopédia | Spec | Sound |
+| :--- | :--- | :--- |
+| `ə` | `ɨ` | the reduced vowel, an allophone of `ɨ` in the spec |
+| `r` | `ɾ` | the tap |
+| `ʀ` | `ʁ` | the strong rhotic |
+
+A reading that writes `r` where the spelling has the strong rhotic (an initial `r`, `rr`, or `r` after `n`, `l` or `s`) is left out, because there `r` is not the tap. Infopédia writes an optional vowel as `(ə)`. The dataset gives both forms, and the entry takes the full form, as the spec writes the vowel. The rows that the corrections overlay of the orthography2ipa board lists are left out: they contradict a written accent, lack the stress mark, or transcribe another headword.
+
+Infopédia transcribes the Lisbon (Estremenho) speech, and the `pt-PT` spec models the more conservative norm. The `pt-PT-x-lisbon` notes list the Lisbon deltas, and the build treats each one that Infopédia carries:
+
+| Lisbon delta | Infopédia | pt-PT spec | Build |
+| :--- | :--- | :--- | :--- |
+| ⟨ei⟩, and ⟨e⟩ before ⟨x⟩ | [ɐj] (leite, êxito) | [ej] (leite `ˈlejtɨ`) | writes [ej] where the rules read the vowel as ⟨e⟩, or read an English ⟨a⟩ for [eɪ] (basebol) as [a] or [ɐ]; leaves any other [ɐj] out (rugby), except in a word spelled with ⟨ai ay aj⟩ |
+| stressed ⟨e⟩ before a palatal | [ɐ] (espelho, coelho) | [e] or [ɛ], by word | leaves the word out, because the vowel cannot be recovered |
+| ⟨ou⟩ | [o] | [o] | nothing to do |
+| the strong rhotic and the reduced vowel | [ʀ], [ə] | [ʁ], [ɨ] | writes the spec symbols |
+
+The build compares the rules with the mapped reading, so a word whose only difference was [ɐj] against [ej] is not a rules miss. A reading with a stress mark between a consonant and the vowel after it (yakuza `jakˈuzɐ` for `jaˈkuzɐ`) places the mark inside the onset, and the build takes the next reading of the word or leaves the word out.
+
+A word that the rules get wrong, and that no lead holds out, must pass four more tests before it becomes a pt-PT entry. `build_lexicon.py --screened` lists each word with the test it fails, or with the sources that agree with it.
+
+1. The reading is of the same headword. An Infopédia row can transcribe a neighbouring headword or a cut reading. The first syllable must start with a consonant of the same class, and the consonants differ by at most one edit plus one per four consonants. The syllable count is the same, or differs by one where a vowel deletes or a glide forms. The reading ends on the same consonant class and keeps a final coda. This test also drops some correct loanwords, such as *kiwi* and *pipeline*.
+2. The word is not a one-letter headword, an interjection spelled as a vowel and ⟨h⟩ (*ah*, *eh*, *oh*), a closed-class word, or a homograph with two readings by sense (*pola*: the archaic contraction [pulɐ] and the noun [ˈpɔlɐ]), because the lexicon cannot choose by context. A dictionary reads these as a letter name or a stressed citation form, which would replace the reduced article *o* [u] in every sentence. A closed-class word is one that the spec reads unstressed (`stress.cliticless_words`), or that a row of the dataset tags as a preposition, conjunction, determiner, pronoun or contraction.
+3. The only difference from the rules is not an open orthography2ipa defect, such as ⟨ã⟩ read [ã] (*afã*, *fã*). Such an entry would hide the defect. `lexicon_build.OPEN_RULE_BUGS` lists each defect by its issue number. A reading that a hand check found wrong is also left out (`lexicon_build.KNOWN_SOURCE_DEFECTS`), and so is a reading with the Lisbon [ɐ] before a palatal or a Lisbon [ɐj] that has no pt-PT [ej].
+4. A second source gives the same reading: a hand-typed pt.wiktionary reading for European Portuguese or with no region, or WikiPron pt-PT where it gives the word exactly one reading. A dataset row merged from Infopédia and pt.wiktionary repeats the Infopédia reading, so its agreement is recorded, but it keeps no entry on its own. WikiPron pt comes from the en.wiktionary `{{pt-IPA}}` template, which lists several variants for many words, and a match against one of them is no evidence. The Lisbon reading of the Portal da Língua Portuguesa is generator output: its agreement is recorded, but it keeps no entry on its own. The stress is compared only where both readings mark it, and WikiPron marks none.
 
 ## Build, measure and prune
 
@@ -59,16 +90,18 @@ The scripts run the installed orthography2ipa. They score with the board harness
 
 ```bash
 python scripts/build_lexicon.py en-GB wikipron --report build-report.json
+python scripts/build_lexicon.py pt-PT infopedia --report build-report.json
 python scripts/measure.py en-GB ipadict:en-GB cmudict:en
+python scripts/measure.py pt-PT wikipron:pt-PT
 python scripts/prune_check.py
 ```
 
 `build_lexicon.py` keeps a word only when the rules get it wrong under the board's scoring. Words that share a spelling pattern and the same error at it form a lead. A lead is a question for the linguistic literature, not a rule. Its words stay out of the lexicon until a cited source states a rule for the pattern, or states that the pattern is lexical. The build report lists each lead.
 
-`measure.py` scores a lexicon on a gold from a different source, with the rules only and with the lexicon. It refuses the gold that supplied the lexicon.
+`measure.py` scores a lexicon on a gold from a different source, with the rules only and with the lexicon. It refuses the gold that supplied the lexicon, and the board dataset that holds that gold. The pt-PT screen keeps only the entries that a second source corroborates, WikiPron pt-PT among them, so a pt-PT measure on WikiPron is not independent of the selection.
 
 `prune_check.py` exits with status 1 when the rules alone now get an entry right. CI runs it on each pull request, and a weekly job removes the stale entries and opens a draft pull request.
 
 ## Licence
 
-The code is Apache-2.0. Each data file keeps the licence of its source, which its `.meta.json` sidecar states. The `en-GB` file is CC BY-SA 4.0, the licence of the Wiktionary text it comes from.
+The code is Apache-2.0. Each data file keeps the licence of its source, which its `.meta.json` sidecar states. The `en-GB` file is CC BY-SA 4.0, the licence of the Wiktionary text it comes from. The `pt-PT` file is CC BY-SA 4.0, the licence that the card of the portuguese-unified dataset states.

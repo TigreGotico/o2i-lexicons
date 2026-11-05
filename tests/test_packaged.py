@@ -54,3 +54,102 @@ def test_the_en_gb_pilot_ships_with_its_provenance():
     # data/scrape/lib/scrape.py), so the stress comes from the o2i rules.
     assert meta["stress"] == "rules"
     assert meta["source_url"].endswith("/eng_latn_uk_broad.tsv")
+
+
+def test_the_pt_pt_lexicon_ships_with_its_provenance():
+    # The Infopédia rows of portuguese-unified: the dataset card gives
+    # cc-by-sa-4.0, and the orthography2ipa benchmark registry gives the
+    # portuguese_unified gold the lexicon-derived tier.
+    assert "pt-PT" in o2i_lexicons.available_codes()
+    assert o2i_lexicons.tsv_path("pt-PT").name == "infopedia.tsv"
+    meta = o2i_lexicons.load_meta("pt-PT")
+    assert (meta["source"], meta["tier"], meta["licence"]) == (
+        "infopedia", "lexicon-derived", "CC-BY-SA-4.0")
+    assert meta["stress"] == "source"
+    assert meta["source_url"].endswith(
+        "/portuguese-unified-pronunciation-lexicon/resolve/main/"
+        "portuguese_pronunciation_lexicon.jsonl")
+
+
+def test_the_pt_pt_entries_use_the_spec_symbols():
+    # Infopédia writes exame iˈzɐm(ə), rap ˈʀɛp and bisbilhotar bəʒbiʎuˈtar.
+    # The pt-PT spec writes the reduced vowel ɨ, the strong rhotic ʁ and the
+    # tap ɾ, and the full form of an optional vowel.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    entries = dict(line.split("\t") for line in text.splitlines())
+    assert entries["exame"] == "iˈzɐmɨ"
+    assert entries["rap"] == "ˈʁɛp"
+    assert entries["bisbilhotar"] == "bɨʒbiʎuˈtaɾ"
+    assert [w for w, ipa in entries.items() if set(ipa) & set("əʀr")] == []
+
+
+def test_the_pt_pt_lexicon_holds_no_reading_of_another_headword():
+    # Infopédia rows that transcribe another word: augustinista reads
+    # vjuliˈniʃtɐ, aquilombado reads mɐɾõˈbadu, cucaracho reads mɐmɐˈɾaʃu and
+    # blitz reads blitzkrieg. The rules read each of them better.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    words = {line.split("\t")[0] for line in text.splitlines()}
+    assert words & {"augustinista", "aquilombado", "cucaracho", "blitz"} == set()
+
+
+def test_the_pt_pt_lexicon_holds_no_letter_name_or_function_word():
+    # Infopédia reads a as [a] and o as [ˈɔ], the letter names; the articles
+    # are [ɐ] and [u]. The spec's unstressed words must keep the rules.
+    import orthography2ipa
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    words = {line.split("\t")[0] for line in text.splitlines()}
+    assert {w for w in words if len(w) == 1} == set()
+    assert words & {"ah", "eh", "oh"} == set()
+    assert words & set(orthography2ipa.get("pt-PT").stress.cliticless_words) == set()
+
+
+def test_the_pt_pt_lexicon_hides_no_open_rule_defect():
+    # o2i#2046: ⟨ã⟩ reads [ã]. These words differ from the rules only there.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    words = {line.split("\t")[0] for line in text.splitlines()}
+    assert words & {"afã", "fã", "chã", "sã", "pã"} == set()
+
+
+def test_the_pt_pt_lexicon_holds_no_known_source_defect():
+    # A hand check found armazém ɐɾmɐˈʒɐ̃j̃, cupé kuˈpe, deve ˈdɛv, bajulação
+    # bɐjulɐˈsɐ̃w̃ and bombardeiro bobɐɾˈdɐjɾu wrong.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    words = {line.split("\t")[0] for line in text.splitlines()}
+    assert words & {"armazém", "cupé", "deve", "bajulação", "bombardeiro"} == set()
+
+
+def test_no_packaged_entry_has_a_stress_mark_inside_an_onset():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    import lexicon_build as lb
+    found = {}
+    for code in o2i_lexicons.available_codes():
+        text = o2i_lexicons.tsv_path(code).read_text(encoding="utf-8")
+        bad = [w for w, _, ipa in (line.partition("\t") for line in text.splitlines()) if lb.misplaced_stress(ipa)]
+        if bad:
+            found[code] = bad
+    assert found == {}
+
+
+def test_the_pt_pt_lexicon_follows_the_pt_pt_norm():
+    # Infopédia writes the Lisbon [ɐj] (êxito ˈɐjzitu); pt-PT writes [ej].
+    # yakuza carries a stress mark inside an onset, pola is a homograph, and
+    # the [ɐj] of rugby spells ⟨u⟩, so it has no pt-PT [ej].
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    entries = dict(line.split("\t") for line in text.splitlines())
+    lisbon = [w for w, ipa in entries.items()
+              if "ɐj" in ipa.replace("ɐ̃j̃", "") and not any(s in w for s in ("ai", "ay", "aj", "âi"))]
+    assert lisbon == []
+    assert entries.keys() & {"yakuza", "pola", "rugby"} == set()
+
+
+def test_no_pt_pt_entry_rests_on_a_merged_row_alone():
+    # A row merged from Infopédia and pt.wiktionary repeats the Infopédia
+    # reading. These words have no other second source.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    entries = {line.split("\t")[0] for line in text.splitlines()}
+    merged_only = {"airbag", "amuado", "beatlemania", "bluff", "cear", "coevo",
+                   "coibir", "cânon", "flirt", "jazz", "soufflé", "tweed",
+                   "êxito", "óptico"}
+    assert entries & merged_only == set()

@@ -31,6 +31,7 @@ Repository = "https://github.com/TigreGotico/o2i-lexicons"
 # orthography2ipa calls with the entry point's name.
 [project.entry-points."orthography2ipa.lexicons"]
 "en-GB" = "o2i_lexicons:tsv_path"
+"pt-PT" = "o2i_lexicons:tsv_path"
 
 [tool.setuptools.packages.find]
 where = ["."]

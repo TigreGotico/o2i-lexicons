@@ -15,6 +15,24 @@ def naive_align(a, b):
     return [(a[i] if i < len(a) else None, b[i] if i < len(b) else None) for i in range(n)]
 
 
+def edit_align(a, b):
+    """A unit-cost edit alignment of two strings, as pairs with None for a gap."""
+    n, m = len(a), len(b)
+    d = [[i + j if i * j == 0 else 0 for j in range(m + 1)] for i in range(n + 1)]
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] != b[j - 1]))
+    pairs, i, j = [], n, m
+    while i or j:
+        if i and j and d[i][j] == d[i - 1][j - 1] + (a[i - 1] != b[j - 1]):
+            pairs.append((a[i - 1], b[j - 1])); i, j = i - 1, j - 1
+        elif i and d[i][j] == d[i - 1][j] + 1:
+            pairs.append((a[i - 1], None)); i -= 1
+        else:
+            pairs.append((None, b[j - 1])); j -= 1
+    return pairs[::-1]
+
+
 @pytest.mark.parametrize("gold, stored", [
     ("k ɜː n əl", "kɜːnəl"),
     ("ˈθ ʌ ɹ ə", "ˈθʌɹə"),
@@ -120,3 +138,202 @@ def test_nearly_identical_groups_collapse_to_the_most_specific():
     words = [cand(s + "tion", "x" * len(s) + "tiɒn", "x" * len(s) + "ʃən") for s in stems]
     leads = lb.find_leads(words, naive_align, min_size=10)
     assert [(l.pattern, l.position) for l in leads] == [("tion", "final")]
+
+
+@pytest.mark.parametrize("infopedia, spec", [
+    ("ɐˈmor", "ɐˈmoɾ"),        # amor: the tap
+    ("ˈkaʀu", "ˈkaʁu"),        # carro: the strong rhotic
+    ("pəˈsoɐ", "pɨˈsoɐ"),      # pessoa: the reduced vowel
+    ("ˈkazɐ", "ˈkazɐ"),        # casa: nothing to map
+])
+def test_infopedia_reading_takes_the_spec_symbols(infopedia, spec):
+    assert lb.infopedia_to_spec(infopedia) == spec
+
+
+@pytest.mark.parametrize("word, reading, ambiguous", [
+    ("acarreja", "ɐkɐˈrɐʒɐ", True),     # ⟨rr⟩ written [r]
+    ("rapidamente", "rapidɐˈmẽt", True),  # initial ⟨r⟩ written [r]
+    ("carro", "ˈkaʀu", False),
+    ("caro", "ˈkaru", False),
+    ("honra", "ˈõʀɐ", False),
+    ("Israel", "iʒʀɐˈɛɫ", False),
+])
+def test_strong_r_written_as_r_is_ambiguous(word, reading, ambiguous):
+    assert lb.strong_r_is_ambiguous(word, reading) is ambiguous
+
+
+def test_full_form_of_an_optional_vowel_comes_first():
+    # paciente is pɐˈsjẽt(ə) in Infopédia: short form first in the dataset.
+    assert lb.full_form_first(["pɐˈsjẽt", "pɐˈsjẽtə"]) == ["pɐˈsjẽtə", "pɐˈsjẽt"]
+    # Two readings that differ in more than the optional vowel keep their order.
+    assert lb.full_form_first(["ajfəˈljɐnu", "ɐjfəˈljɐnu"]) == ["ajfəˈljɐnu", "ɐjfəˈljɐnu"]
+
+
+@pytest.mark.parametrize("rules, reading, reason", [
+    # paciente: the glide forms and one nucleus goes; same consonants.
+    ("pɐsiˈẽtɨ", "pɐˈsjẽtɨ", None),
+    # exame: the rules misread ⟨x⟩ and the vowels; same consonant classes.
+    ("eˈʃamɨ", "iˈzɐmɨ", None),
+    # augustinista read as another word: a vowel onset against [v].
+    ("awɡuʃtiˈniʃtɐ", "vjuliˈniʃtɐ", "first-syllable onset"),
+    # despampanadeira cut after its second syllable: classes T S P P N T R
+    # against T S P P, three edits for seven consonants (limit 1 + 7 // 4).
+    ("dɨʃpɐ̃pɐnɐˈdejɾɐ", "dɨʃˈpɐ̃pɐ", "consonant skeleton"),
+    # one nucleus more, of [a], which neither deletes nor glides.
+    ("ˈbaba", "ˈbababa", "syllable count"),
+    # carapotós without its final [ʃ].
+    ("kɐɾɐpuˈtɔʃ", "kɐɾɐpuˈtɔ", "truncated end"),
+])
+def test_other_reading_reason(rules, reading, reason):
+    assert lb.other_reading_reason(rules, reading) == reason
+
+
+def test_a_non_syllabic_mark_makes_a_glide():
+    assert lb.segments("ai̯") == [("V", "a"), ("G", "i")]
+
+
+@pytest.mark.parametrize("headword, reason", [
+    # The letter names: a and o read [a] and [ˈɔ] in Infopédia.
+    ("a", "one letter"),
+    ("O", "one letter"),
+    ("à", "one letter"),
+    ("oh", "interjection spelled as a letter"),
+    ("eh", "interjection spelled as a letter"),
+    ("do", "closed class"),
+    ("Naquele", "closed class"),
+    ("casa", None),
+    ("hoje", None),
+])
+def test_closed_class_reason(headword, reason):
+    assert lb.closed_class_reason(headword, frozenset({"do", "naquele"})) == reason
+
+
+def stress_free(a, b):
+    return a.replace("ˈ", "") == b.replace("ˈ", "")
+
+
+@pytest.mark.parametrize("headword, rules, reading, issues", [
+    # o2i#2046: afã and fã differ from the rules only in ⟨ã⟩.
+    ("afã", "ɐˈfã", "ɐˈfɐ̃", [2046]),
+    ("fã", "ˈfã", "ˈfɐ̃", [2046]),
+    # maçã with a second difference, in the first vowel: the entry stays.
+    ("maçã", "maˈsã", "mɐˈsɐ̃", []),
+    # [ã] that no ⟨ã⟩ spells is outside the issue.
+    ("tanta", "ˈtãtɐ", "ˈtɐ̃tɐ", []),
+    # o2i#2041: the coda sibilant voices before a voiced consonant (desdém),
+    # and deletes before /ʒ/ (desgelo).
+    ("desdém", "dɨʃˈdɐ̃j̃", "dɨʒˈdɐ̃j̃", [2041]),
+    ("desgelo", "dɨʃˈʒelu", "dɨˈʒelu", [2041]),
+    # mesmo also takes another stressed vowel, so the issue does not explain it.
+    ("mesmo", "ˈmɛʃmu", "ˈmeʒmu", []),
+    # a word-final sibilant is outside the issue.
+    ("gás", "ˈɡaʃ", "ˈɡaʒ", []),
+])
+def test_open_rule_bugs(headword, rules, reading, issues):
+    assert lb.open_rule_bugs("pt-PT", headword, rules, reading, stress_free) == issues
+
+
+def test_no_open_rule_bug_outside_its_language():
+    assert lb.open_rule_bugs("pt-BR", "afã", "aˈfã", "aˈfɐ̃", stress_free) == []
+
+
+def test_the_stress_mark_moves_to_its_vowel():
+    # Infopédia writes the mark before the syllable, the Portal before the vowel.
+    assert lb.stress_on_nucleus("ˈkazɐ") == lb.stress_on_nucleus("kˈazɐ") == "kˈazɐ"
+    assert lb.stress_on_nucleus("ˌɐkɐˈdɛmjɐ") == "ɐkɐdˈɛmjɐ"
+
+
+def test_corroborating_sources():
+    refs = {
+        # WikiPron writes no stress: its segments are compared.
+        "wikipron": {"exame": ["i z ɐ m ɨ"], "mesmo": ["m e ʒ m u"]},
+        "wiktionary": {"exame": ["iˈzamɨ"]},
+        "portal_lisbon": {"exame": ["izˈɐmɨ"], "mesmo": ["mˈɛʒmu"]},
+    }
+    def form(ipa):
+        return "".join(ipa.split())
+    assert lb.corroborating_sources("exame", "iˈzɐmɨ", refs, form) == ["wikipron", "portal_lisbon"]
+    # The Portal stresses the same vowel but writes another one: no agreement.
+    assert lb.corroborating_sources("mesmo", "ˈmeʒmu", refs, form) == ["wikipron"]
+    # A stress on another vowel is a disagreement when both mark it.
+    assert lb.corroborating_sources("exame", "ˈizɐmɨ", refs, form) == ["wikipron"]
+    assert lb.corroborating_sources("casa", "ˈkazɐ", refs, form) == []
+
+
+def test_wikipron_corroborates_only_a_single_reading():
+    readings = {"cupé": ["k u p e", "k u p ɛ"], "casa": ["k a z ɐ"], "asno": ["a ʒ n u", "a ʒ n u"]}
+    assert lb.single_readings(readings) == {"casa": ["k a z ɐ"], "asno": ["a ʒ n u", "a ʒ n u"]}
+
+
+def test_the_portal_and_a_merged_row_keep_no_entry_on_their_own():
+    # A merged Infopédia and pt.wiktionary row repeats the Infopédia reading.
+    assert lb.CORROBORATING_SOURCES.isdisjoint({"portal_lisbon", "merged"})
+    assert lb.CORROBORATING_SOURCES == {"wikipron", "wiktionary"}
+
+
+@pytest.mark.parametrize("ipa, misplaced", [
+    # yakuza: the syllables are ja.ˈku.zɐ, so [k] belongs after the mark.
+    ("jakˈuzɐ", True),
+    ("jaˈkuzɐ", False),
+    ("ˈkazɐ", False),
+    # A glide before the mark closes the syllable before it.
+    ("mawˈiʃtɐ", False),
+    # A syllable dot before the mark states where the syllable starts.
+    ("ak.ˈa", False),
+    ("ɐ̃ˌtiˈdɐ̃pĩɡ", False),
+])
+def test_misplaced_stress(ipa, misplaced):
+    assert lb.misplaced_stress(ipa) is misplaced
+
+
+@pytest.mark.parametrize("word, reading, rules, expected", [
+    # ⟨ei⟩ and ⟨ê⟩ before ⟨x⟩: Lisbon [ɐj], pt-PT [ej]. The rules read [e].
+    ("leite", "ˈlɐjtɨ", "ˈlejtɨ", "ˈlejtɨ"),
+    ("êxito", "ˈɐjzitu", "ˈeʃitu", "ˈejzitu"),
+    # The English [eɪ] of basebol, spelled ⟨a⟩: the rules read [ɐ], no glide.
+    ("basebol", "bɐjzɨˈbɔɫ", "bɐzɨˈbɔɫ", "bejzɨˈbɔɫ"),
+    # game: the aligner may pair [j] with the rules' [m].
+    ("game", "ˈɡɐjm", "ˈɡamɨ", "ˈɡejm"),
+    # rugby: the [ɐj] spells ⟨u⟩, and no source gives [ej].
+    ("rugby", "ˈʁɐjɡɨbi", "ˈʁuɡbi", "ˈʁɐjɡɨbi"),
+    # The unstressed ⟨ai⟩ is [ɐj] in pt-PT too.
+    ("baixar", "bɐjˈʃaɾ", "bajˈʃaɾ", "bɐjˈʃaɾ"),
+    # ⟨aj⟩: the [j] is a misread ⟨j⟩, not a diphthong.
+    ("bajulação", "bɐjulɐˈsɐ̃w̃", "bɐʒulɐˈsɐ̃w̃", "bɐjulɐˈsɐ̃w̃"),
+    # The nasal diphthong is not the Lisbon [ɐj].
+    ("mãe", "ˈmɐ̃j̃", "ˈmɐ̃j̃", "ˈmɐ̃j̃"),
+])
+def test_lisbon_ej_takes_the_pt_pt_norm(word, reading, rules, expected):
+    assert lb.lisbon_to_pt_pt(word, reading, rules, edit_align) == expected
+
+
+def test_the_rules_vowel_may_align_with_the_glide():
+    # The board aligner pairs êxito's rules [e] with the [j] of [ɐj].
+    def tie_align(a, b):
+        return [("ɐ", None), ("j", "e"), ("z", "ʃ"), ("i", "i"), ("t", "t"), ("u", "u")]
+    assert lb.lisbon_to_pt_pt("êxito", "ˈɐjzitu", "ˈeʃitu", tie_align) == "ˈejzitu"
+
+
+def test_rugby_keeps_a_lisbon_aj_that_the_build_drops():
+    reading = lb.lisbon_to_pt_pt("rugby", "ˈʁɐjɡɨbi", "ˈʁuɡbi", edit_align)
+    assert "ej" not in reading
+    assert lb.lisbon_aj_left("rugby", reading)
+    assert not lb.lisbon_aj_left("êxito", lb.lisbon_to_pt_pt("êxito", "ˈɐjzitu", "ˈeʃitu", edit_align))
+    assert not lb.lisbon_aj_left("baixar", "bɐjˈʃaɾ")
+
+
+@pytest.mark.parametrize("rules, reading, lisbon", [
+    # espelho: Lisbon [ɐ] before [ʎ], where pt-PT has [ɛ].
+    ("ɨʃpɛʎu", "ɨʃpɐʎu", True),
+    ("kuɛʎu", "kuɐʎu", True),
+    # [ɐ] against [e] before a non-palatal is another difference.
+    ("sedɐ", "sɐdɐ", False),
+    # [ɐ] before a palatal where the rules also have [ɐ].
+    ("ɐʎu", "ɐʎu", False),
+])
+def test_lisbon_prepalatal_vowel(rules, reading, lisbon):
+    assert lb.lisbon_prepalatal_vowel(rules, reading, naive_align) is lisbon
+
+
+def test_pola_is_a_homograph():
+    assert "pola" in lb.HOMOGRAPHS["pt-PT"]
