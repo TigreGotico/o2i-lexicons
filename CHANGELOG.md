@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.2.2a1) (2026-11-05)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.2.1a1...0.2.2a1)
+
+**Merged pull requests:**
+
+- fix: give an Infopédia nasal diphthong a nasal nucleus [\#12](https://github.com/TigreGotico/o2i-lexicons/pull/12) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.2.1a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.2.1a1) (2026-11-05)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.2.0a1...0.2.1a1)
