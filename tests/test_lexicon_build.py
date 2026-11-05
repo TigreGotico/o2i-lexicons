@@ -15,6 +15,24 @@ def naive_align(a, b):
     return [(a[i] if i < len(a) else None, b[i] if i < len(b) else None) for i in range(n)]
 
 
+def edit_align(a, b):
+    """A unit-cost edit alignment of two strings, as pairs with None for a gap."""
+    n, m = len(a), len(b)
+    d = [[i + j if i * j == 0 else 0 for j in range(m + 1)] for i in range(n + 1)]
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            d[i][j] = min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] != b[j - 1]))
+    pairs, i, j = [], n, m
+    while i or j:
+        if i and j and d[i][j] == d[i - 1][j - 1] + (a[i - 1] != b[j - 1]):
+            pairs.append((a[i - 1], b[j - 1])); i, j = i - 1, j - 1
+        elif i and d[i][j] == d[i - 1][j] + 1:
+            pairs.append((a[i - 1], None)); i -= 1
+        else:
+            pairs.append((None, b[j - 1])); j -= 1
+    return pairs[::-1]
+
+
 @pytest.mark.parametrize("gold, stored", [
     ("k ɜː n əl", "kɜːnəl"),
     ("ˈθ ʌ ɹ ə", "ˈθʌɹə"),
@@ -247,8 +265,9 @@ def test_wikipron_corroborates_only_a_single_reading():
     assert lb.single_readings(readings) == {"casa": ["k a z ɐ"], "asno": ["a ʒ n u", "a ʒ n u"]}
 
 
-def test_the_portal_keeps_no_entry_on_its_own():
-    assert "portal_lisbon" not in lb.CORROBORATING_SOURCES
+def test_the_portal_and_a_merged_row_keep_no_entry_on_their_own():
+    # A merged Infopédia and pt.wiktionary row repeats the Infopédia reading.
+    assert lb.CORROBORATING_SOURCES.isdisjoint({"portal_lisbon", "merged"})
     assert lb.CORROBORATING_SOURCES == {"wikipron", "wiktionary"}
 
 
@@ -267,21 +286,40 @@ def test_misplaced_stress(ipa, misplaced):
     assert lb.misplaced_stress(ipa) is misplaced
 
 
-@pytest.mark.parametrize("word, reading, expected", [
-    # ⟨ei⟩ and ⟨ê⟩ before ⟨x⟩: Lisbon [ɐj], pt-PT [ej].
-    ("leite", "ˈlɐjtɨ", "ˈlejtɨ"),
-    ("êxito", "ˈɐjzitu", "ˈejzitu"),
-    # The English [eɪ] of basebol.
-    ("basebol", "bɐjzɨˈbɔɫ", "bejzɨˈbɔɫ"),
+@pytest.mark.parametrize("word, reading, rules, expected", [
+    # ⟨ei⟩ and ⟨ê⟩ before ⟨x⟩: Lisbon [ɐj], pt-PT [ej]. The rules read [e].
+    ("leite", "ˈlɐjtɨ", "ˈlejtɨ", "ˈlejtɨ"),
+    ("êxito", "ˈɐjzitu", "ˈeʃitu", "ˈejzitu"),
+    # The English [eɪ] of basebol, spelled ⟨a⟩: the rules read [ɐ], no glide.
+    ("basebol", "bɐjzɨˈbɔɫ", "bɐzɨˈbɔɫ", "bejzɨˈbɔɫ"),
+    # game: the aligner may pair [j] with the rules' [m].
+    ("game", "ˈɡɐjm", "ˈɡamɨ", "ˈɡejm"),
+    # rugby: the [ɐj] spells ⟨u⟩, and no source gives [ej].
+    ("rugby", "ˈʁɐjɡɨbi", "ˈʁuɡbi", "ˈʁɐjɡɨbi"),
     # The unstressed ⟨ai⟩ is [ɐj] in pt-PT too.
-    ("baixar", "bɐjˈʃaɾ", "bɐjˈʃaɾ"),
+    ("baixar", "bɐjˈʃaɾ", "bajˈʃaɾ", "bɐjˈʃaɾ"),
     # ⟨aj⟩: the [j] is a misread ⟨j⟩, not a diphthong.
-    ("bajulação", "bɐjulɐˈsɐ̃w̃", "bɐjulɐˈsɐ̃w̃"),
+    ("bajulação", "bɐjulɐˈsɐ̃w̃", "bɐʒulɐˈsɐ̃w̃", "bɐjulɐˈsɐ̃w̃"),
     # The nasal diphthong is not the Lisbon [ɐj].
-    ("mãe", "ˈmɐ̃j̃", "ˈmɐ̃j̃"),
+    ("mãe", "ˈmɐ̃j̃", "ˈmɐ̃j̃", "ˈmɐ̃j̃"),
 ])
-def test_lisbon_ej_takes_the_pt_pt_norm(word, reading, expected):
-    assert lb.lisbon_to_pt_pt(word, reading) == expected
+def test_lisbon_ej_takes_the_pt_pt_norm(word, reading, rules, expected):
+    assert lb.lisbon_to_pt_pt(word, reading, rules, edit_align) == expected
+
+
+def test_the_rules_vowel_may_align_with_the_glide():
+    # The board aligner pairs êxito's rules [e] with the [j] of [ɐj].
+    def tie_align(a, b):
+        return [("ɐ", None), ("j", "e"), ("z", "ʃ"), ("i", "i"), ("t", "t"), ("u", "u")]
+    assert lb.lisbon_to_pt_pt("êxito", "ˈɐjzitu", "ˈeʃitu", tie_align) == "ˈejzitu"
+
+
+def test_rugby_keeps_a_lisbon_aj_that_the_build_drops():
+    reading = lb.lisbon_to_pt_pt("rugby", "ˈʁɐjɡɨbi", "ˈʁuɡbi", edit_align)
+    assert "ej" not in reading
+    assert lb.lisbon_aj_left("rugby", reading)
+    assert not lb.lisbon_aj_left("êxito", lb.lisbon_to_pt_pt("êxito", "ˈɐjzitu", "ˈeʃitu", edit_align))
+    assert not lb.lisbon_aj_left("baixar", "bɐjˈʃaɾ")
 
 
 @pytest.mark.parametrize("rules, reading, lisbon", [

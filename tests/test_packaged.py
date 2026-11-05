@@ -134,10 +134,22 @@ def test_no_packaged_entry_has_a_stress_mark_inside_an_onset():
 
 def test_the_pt_pt_lexicon_follows_the_pt_pt_norm():
     # Infopédia writes the Lisbon [ɐj] (êxito ˈɐjzitu); pt-PT writes [ej].
-    # yakuza carries a stress mark inside an onset, and pola is a homograph.
+    # yakuza carries a stress mark inside an onset, pola is a homograph, and
+    # the [ɐj] of rugby spells ⟨u⟩, so it has no pt-PT [ej].
     text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
     entries = dict(line.split("\t") for line in text.splitlines())
     lisbon = [w for w, ipa in entries.items()
               if "ɐj" in ipa.replace("ɐ̃j̃", "") and not any(s in w for s in ("ai", "ay", "aj", "âi"))]
     assert lisbon == []
-    assert entries.keys() & {"yakuza", "pola"} == set()
+    assert entries.keys() & {"yakuza", "pola", "rugby"} == set()
+
+
+def test_no_pt_pt_entry_rests_on_a_merged_row_alone():
+    # A row merged from Infopédia and pt.wiktionary repeats the Infopédia
+    # reading. These words have no other second source.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    entries = {line.split("\t")[0] for line in text.splitlines()}
+    merged_only = {"airbag", "amuado", "beatlemania", "bluff", "cear", "coevo",
+                   "coibir", "cânon", "flirt", "jazz", "soufflé", "tweed",
+                   "êxito", "óptico"}
+    assert entries & merged_only == set()

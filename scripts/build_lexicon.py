@@ -28,14 +28,15 @@ An Infopédia entry must pass four tests, in this order:
 3. It is not a homograph with two readings by sense
    (``lexicon_build.HOMOGRAPHS``), and it carries no Lisbon-only feature that
    cannot be put in the pt-PT norm (``lexicon_build.lisbon_prepalatal_vowel``).
-   The loader already writes the Lisbon [ɐj] as [ej]
+   The build writes the Lisbon [ɐj] as [ej] before it compares the rules
    (``lexicon_build.lisbon_to_pt_pt``). Its only difference from the rules is
    not an open orthography2ipa rule defect (``lexicon_build.OPEN_RULE_BUGS``),
    and a hand check did not find the reading wrong
    (``lexicon_build.KNOWN_SOURCE_DEFECTS``).
-4. A second source gives the same reading: a pt.wiktionary reading, or
-   WikiPron pt-PT where it gives the word one reading. The Portal da Língua
-   Portuguesa Lisbon reading is recorded, but it keeps no entry on its own.
+4. A second source gives the same reading: a hand-typed pt.wiktionary
+   reading, or WikiPron pt-PT where it gives the word one reading. The Portal
+   da Língua Portuguesa Lisbon reading and a row merged from Infopédia and
+   pt.wiktionary are recorded, but they keep no entry on their own.
 
 ``--screened`` lists every word that reaches the screen, with the test it
 fails, or ``kept`` and the sources that agree with it.
@@ -129,8 +130,7 @@ def load_infopedia(bench, code: str):
                 excluded["[r] where the spelling has the strong rhotic"] += 1
                 continue
             readings.setdefault(word, []).append(reading)
-    pairs = [(word, lb.lisbon_to_pt_pt(word, lb.infopedia_to_spec(reading)))
-             for word, group in readings.items()
+    pairs = [(word, lb.infopedia_to_spec(reading)) for word, group in readings.items()
              for reading in lb.full_form_first(group)]
     return pairs, excluded
 
@@ -139,17 +139,16 @@ def infopedia_references(bench, engine, code: str):
     """The closed-class words of the language, and the readings of the
     sources that can corroborate an Infopédia reading, per lexicon key.
 
-    WikiPron corroborates only the words for which it gives one reading.
-    A closed-class word is one that the spec reads unstressed
+    WikiPron corroborates only the words for which it gives one reading. A
+    row that is in Infopédia and in pt.wiktionary goes under ``merged``: it
+    repeats the Infopédia reading. A closed-class word is one that the spec reads unstressed
     (``stress.cliticless_words``), or that a portuguese_unified row tags with
-    a closed-class part of speech (``lexicon_build.CLOSED_CLASS_POS``). A row
-    that is in Infopédia and in pt.wiktionary has the same reading in both,
-    so it corroborates its own reading.
+    a closed-class part of speech (``lexicon_build.CLOSED_CLASS_POS``).
     """
     region = bench._PT_UNIFIED_REGIONS[code]
     closed = {lb.lexicon_key(w) for w in engine.spec.stress.cliticless_words}
     references: dict[str, dict[str, list[str]]] = {
-        "wikipron": {}, "wiktionary": {}, "portal_lisbon": {}}
+        "wikipron": {}, "wiktionary": {}, "merged": {}, "portal_lisbon": {}}
     text = bench._fetch(bench._PT_UNIFIED_URL, "portuguese_pronunciation_lexicon.jsonl")
     for line in text.splitlines():
         if not line.strip():
@@ -161,19 +160,17 @@ def infopedia_references(bench, engine, code: str):
         source, where = bench.pt_unified_source(row), row.get("region")
         readings = [r.strip() for r in (row.get("ipa_narrow") or "").split(",") if r.strip()]
         if source == "infopedia+wiktionary" and where == region:
-            readings, name = [lb.infopedia_to_spec(r) for r in readings], "wiktionary"
+            readings, name = [lb.infopedia_to_spec(r) for r in readings], "merged"
         elif source == "wiktionary" and where in WIKTIONARY_REGIONS:
             name = "wiktionary"
         elif source == "portal" and where == PORTAL_LISBON:
             name = "portal_lisbon"
         else:
             continue
-        references[name].setdefault(word, []).extend(
-            lb.lisbon_to_pt_pt(word, r) for r in readings)
+        references[name].setdefault(word, []).extend(readings)
     wikipron: dict[str, list[str]] = {}
     for word, ipa in bench.load_wikipron(code, sys.maxsize):
-        word = lb.lexicon_key(word)
-        wikipron.setdefault(word, []).append(lb.lisbon_to_pt_pt(word, "".join(ipa.split())))
+        wikipron.setdefault(lb.lexicon_key(word), []).append("".join(ipa.split()))
     references["wikipron"] = lb.single_readings(wikipron)
     return frozenset(closed), references
 
@@ -196,18 +193,24 @@ def screen_infopedia(bench, engine, code: str, kept: list[lb.Candidate],
     for c in kept:
         rules = engine.transcribe_word(c.headword)
         issues = lb.open_rule_bugs(code, c.headword, rules, c.ipa, same)
-        sources = lb.corroborating_sources(c.word, c.ipa, references, form)
+        mapped = {name: {c.word: [lb.lisbon_to_pt_pt(c.word, r, rules, bench.align)
+                                  for r in by_word.get(c.word, ())]}
+                  for name, by_word in references.items()}
+        sources = lb.corroborating_sources(c.word, c.ipa, mapped, form)
         for stage, reason in (
                 ("same headword", lb.other_reading_reason(rules, c.ipa)),
                 ("closed class", lb.closed_class_reason(c.headword, closed)),
                 ("homograph", homographs.get(c.word)),
                 ("Lisbon-only feature",
                  "[ɐ] before a palatal" if lb.lisbon_prepalatal_vowel(
-                     norm(rules), norm(c.ipa), bench.align) else None),
+                     norm(rules), norm(c.ipa), bench.align)
+                 else "[ɐj] for a vowel not spelled ⟨e ê ei⟩ or an English [eɪ]"
+                 if lb.lisbon_aj_left(c.word, c.ipa) else None),
                 ("open rule bug", ", ".join(f"o2i#{n}" for n in issues) or None),
                 ("known source defect", defects.get(c.word)),
                 ("uncorroborated", None if lb.CORROBORATING_SOURCES & set(sources)
-                 else "Portal Lisbon only" if sources else "no second source agrees")):
+                 else "only " + "+".join(sources) if sources
+                 else "no second source agrees")):
             if reason is not None:
                 screened.append((c, rules, stage, reason))
                 break
@@ -217,11 +220,18 @@ def screen_infopedia(bench, engine, code: str, kept: list[lb.Candidate],
     return passed, screened
 
 
+def infopedia_norm(bench, headword: str, reading: str, rules: str) -> str:
+    """An Infopédia reading in the pt-PT norm, given the rules' reading."""
+    return lb.lisbon_to_pt_pt(headword, reading, rules, bench.align)
+
+
 #: dataset -> (loader, licence of the gold, the board dataset that holds it,
-#: the screen of the words that pass the leads, or ``None``).
+#: the screen of the words that pass the leads or ``None``, the map of a gold
+#: reading to the language's norm before the rules are compared or ``None``).
 SOURCES = {
-    "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron", None),
-    "infopedia": (load_infopedia, "CC-BY-SA-4.0", "portuguese_unified", screen_infopedia),
+    "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron", None, None),
+    "infopedia": (load_infopedia, "CC-BY-SA-4.0", "portuguese_unified", screen_infopedia,
+                  infopedia_norm),
 }
 
 
@@ -250,7 +260,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
           command: str, held_out_file: Path | None = None,
           screened_file: Path | None = None) -> dict:
     bench = o2i_harness.load_benchmark(cache)
-    loader, licence, board_dataset, screen = SOURCES[dataset]
+    loader, licence, board_dataset, screen, to_norm = SOURCES[dataset]
     tier = bench.provenance_for(board_dataset, code)
     if tier not in ALLOWED_TIERS or not bench.can_gate_promotion(tier):
         raise SystemExit(f"{dataset}/{code} is on tier {tier!r}, which cannot supply entries")
@@ -290,12 +300,15 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
             excluded["two source headwords differ only in case"] += 1
             continue
         try:
-            hyp = norm(engine.transcribe_word(headword))
+            rules = engine.transcribe_word(headword)
         except Exception:
-            hyp = ""
+            rules = ""
+        hyp = norm(rules)
         if not hyp:
             excluded["the engine gives no output"] += 1
             continue
+        if to_norm is not None:
+            readings = [to_norm(bench, headword, g, rules) for g in readings]
         normed = [norm(g) for g in readings]
         if any(bench.levenshtein(hyp, g) == 0 for g in normed):
             right += 1

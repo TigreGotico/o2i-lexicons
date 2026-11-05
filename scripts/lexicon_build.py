@@ -13,6 +13,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
+from o2i_lexicons.schema import STRESS_MARKS
+
 #: A headword the lexicon can hold: letters, with optional internal apostrophes.
 #: A space, a hyphen, a digit or an edge apostrophe makes the source entry a
 #: phrase, a compound or a clipping that the engine tokenises differently.
@@ -206,19 +208,50 @@ PT_PT_AJ_RE = re.compile(r"[aâ][iyj]")
 LISBON_AJ_RE = re.compile("ɐj(?!\u0303)")
 
 
-def lisbon_to_pt_pt(word: str, reading: str) -> str:
+#: The rules' readings of a vowel spelled ⟨e ê ei ey⟩, and of a vowel spelled ⟨a⟩.
+RULES_E = frozenset("eɛɨ")
+RULES_A = frozenset("aɐ")
+
+
+def lisbon_to_pt_pt(word: str, reading: str, rules: str, align: Callable) -> str:
     """*reading* with the Lisbon [ɐj] in the pt-PT norm [ej].
 
     Infopédia writes the Lisbon (Estremenho) [ɐj] of ⟨ei⟩, of ⟨e⟩ before
     ⟨x⟩ and of the English [eɪ] of a loanword. The pt-PT spec writes [ej]: the
     pt-PT-x-lisbon notes list "<ei> -> [ɐj]" as a Lisbon delta "where more
-    conservative/Northern EP keeps [ej]", and pt-PT gives leite ˈlejtɨ. A word
+    conservative/Northern EP keeps [ej]", and pt-PT gives leite ˈlejtɨ.
+
+    The rules' reading *rules* tells which vowel each [ɐj] spells. Where the
+    rules read [e], [ɛ] or the reduced [ɨ], the vowel is ⟨e ê ei ey⟩. Where the
+    rules read only [a] or [ɐ], with no glide, it is the English [eɪ] spelled
+    ⟨a⟩ (basebol). Any other [ɐj] stays (rugby, where it spells ⟨u⟩). A word
     spelled with ⟨ai⟩, ⟨ay⟩ or ⟨aj⟩ keeps its reading, because there [ɐj] is
     the unstressed ⟨a⟩ of pt-PT, or a misread ⟨j⟩.
     """
-    if PT_PT_AJ_RE.search(lexicon_key(word)):
+    if PT_PT_AJ_RE.search(lexicon_key(word)) or not LISBON_AJ_RE.search(reading):
         return reading
-    return LISBON_AJ_RE.sub("ej", reading)
+    kept = [i for i, ch in enumerate(reading) if ch not in STRESS_MARKS]
+    bare = "".join(reading[i] for i in kept)
+    aligned: dict[int, Optional[str]] = {}
+    k = 0
+    for g, h in align(bare, "".join(ch for ch in rules if ch not in STRESS_MARKS)):
+        if g is not None:
+            aligned[k] = h
+            k += 1
+    out = list(reading)
+    for m in LISBON_AJ_RE.finditer(bare):
+        # The alignment may pair the rules' vowel with [ɐ] or with [j], and the
+        # other half with a gap or a neighbouring consonant.
+        rules_part = {aligned.get(m.start()), aligned.get(m.start() + 1)} & (VOWELS | GLIDES)
+        if rules_part & RULES_E or (rules_part and rules_part <= RULES_A):
+            out[kept[m.start()]] = "e"
+    return "".join(out)
+
+
+def lisbon_aj_left(word: str, reading: str) -> bool:
+    """Whether *reading* keeps a Lisbon [ɐj] that ``lisbon_to_pt_pt`` could not
+    put in the pt-PT norm."""
+    return not PT_PT_AJ_RE.search(lexicon_key(word)) and bool(LISBON_AJ_RE.search(reading))
 
 
 #: The palatal consonants before which Lisbon centralises a stressed ⟨e⟩.
@@ -486,8 +519,10 @@ def corroborating_sources(word: str, reading: str, references: dict[str, dict[st
 
 
 #: The sources whose agreement keeps an entry. The Portal Lisbon readings are
-#: generator output, a comparison and not a gold, so a Portal agreement is
-#: recorded but keeps no entry on its own.
+#: generator output, a comparison and not a gold. A row that portuguese_unified
+#: merged from Infopédia and pt.wiktionary (``merged``) repeats the Infopédia
+#: reading, so it is not independent. Their agreement is recorded, but it keeps
+#: no entry on its own.
 CORROBORATING_SOURCES = frozenset({"wikipron", "wiktionary"})
 
 
