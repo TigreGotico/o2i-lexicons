@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.4.0a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.4.0a2) (2026-11-05)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.4.0a1...0.4.0a2)
+
+**Merged pull requests:**
+
+- refactor: measure and prune through G2P\(pipeline=...\) [\#18](https://github.com/TigreGotico/o2i-lexicons/pull/18) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.4.0a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.4.0a1) (2026-11-05)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.3.0a1...0.4.0a1)
