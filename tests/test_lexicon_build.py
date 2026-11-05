@@ -250,3 +250,52 @@ def test_wikipron_corroborates_only_a_single_reading():
 def test_the_portal_keeps_no_entry_on_its_own():
     assert "portal_lisbon" not in lb.CORROBORATING_SOURCES
     assert lb.CORROBORATING_SOURCES == {"wikipron", "wiktionary"}
+
+
+@pytest.mark.parametrize("ipa, misplaced", [
+    # yakuza: the syllables are ja.ˈku.zɐ, so [k] belongs after the mark.
+    ("jakˈuzɐ", True),
+    ("jaˈkuzɐ", False),
+    ("ˈkazɐ", False),
+    # A glide before the mark closes the syllable before it.
+    ("mawˈiʃtɐ", False),
+    # A syllable dot before the mark states where the syllable starts.
+    ("ak.ˈa", False),
+    ("ɐ̃ˌtiˈdɐ̃pĩɡ", False),
+])
+def test_misplaced_stress(ipa, misplaced):
+    assert lb.misplaced_stress(ipa) is misplaced
+
+
+@pytest.mark.parametrize("word, reading, expected", [
+    # ⟨ei⟩ and ⟨ê⟩ before ⟨x⟩: Lisbon [ɐj], pt-PT [ej].
+    ("leite", "ˈlɐjtɨ", "ˈlejtɨ"),
+    ("êxito", "ˈɐjzitu", "ˈejzitu"),
+    # The English [eɪ] of basebol.
+    ("basebol", "bɐjzɨˈbɔɫ", "bejzɨˈbɔɫ"),
+    # The unstressed ⟨ai⟩ is [ɐj] in pt-PT too.
+    ("baixar", "bɐjˈʃaɾ", "bɐjˈʃaɾ"),
+    # ⟨aj⟩: the [j] is a misread ⟨j⟩, not a diphthong.
+    ("bajulação", "bɐjulɐˈsɐ̃w̃", "bɐjulɐˈsɐ̃w̃"),
+    # The nasal diphthong is not the Lisbon [ɐj].
+    ("mãe", "ˈmɐ̃j̃", "ˈmɐ̃j̃"),
+])
+def test_lisbon_ej_takes_the_pt_pt_norm(word, reading, expected):
+    assert lb.lisbon_to_pt_pt(word, reading) == expected
+
+
+@pytest.mark.parametrize("rules, reading, lisbon", [
+    # espelho: Lisbon [ɐ] before [ʎ], where pt-PT has [ɛ].
+    ("ɨʃpɛʎu", "ɨʃpɐʎu", True),
+    ("kuɛʎu", "kuɐʎu", True),
+    # [ɐ] against [e] before a non-palatal is another difference.
+    ("sedɐ", "sɐdɐ", False),
+    # [ɐ] before a palatal where the rules also have [ɐ].
+    ("ɐʎu", "ɐʎu", False),
+])
+def test_lisbon_prepalatal_vowel(rules, reading, lisbon):
+    assert lb.lisbon_prepalatal_vowel(rules, reading, naive_align) is lisbon
+
+
+def test_pola_is_a_homograph():
+    assert "pola" in lb.HOMOGRAPHS["pt-PT"]

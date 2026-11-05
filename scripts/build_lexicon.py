@@ -25,15 +25,24 @@ An Infopédia entry must pass four tests, in this order:
 2. It is not a closed-class word or a one-letter headword, whose dictionary
    reading is a citation form or a letter name
    (``lexicon_build.closed_class_reason``).
-3. Its only difference from the rules is not an open orthography2ipa rule
-   defect (``lexicon_build.OPEN_RULE_BUGS``), and a hand check did not find
-   the reading wrong (``lexicon_build.KNOWN_SOURCE_DEFECTS``).
+3. It is not a homograph with two readings by sense
+   (``lexicon_build.HOMOGRAPHS``), and it carries no Lisbon-only feature that
+   cannot be put in the pt-PT norm (``lexicon_build.lisbon_prepalatal_vowel``).
+   The loader already writes the Lisbon [ɐj] as [ej]
+   (``lexicon_build.lisbon_to_pt_pt``). Its only difference from the rules is
+   not an open orthography2ipa rule defect (``lexicon_build.OPEN_RULE_BUGS``),
+   and a hand check did not find the reading wrong
+   (``lexicon_build.KNOWN_SOURCE_DEFECTS``).
 4. A second source gives the same reading: a pt.wiktionary reading, or
    WikiPron pt-PT where it gives the word one reading. The Portal da Língua
    Portuguesa Lisbon reading is recorded, but it keeps no entry on its own.
 
 ``--screened`` lists every word that reaches the screen, with the test it
 fails, or ``kept`` and the sources that agree with it.
+
+A reading with a stress mark between a consonant and the vowel after it
+places the mark inside the onset (jakˈuzɐ for jaˈkuzɐ). The build takes the
+next reading of the word, or leaves the word out.
 
 The gold must sit on a tier that can gate a quality decision in
 orthography2ipa. A silver set or a competitor's output is refused.
@@ -120,7 +129,8 @@ def load_infopedia(bench, code: str):
                 excluded["[r] where the spelling has the strong rhotic"] += 1
                 continue
             readings.setdefault(word, []).append(reading)
-    pairs = [(word, lb.infopedia_to_spec(reading)) for word, group in readings.items()
+    pairs = [(word, lb.lisbon_to_pt_pt(word, lb.infopedia_to_spec(reading)))
+             for word, group in readings.items()
              for reading in lb.full_form_first(group)]
     return pairs, excluded
 
@@ -158,10 +168,12 @@ def infopedia_references(bench, engine, code: str):
             name = "portal_lisbon"
         else:
             continue
-        references[name].setdefault(word, []).extend(readings)
+        references[name].setdefault(word, []).extend(
+            lb.lisbon_to_pt_pt(word, r) for r in readings)
     wikipron: dict[str, list[str]] = {}
     for word, ipa in bench.load_wikipron(code, sys.maxsize):
-        wikipron.setdefault(lb.lexicon_key(word), []).append(ipa)
+        word = lb.lexicon_key(word)
+        wikipron.setdefault(word, []).append(lb.lisbon_to_pt_pt(word, "".join(ipa.split())))
     references["wikipron"] = lb.single_readings(wikipron)
     return frozenset(closed), references
 
@@ -179,6 +191,7 @@ def screen_infopedia(bench, engine, code: str, kept: list[lb.Candidate],
         return bench.normalize(ipa, strip_stress=False, broad=True)
 
     defects = lb.KNOWN_SOURCE_DEFECTS.get(code, {})
+    homographs = lb.HOMOGRAPHS.get(code, {})
     passed, screened = [], []
     for c in kept:
         rules = engine.transcribe_word(c.headword)
@@ -187,6 +200,10 @@ def screen_infopedia(bench, engine, code: str, kept: list[lb.Candidate],
         for stage, reason in (
                 ("same headword", lb.other_reading_reason(rules, c.ipa)),
                 ("closed class", lb.closed_class_reason(c.headword, closed)),
+                ("homograph", homographs.get(c.word)),
+                ("Lisbon-only feature",
+                 "[ɐ] before a palatal" if lb.lisbon_prepalatal_vowel(
+                     norm(rules), norm(c.ipa), bench.align) else None),
                 ("open rule bug", ", ".join(f"o2i#{n}" for n in issues) or None),
                 ("known source defect", defects.get(c.word)),
                 ("uncorroborated", None if lb.CORROBORATING_SOURCES & set(sources)
@@ -283,7 +300,11 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         if any(bench.levenshtein(hyp, g) == 0 for g in normed):
             right += 1
             continue
-        ipa = lb.first_usable(readings, usable)
+        placed = [g for g in readings if not lb.misplaced_stress(g)]
+        if not placed:
+            excluded["every reading has a stress mark inside an onset"] += 1
+            continue
+        ipa = lb.first_usable(placed, usable)
         if ipa is None:
             excluded["no gold reading is IPA-only and inside the inventory"] += 1
             continue

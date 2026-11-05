@@ -72,13 +72,13 @@ def test_the_pt_pt_lexicon_ships_with_its_provenance():
 
 
 def test_the_pt_pt_entries_use_the_spec_symbols():
-    # Infopédia writes exame iˈzɐm(ə), rugby ˈʀɐjɡəbi and bisbilhotar bəʒbiʎuˈtar.
+    # Infopédia writes exame iˈzɐm(ə), rap ˈʀɛp and bisbilhotar bəʒbiʎuˈtar.
     # The pt-PT spec writes the reduced vowel ɨ, the strong rhotic ʁ and the
     # tap ɾ, and the full form of an optional vowel.
     text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
     entries = dict(line.split("\t") for line in text.splitlines())
     assert entries["exame"] == "iˈzɐmɨ"
-    assert entries["rugby"] == "ˈʁɐjɡɨbi"
+    assert entries["rap"] == "ˈʁɛp"
     assert entries["bisbilhotar"] == "bɨʒbiʎuˈtaɾ"
     assert [w for w, ipa in entries.items() if set(ipa) & set("əʀr")] == []
 
@@ -111,7 +111,33 @@ def test_the_pt_pt_lexicon_hides_no_open_rule_defect():
 
 
 def test_the_pt_pt_lexicon_holds_no_known_source_defect():
-    # A hand check found armazém ɐɾmɐˈʒɐ̃j̃, cupé kuˈpe and deve ˈdɛv wrong.
+    # A hand check found armazém ɐɾmɐˈʒɐ̃j̃, cupé kuˈpe, deve ˈdɛv, bajulação
+    # bɐjulɐˈsɐ̃w̃ and bombardeiro bobɐɾˈdɐjɾu wrong.
     text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
     words = {line.split("\t")[0] for line in text.splitlines()}
-    assert words & {"armazém", "cupé", "deve"} == set()
+    assert words & {"armazém", "cupé", "deve", "bajulação", "bombardeiro"} == set()
+
+
+def test_no_packaged_entry_has_a_stress_mark_inside_an_onset():
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    import lexicon_build as lb
+    found = {}
+    for code in o2i_lexicons.available_codes():
+        text = o2i_lexicons.tsv_path(code).read_text(encoding="utf-8")
+        bad = [w for w, _, ipa in (line.partition("\t") for line in text.splitlines()) if lb.misplaced_stress(ipa)]
+        if bad:
+            found[code] = bad
+    assert found == {}
+
+
+def test_the_pt_pt_lexicon_follows_the_pt_pt_norm():
+    # Infopédia writes the Lisbon [ɐj] (êxito ˈɐjzitu); pt-PT writes [ej].
+    # yakuza carries a stress mark inside an onset, and pola is a homograph.
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    entries = dict(line.split("\t") for line in text.splitlines())
+    lisbon = [w for w, ipa in entries.items()
+              if "ɐj" in ipa.replace("ɐ̃j̃", "") and not any(s in w for s in ("ai", "ay", "aj", "âi"))]
+    assert lisbon == []
+    assert entries.keys() & {"yakuza", "pola"} == set()

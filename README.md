@@ -66,11 +66,22 @@ The entries carry the stress marks of Infopédia (`"stress": "source"`). Infopé
 
 A reading that writes `r` where the spelling has the strong rhotic (an initial `r`, `rr`, or `r` after `n`, `l` or `s`) is left out, because there `r` is not the tap. Infopédia writes an optional vowel as `(ə)`. The dataset gives both forms, and the entry takes the full form, as the spec writes the vowel. The rows that the corrections overlay of the orthography2ipa board lists are left out: they contradict a written accent, lack the stress mark, or transcribe another headword.
 
+Infopédia transcribes the Lisbon (Estremenho) speech, and the `pt-PT` spec models the more conservative norm. The `pt-PT-x-lisbon` notes list the Lisbon deltas, and the build treats each one that Infopédia carries:
+
+| Lisbon delta | Infopédia | pt-PT spec | Build |
+| :--- | :--- | :--- | :--- |
+| ⟨ei⟩, and ⟨e⟩ before ⟨x⟩ | [ɐj] (leite, êxito) | [ej] (leite `ˈlejtɨ`) | writes [ej], except in a word spelled with ⟨ai ay aj⟩ |
+| stressed ⟨e⟩ before a palatal | [ɐ] (espelho, coelho) | [e] or [ɛ], by word | leaves the word out, because the vowel cannot be recovered |
+| ⟨ou⟩ | [o] | [o] | nothing to do |
+| the strong rhotic and the reduced vowel | [ʀ], [ə] | [ʁ], [ɨ] | writes the spec symbols |
+
+The build compares the rules with the mapped reading, so a word whose only difference was [ɐj] against [ej] is not a rules miss. A reading with a stress mark between a consonant and the vowel after it (yakuza `jakˈuzɐ` for `jaˈkuzɐ`) places the mark inside the onset, and the build takes the next reading of the word or leaves the word out.
+
 A word that the rules get wrong, and that no lead holds out, must pass four more tests before it becomes a pt-PT entry. `build_lexicon.py --screened` lists each word with the test it fails, or with the sources that agree with it.
 
 1. The reading is of the same headword. An Infopédia row can transcribe a neighbouring headword or a cut reading. The first syllable must start with a consonant of the same class, and the consonants differ by at most one edit plus one per four consonants. The syllable count is the same, or differs by one where a vowel deletes or a glide forms. The reading ends on the same consonant class and keeps a final coda. This test also drops some correct loanwords, such as *kiwi* and *pipeline*.
-2. The word is not a one-letter headword, an interjection spelled as a vowel and ⟨h⟩ (*ah*, *eh*, *oh*), or a closed-class word. A dictionary reads these as a letter name or a stressed citation form, which would replace the reduced article *o* [u] in every sentence. A closed-class word is one that the spec reads unstressed (`stress.cliticless_words`), or that a row of the dataset tags as a preposition, conjunction, determiner, pronoun or contraction.
-3. The only difference from the rules is not an open orthography2ipa defect, such as ⟨ã⟩ read [ã] (*afã*, *fã*). Such an entry would hide the defect. `lexicon_build.OPEN_RULE_BUGS` lists each defect by its issue number. A reading that a hand check found wrong is also left out (`lexicon_build.KNOWN_SOURCE_DEFECTS`).
+2. The word is not a one-letter headword, an interjection spelled as a vowel and ⟨h⟩ (*ah*, *eh*, *oh*), a closed-class word, or a homograph with two readings by sense (*pola*: the archaic contraction [pulɐ] and the noun [ˈpɔlɐ]), because the lexicon cannot choose by context. A dictionary reads these as a letter name or a stressed citation form, which would replace the reduced article *o* [u] in every sentence. A closed-class word is one that the spec reads unstressed (`stress.cliticless_words`), or that a row of the dataset tags as a preposition, conjunction, determiner, pronoun or contraction.
+3. The only difference from the rules is not an open orthography2ipa defect, such as ⟨ã⟩ read [ã] (*afã*, *fã*). Such an entry would hide the defect. `lexicon_build.OPEN_RULE_BUGS` lists each defect by its issue number. A reading that a hand check found wrong is also left out (`lexicon_build.KNOWN_SOURCE_DEFECTS`), and so is a reading with the Lisbon [ɐ] before a palatal.
 4. A second source gives the same reading: a pt.wiktionary reading for European Portuguese or with no region, or WikiPron pt-PT where it gives the word exactly one reading. WikiPron pt comes from the en.wiktionary `{{pt-IPA}}` template, which lists several variants for many words, and a match against one of them is no evidence. The Lisbon reading of the Portal da Língua Portuguesa is generator output: its agreement is recorded, but it keeps no entry on its own. The stress is compared only where both readings mark it, and WikiPron marks none.
 
 ## Build, measure and prune

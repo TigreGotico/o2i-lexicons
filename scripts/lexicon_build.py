@@ -198,6 +198,69 @@ def infopedia_to_spec(reading: str) -> str:
     return "".join(INFOPEDIA_NOTATION.get(c, c) for c in reading)
 
 
+#: Spellings whose [ɐj] is not the Lisbon diphthong: an unstressed ⟨ai⟩ or
+#: ⟨ay⟩, which pt-PT writes [ɐj] too, and ⟨a⟩ before the consonant ⟨j⟩.
+PT_PT_AJ_RE = re.compile(r"[aâ][iyj]")
+
+#: The Lisbon [ɐj] as Infopédia writes it: oral, not the nasal [ɐ̃j̃].
+LISBON_AJ_RE = re.compile("ɐj(?!\u0303)")
+
+
+def lisbon_to_pt_pt(word: str, reading: str) -> str:
+    """*reading* with the Lisbon [ɐj] in the pt-PT norm [ej].
+
+    Infopédia writes the Lisbon (Estremenho) [ɐj] of ⟨ei⟩, of ⟨e⟩ before
+    ⟨x⟩ and of the English [eɪ] of a loanword. The pt-PT spec writes [ej]: the
+    pt-PT-x-lisbon notes list "<ei> -> [ɐj]" as a Lisbon delta "where more
+    conservative/Northern EP keeps [ej]", and pt-PT gives leite ˈlejtɨ. A word
+    spelled with ⟨ai⟩, ⟨ay⟩ or ⟨aj⟩ keeps its reading, because there [ɐj] is
+    the unstressed ⟨a⟩ of pt-PT, or a misread ⟨j⟩.
+    """
+    if PT_PT_AJ_RE.search(lexicon_key(word)):
+        return reading
+    return LISBON_AJ_RE.sub("ej", reading)
+
+
+#: The palatal consonants before which Lisbon centralises a stressed ⟨e⟩.
+PALATALS = frozenset("ʎɲʃʒ")
+
+
+def lisbon_prepalatal_vowel(rules: str, reading: str, align: Callable) -> bool:
+    """Whether *reading* has the Lisbon [ɐ] where the rules have the pt-PT
+    [e] or [ɛ] before a palatal consonant (espelho [ɨʃˈpɐʎu]).
+
+    The pt-PT-x-lisbon notes give this centralisation as a Lisbon delta: "The
+    conservative/central (Coimbra-type = pt-PT base) norm keeps [e]/[ɛ] here".
+    The pt-PT vowel is lexical [e] or [ɛ], so the reading cannot be mapped.
+    """
+    pairs = align(reading, rules)
+    for i, (g, h) in enumerate(pairs):
+        if g == "ɐ" and h in ("e", "ɛ"):
+            after = next((p[0] for p in pairs[i + 1:] if p[0] is not None), None)
+            if after in PALATALS:
+                return True
+    return False
+
+
+def misplaced_stress(ipa: str) -> bool:
+    """Whether a stress mark stands between a consonant and the vowel after it.
+
+    A consonant before a vowel is the onset of that vowel's syllable, so the
+    mark goes before the consonant: jaˈkuzɐ, not jakˈuzɐ.
+    """
+    before = None
+    for i, ch in enumerate(ipa):
+        if ch in "ˈˌ":
+            after = ipa[i + 1] if i + 1 < len(ipa) else ""
+            if before is not None and before not in VOWELS | GLIDES and after in VOWELS:
+                return True
+        elif ch == ".":
+            before = None
+        elif not unicodedata.combining(ch) and ch not in "ːˑ":
+            before = ch
+    return False
+
+
 def strong_r_is_ambiguous(word: str, reading: str) -> bool:
     """Whether *reading* writes [r] where the spelling of *word* has the strong
     rhotic, so that its [r] cannot be read as the tap."""
@@ -438,6 +501,15 @@ def single_readings(readings: dict[str, list[str]]) -> dict[str, list[str]]:
     return {word: rs for word, rs in readings.items() if len(set(rs)) == 1}
 
 
+#: Headwords with two readings by sense, per language: headword -> the senses.
+#: A lexicon entry cannot choose by context, so the rules keep the word.
+HOMOGRAPHS = {
+    "pt-PT": {
+        "pola": "the archaic contraction of por + a [pulɐ] and the noun [ˈpɔlɐ] "
+                "(pt.wiktionary: Contração (ô), Substantivo 2 (ó))",
+    },
+}
+
 #: Source readings that a hand check found wrong, per language: headword ->
 #: the defect. Each is a candidate for the orthography2ipa corrections overlay.
 KNOWN_SOURCE_DEFECTS = {
@@ -445,6 +517,8 @@ KNOWN_SOURCE_DEFECTS = {
         "armazém": "intervocalic ⟨z⟩ is [z], not [ʒ]",
         "cupé": "the acute marks [ɛ], not [e]",
         "deve": "the final [ɨ] is dropped",
+        "bajulação": "⟨j⟩ is [ʒ], not the glide [j]",
+        "bombardeiro": "⟨om⟩ before a consonant is the nasal [õ]",
     },
 }
 
