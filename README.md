@@ -66,7 +66,12 @@ The entries carry the stress marks of Infopédia (`"stress": "source"`). Infopé
 
 A reading that writes `r` where the spelling has the strong rhotic (an initial `r`, `rr`, or `r` after `n`, `l` or `s`) is left out, because there `r` is not the tap. Infopédia writes an optional vowel as `(ə)`. The dataset gives both forms, and the entry takes the full form, as the spec writes the vowel. The rows that the corrections overlay of the orthography2ipa board lists are left out: they contradict a written accent, lack the stress mark, or transcribe another headword.
 
-An Infopédia row can transcribe a neighbouring headword or a cut reading, so a pt-PT entry must also read as a correction of the rules' reading of the same word. The first syllable starts with a consonant of the same class, and the consonants differ by at most one edit plus one per four consonants. The syllable count is the same, or differs by one where a vowel deletes or a glide forms. The reading ends on the same consonant class and keeps a final coda. `build_lexicon.py --dropped` lists the entries that fail this test. The test also drops some correct loanwords, such as *kiwi* and *pipeline*.
+A word that the rules get wrong, and that no lead holds out, must pass four more tests before it becomes a pt-PT entry. `build_lexicon.py --screened` lists each word with the test it fails, or with the sources that agree with it.
+
+1. The reading is of the same headword. An Infopédia row can transcribe a neighbouring headword or a cut reading. The first syllable must start with a consonant of the same class, and the consonants differ by at most one edit plus one per four consonants. The syllable count is the same, or differs by one where a vowel deletes or a glide forms. The reading ends on the same consonant class and keeps a final coda. This test also drops some correct loanwords, such as *kiwi* and *pipeline*.
+2. The word is not a one-letter headword, an interjection spelled as a vowel and ⟨h⟩ (*ah*, *eh*, *oh*), or a closed-class word. A dictionary reads these as a letter name or a stressed citation form, which would replace the reduced article *o* [u] in every sentence. A closed-class word is one that the spec reads unstressed (`stress.cliticless_words`), or that a row of the dataset tags as a preposition, conjunction, determiner, pronoun or contraction.
+3. The only difference from the rules is not an open orthography2ipa defect, such as ⟨ã⟩ read [ã] (*afã*, *fã*). Such an entry would hide the defect. `lexicon_build.OPEN_RULE_BUGS` lists each defect by its issue number.
+4. A second source gives the same reading: WikiPron pt-PT, a pt.wiktionary reading for European Portuguese or with no region, or the Lisbon reading of the Portal da Língua Portuguesa. The stress is compared only where both readings mark it, and WikiPron marks none.
 
 ## Build, measure and prune
 
@@ -82,7 +87,7 @@ python scripts/prune_check.py
 
 `build_lexicon.py` keeps a word only when the rules get it wrong under the board's scoring. Words that share a spelling pattern and the same error at it form a lead. A lead is a question for the linguistic literature, not a rule. Its words stay out of the lexicon until a cited source states a rule for the pattern, or states that the pattern is lexical. The build report lists each lead.
 
-`measure.py` scores a lexicon on a gold from a different source, with the rules only and with the lexicon. It refuses the gold that supplied the lexicon, and the board dataset that holds that gold.
+`measure.py` scores a lexicon on a gold from a different source, with the rules only and with the lexicon. It refuses the gold that supplied the lexicon, and the board dataset that holds that gold. The pt-PT screen keeps only the entries that a second source corroborates, WikiPron pt-PT among them, so a pt-PT measure on WikiPron is not independent of the selection.
 
 `prune_check.py` exits with status 1 when the rules alone now get an entry right. CI runs it on each pull request, and a weekly job removes the stale entries and opens a draft pull request.
 

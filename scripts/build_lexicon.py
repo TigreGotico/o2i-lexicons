@@ -16,12 +16,22 @@ lead is a question for the linguistic literature, not a rule. Its words stay
 out of the lexicon until a cited source settles the pattern, and the build
 report lists every lead.
 
-For a source whose rows can transcribe a neighbouring headword (Infopédia),
-a kept entry must also read as a correction of the rules' reading of the same
-word: same first onset, nearly the same consonants, the same number of
-syllables up to one deleted vowel or formed glide, and the same end (see
-``lexicon_build.other_reading_reason``). ``--dropped`` lists the entries that
-fail it.
+A source can screen the words that pass the leads (``screen_infopedia``).
+An Infopédia entry must pass four tests, in this order:
+
+1. It reads the same headword as the rules: the same first onset, nearly the
+   same consonants, the same number of syllables up to one deleted vowel or
+   formed glide, and the same end (``lexicon_build.other_reading_reason``).
+2. It is not a closed-class word or a one-letter headword, whose dictionary
+   reading is a citation form or a letter name
+   (``lexicon_build.closed_class_reason``).
+3. Its only difference from the rules is not an open orthography2ipa rule
+   defect (``lexicon_build.OPEN_RULE_BUGS``).
+4. A second source gives the same reading: WikiPron pt-PT, a pt.wiktionary
+   reading, or the Portal da Língua Portuguesa Lisbon reading.
+
+``--screened`` lists every word that reaches the screen, with the test it
+fails, or ``kept`` and the sources that agree with it.
 
 The gold must sit on a tier that can gate a quality decision in
 orthography2ipa. A silver set or a competitor's output is refused.
@@ -34,6 +44,7 @@ import shlex
 import sys
 from collections import Counter
 from pathlib import Path
+from typing import Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -53,6 +64,15 @@ from o2i_lexicons.schema import ALLOWED_TIERS, STRESS_MARKS  # noqa: E402
 #: Infopédia entry, and an entry with the same reading in Infopédia and in
 #: Wiktionary.
 INFOPEDIA_SOURCES = {"infopedia", "infopedia+wiktionary"}
+
+
+#: The portuguese_unified region of the Portal readings that can corroborate
+#: a pt-PT entry: the Portal's Lisbon standard.
+PORTAL_LISBON = "pt-PT-x-lisboa"
+
+#: The regions of the pt.wiktionary readings that can corroborate a pt-PT
+#: entry: European Portuguese, and a reading with no region qualifier.
+WIKTIONARY_REGIONS = {"pt-PT", "pt"}
 
 
 def load_wikipron(bench, code: str):
@@ -103,13 +123,80 @@ def load_infopedia(bench, code: str):
     return pairs, excluded
 
 
+def infopedia_references(bench, engine, code: str):
+    """The closed-class words of the language, and the readings of the
+    sources that can corroborate an Infopédia reading, per lexicon key.
+
+    A closed-class word is one that the spec reads unstressed
+    (``stress.cliticless_words``), or that a portuguese_unified row tags with
+    a closed-class part of speech (``lexicon_build.CLOSED_CLASS_POS``). A row
+    that is in Infopédia and in pt.wiktionary has the same reading in both,
+    so it corroborates its own reading.
+    """
+    region = bench._PT_UNIFIED_REGIONS[code]
+    closed = {lb.lexicon_key(w) for w in engine.spec.stress.cliticless_words}
+    references: dict[str, dict[str, list[str]]] = {
+        "wikipron": {}, "wiktionary": {}, "portal_lisbon": {}}
+    text = bench._fetch(bench._PT_UNIFIED_URL, "portuguese_pronunciation_lexicon.jsonl")
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        word = lb.lexicon_key(row["word"])
+        if row.get("pos") in lb.CLOSED_CLASS_POS:
+            closed.add(word)
+        source, where = bench.pt_unified_source(row), row.get("region")
+        readings = [r.strip() for r in (row.get("ipa_narrow") or "").split(",") if r.strip()]
+        if source == "infopedia+wiktionary" and where == region:
+            readings, name = [lb.infopedia_to_spec(r) for r in readings], "wiktionary"
+        elif source == "wiktionary" and where in WIKTIONARY_REGIONS:
+            name = "wiktionary"
+        elif source == "portal" and where == PORTAL_LISBON:
+            name = "portal_lisbon"
+        else:
+            continue
+        references[name].setdefault(word, []).extend(readings)
+    for word, ipa in bench.load_wikipron(code, sys.maxsize):
+        references["wikipron"].setdefault(lb.lexicon_key(word), []).append(ipa)
+    return frozenset(closed), references
+
+
+def screen_infopedia(bench, engine, code: str, kept: list[lb.Candidate],
+                     norm: Callable[[str], str]):
+    """The Infopédia words that pass the four tests of the module docstring,
+    and one ``(candidate, rules, stage, reason)`` row per screened word."""
+    closed, references = infopedia_references(bench, engine, code)
+
+    def same(a: str, b: str) -> bool:
+        return norm(a) == norm(b)
+
+    def form(ipa: str) -> str:
+        return bench.normalize(ipa, strip_stress=False, broad=True)
+
+    passed, screened = [], []
+    for c in kept:
+        rules = engine.transcribe_word(c.headword)
+        issues = lb.open_rule_bugs(code, c.headword, rules, c.ipa, same)
+        sources = lb.corroborating_sources(c.word, c.ipa, references, form)
+        for stage, reason in (
+                ("same headword", lb.other_reading_reason(rules, c.ipa)),
+                ("closed class", lb.closed_class_reason(c.headword, closed)),
+                ("open rule bug", ", ".join(f"o2i#{n}" for n in issues) or None),
+                ("uncorroborated", None if sources else "no second source agrees")):
+            if reason is not None:
+                screened.append((c, rules, stage, reason))
+                break
+        else:
+            passed.append(c)
+            screened.append((c, rules, "kept", "+".join(sources)))
+    return passed, screened
+
+
 #: dataset -> (loader, licence of the gold, the board dataset that holds it,
-#: whether a kept entry must pass ``lexicon_build.other_reading_reason``).
-#: Infopédia rows can transcribe a neighbouring headword, so its entries must
-#: read as a correction of the rules' reading of the same word.
+#: the screen of the words that pass the leads, or ``None``).
 SOURCES = {
-    "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron", False),
-    "infopedia": (load_infopedia, "CC-BY-SA-4.0", "portuguese_unified", True),
+    "wikipron": (load_wikipron, "CC-BY-SA-4.0", "wikipron", None),
+    "infopedia": (load_infopedia, "CC-BY-SA-4.0", "portuguese_unified", screen_infopedia),
 }
 
 
@@ -136,9 +223,9 @@ def held_out_rows(leads: list[lb.Lead]) -> list[str]:
 
 def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
           command: str, held_out_file: Path | None = None,
-          dropped_file: Path | None = None) -> dict:
+          screened_file: Path | None = None) -> dict:
     bench = o2i_harness.load_benchmark(cache)
-    loader, licence, board_dataset, same_word_filter = SOURCES[dataset]
+    loader, licence, board_dataset, screen = SOURCES[dataset]
     tier = bench.provenance_for(board_dataset, code)
     if tier not in ALLOWED_TIERS or not bench.can_gate_promotion(tier):
         raise SystemExit(f"{dataset}/{code} is on tier {tier!r}, which cannot supply entries")
@@ -197,17 +284,9 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     leads = lb.find_leads(candidates, bench.align, min_lead)
     held = lb.held_out_words(leads)
     kept = [c for c in candidates if c.word not in held]
-    dropped: list[tuple[lb.Candidate, str, str]] = []
-    if same_word_filter:
-        passed = []
-        for c in kept:
-            rules = engine.transcribe_word(c.headword)
-            why = lb.other_reading_reason(rules, c.ipa)
-            if why is None:
-                passed.append(c)
-            else:
-                dropped.append((c, rules, why))
-        kept = passed
+    screened: list[tuple[lb.Candidate, str, str, str]] = []
+    if screen is not None:
+        kept, screened = screen(bench, engine, code, kept, norm)
     entries = {c.word: c.ipa for c in kept}
     reasons = {c.word: lb.reason_for(c.headword) for c in kept}
     used = set(reasons.values()) - {"unclassified"}
@@ -227,10 +306,14 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     tsv, meta_file = lb.write_lexicon(out_root / code, dataset, entries, meta)
     if held_out_file is not None:
         held_out_file.write_text("\n".join(held_out_rows(leads)) + "\n", encoding="utf-8")
-    if dropped_file is not None:
-        dropped_file.write_text("word\treason\trules\treading\n" + "".join(
-            f"{c.word}\t{why}\t{rules}\t{c.ipa}\n"
-            for c, rules, why in sorted(dropped, key=lambda d: d[0].word)), encoding="utf-8")
+    if screened_file is not None:
+        screened_file.write_text("word\tstage\treason\trules\treading\n" + "".join(
+            f"{c.word}\t{stage}\t{why}\t{rules}\t{c.ipa}\n"
+            for c, rules, stage, why in sorted(screened, key=lambda d: d[0].word)),
+            encoding="utf-8")
+    stages: dict[str, Counter] = {}
+    for _, _, stage, why in screened:
+        stages.setdefault(stage, Counter())[why] += 1
     return {
         "code": code,
         "dataset": dataset,
@@ -249,7 +332,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
                    "gold": l.gold, "size": len(l.words), "examples": l.words[:LEAD_EXAMPLES]}
                   for l in leads],
         "held_out_words": len(held),
-        "dropped_as_another_reading": dict(Counter(why for _, _, why in dropped)),
+        "screen": {stage: dict(reasons) for stage, reasons in stages.items()},
         "entries": len(entries),
         "entries_per_reason": dict(Counter(reasons.values())),
         "tsv": str(tsv.relative_to(ROOT)) if tsv.is_relative_to(ROOT) else str(tsv),
@@ -268,13 +351,13 @@ def main(argv=None) -> None:
     ap.add_argument("--report", type=Path, help="write the build report here")
     ap.add_argument("--held-out", type=Path,
                     help="write each held-out word and its largest lead here")
-    ap.add_argument("--dropped", type=Path,
-                    help="write each entry that fails the same-headword filter here")
+    ap.add_argument("--screened", type=Path,
+                    help="write each word that the source's screen tests, and its result, here")
     args = ap.parse_args(argv)
     command = "python scripts/build_lexicon.py " + shlex.join(
         [args.code, args.dataset, "--min-lead", str(args.min_lead)])
     report = build(args.code, args.dataset, args.cache, args.min_lead, args.out, command,
-                   args.held_out, args.dropped)
+                   args.held_out, args.screened)
     text = json.dumps(report, ensure_ascii=False, indent=1)
     if args.report:
         args.report.write_text(text + "\n", encoding="utf-8")

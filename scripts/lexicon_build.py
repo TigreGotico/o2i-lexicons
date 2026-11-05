@@ -320,6 +320,108 @@ def other_reading_reason(rules: str, reading: str) -> Optional[str]:
     return None
 
 
+#: The Universal Dependencies closed-class tags that portuguese_unified writes,
+#: and its tag for a contraction (do = de + o).
+CLOSED_CLASS_POS = frozenset({"ADP", "CONJ", "CCONJ", "SCONJ", "DET", "PRON", "CONTR"})
+
+#: An interjection spelled as a vowel letter and a silent ⟨h⟩ (ah, eh, oh): the
+#: source reads it as the name of the letter.
+LETTER_INTERJECTION_RE = re.compile(r"[aeiou]h")
+
+
+def closed_class_reason(headword: str, closed_words: frozenset[str]) -> Optional[str]:
+    """Why *headword* must not take a citation reading, or ``None``.
+
+    A dictionary reads a one-letter headword as the letter name, and a
+    function word in its stressed citation form. In a sentence the same
+    spelling is an article, a preposition or a clitic with a reduced vowel,
+    so the dictionary reading would override the rules in every sentence.
+    """
+    word = lexicon_key(headword)
+    if len(word) == 1:
+        return "one letter"
+    if LETTER_INTERJECTION_RE.fullmatch(word):
+        return "interjection spelled as a letter"
+    if word in closed_words:
+        return "closed class"
+    return None
+
+
+#: The open orthography2ipa issues on a pt-PT rule, as a fix of the rules'
+#: output: issue -> (the spelling the defect needs, the substitutions in order).
+OPEN_RULE_BUGS = {
+    "pt-PT": {
+        # ⟨ã⟩ reads [ã]; the nasal vowel is central [ɐ̃].
+        2046: (re.compile("ã"), ((re.compile("ã"), "ɐ̃"),)),
+        # A word-internal coda sibilant voices before a voiced consonant, and
+        # deletes before /ʒ/ (Cruz-Ferreira 1999: 128).
+        2041: (re.compile(r"[sxz](?=[bdgvjmnlr])"),
+               ((re.compile(r"ʃ(?=[ˈˌ]?ʒ)"), ""),
+                (re.compile(r"ʃ(?=[ˈˌ]?[bdɡgvzmnɲlɫʎɾʁ])"), "ʒ"))),
+    },
+}
+
+
+def open_rule_bugs(code: str, headword: str, rules: str, reading: str,
+                   same: Callable[[str, str], bool]) -> list[int]:
+    """The open issues whose fix makes the rules read *reading*, or ``[]``.
+
+    A residual entry for such a word only hides the open defect: once the
+    issue is fixed, the rules are right and the build drops the word.
+    """
+    spelling = lexicon_key(headword)
+    fixed, issues = rules, []
+    for issue, (needs, substitutions) in OPEN_RULE_BUGS.get(code, {}).items():
+        if not needs.search(spelling):
+            continue
+        out = fixed
+        for pattern, replacement in substitutions:
+            out = pattern.sub(replacement, out)
+        if out != fixed:
+            issues.append(issue)
+            fixed = out
+    return issues if issues and same(fixed, reading) else []
+
+
+def stress_on_nucleus(ipa: str) -> str:
+    """*ipa* with each primary stress mark just before the vowel it stresses,
+    and no secondary stress.
+
+    Sources write the mark in different places for the same stress:
+    Infopédia before the syllable (ˈkazɐ), the Portal before the vowel
+    (kˈazɐ).
+    """
+    out, pending = [], False
+    for ch in ipa.replace("'", "ˈ"):
+        if ch == "ˈ":
+            pending = True
+        elif ch != "ˌ":
+            if pending and ch in VOWELS:
+                out.append("ˈ")
+                pending = False
+            out.append(ch)
+    return "".join(out)
+
+
+def readings_agree(a: str, b: str, form: Callable[[str], str]) -> bool:
+    """Whether two readings are the same after *form*. The stress is compared
+    only when both readings mark it: WikiPron, for one, writes no stress."""
+    fa, fb = stress_on_nucleus(form(a)), stress_on_nucleus(form(b))
+    if "ˈ" not in fa or "ˈ" not in fb:
+        fa, fb = fa.replace("ˈ", ""), fb.replace("ˈ", "")
+    return fa == fb
+
+
+def corroborating_sources(word: str, reading: str, references: dict[str, dict[str, list[str]]],
+                          form: Callable[[str], str]) -> list[str]:
+    """The reference sources that give *word* the reading *reading*.
+
+    *references* maps a source name to its readings per lexicon key.
+    """
+    return [name for name, readings in references.items()
+            if any(readings_agree(reading, r, form) for r in readings.get(word, ()))]
+
+
 def first_usable(golds: list[str], usable: Callable[[str], Optional[str]]) -> Optional[str]:
     """The first gold reading, in source order, that *usable* accepts.
 

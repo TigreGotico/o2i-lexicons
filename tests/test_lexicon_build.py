@@ -172,3 +172,71 @@ def test_other_reading_reason(rules, reading, reason):
 
 def test_a_non_syllabic_mark_makes_a_glide():
     assert lb.segments("ai̯") == [("V", "a"), ("G", "i")]
+
+
+@pytest.mark.parametrize("headword, reason", [
+    # The letter names: a and o read [a] and [ˈɔ] in Infopédia.
+    ("a", "one letter"),
+    ("O", "one letter"),
+    ("à", "one letter"),
+    ("oh", "interjection spelled as a letter"),
+    ("eh", "interjection spelled as a letter"),
+    ("do", "closed class"),
+    ("Naquele", "closed class"),
+    ("casa", None),
+    ("hoje", None),
+])
+def test_closed_class_reason(headword, reason):
+    assert lb.closed_class_reason(headword, frozenset({"do", "naquele"})) == reason
+
+
+def stress_free(a, b):
+    return a.replace("ˈ", "") == b.replace("ˈ", "")
+
+
+@pytest.mark.parametrize("headword, rules, reading, issues", [
+    # o2i#2046: afã and fã differ from the rules only in ⟨ã⟩.
+    ("afã", "ɐˈfã", "ɐˈfɐ̃", [2046]),
+    ("fã", "ˈfã", "ˈfɐ̃", [2046]),
+    # maçã with a second difference, in the first vowel: the entry stays.
+    ("maçã", "maˈsã", "mɐˈsɐ̃", []),
+    # [ã] that no ⟨ã⟩ spells is outside the issue.
+    ("tanta", "ˈtãtɐ", "ˈtɐ̃tɐ", []),
+    # o2i#2041: the coda sibilant voices before a voiced consonant (desdém),
+    # and deletes before /ʒ/ (desgelo).
+    ("desdém", "dɨʃˈdɐ̃j̃", "dɨʒˈdɐ̃j̃", [2041]),
+    ("desgelo", "dɨʃˈʒelu", "dɨˈʒelu", [2041]),
+    # mesmo also takes another stressed vowel, so the issue does not explain it.
+    ("mesmo", "ˈmɛʃmu", "ˈmeʒmu", []),
+    # a word-final sibilant is outside the issue.
+    ("gás", "ˈɡaʃ", "ˈɡaʒ", []),
+])
+def test_open_rule_bugs(headword, rules, reading, issues):
+    assert lb.open_rule_bugs("pt-PT", headword, rules, reading, stress_free) == issues
+
+
+def test_no_open_rule_bug_outside_its_language():
+    assert lb.open_rule_bugs("pt-BR", "afã", "aˈfã", "aˈfɐ̃", stress_free) == []
+
+
+def test_the_stress_mark_moves_to_its_vowel():
+    # Infopédia writes the mark before the syllable, the Portal before the vowel.
+    assert lb.stress_on_nucleus("ˈkazɐ") == lb.stress_on_nucleus("kˈazɐ") == "kˈazɐ"
+    assert lb.stress_on_nucleus("ˌɐkɐˈdɛmjɐ") == "ɐkɐdˈɛmjɐ"
+
+
+def test_corroborating_sources():
+    refs = {
+        # WikiPron writes no stress: its segments are compared.
+        "wikipron": {"exame": ["i z ɐ m ɨ"], "mesmo": ["m e ʒ m u"]},
+        "wiktionary": {"exame": ["iˈzamɨ"]},
+        "portal_lisbon": {"exame": ["izˈɐmɨ"], "mesmo": ["mˈɛʒmu"]},
+    }
+    def form(ipa):
+        return "".join(ipa.split())
+    assert lb.corroborating_sources("exame", "iˈzɐmɨ", refs, form) == ["wikipron", "portal_lisbon"]
+    # The Portal stresses the same vowel but writes another one: no agreement.
+    assert lb.corroborating_sources("mesmo", "ˈmeʒmu", refs, form) == ["wikipron"]
+    # A stress on another vowel is a disagreement when both mark it.
+    assert lb.corroborating_sources("exame", "ˈizɐmɨ", refs, form) == ["wikipron"]
+    assert lb.corroborating_sources("casa", "ˈkazɐ", refs, form) == []
