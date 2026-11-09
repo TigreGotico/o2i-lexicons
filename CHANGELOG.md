@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.0a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.0a1) (2026-11-09)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.6.2a1...0.7.0a1)
+
+**Merged pull requests:**
+
+- feat: split each lexicon into exceptions and patches [\#33](https://github.com/TigreGotico/o2i-lexicons/pull/33) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.6.2a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.6.2a1) (2026-11-09)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.6.1a2...0.6.2a1)
