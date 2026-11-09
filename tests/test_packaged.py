@@ -221,15 +221,37 @@ def test_the_pt_pt_lexicon_holds_the_lexical_classes():
 
 def test_a_pt_pt_class_word_needs_no_second_source():
     # No WikiPron or pt.wiktionary reading agrees with Infopédia exógamo
-    # eˈzɔɡɐmu or codorna kuˈdornɐ, and both are entries. The sidecar keeps
+    # eˈzɔɡɐmu or abelota ɐbɨˈlotɐ, and both are entries. The sidecar keeps
     # the class and the result of the second-source test of each such entry.
     entries = pt_pt_entries()
     classes = o2i_lexicons.load_meta("pt-PT")["lexical_classes"]
     assert classes["exógamo"] == {"class": "⟨x⟩ as [z]", "second_source": "no second source"}
-    assert classes["codorna"] == {"class": "stressed mid vowel",
+    assert classes["abelota"] == {"class": "stressed mid vowel",
                                   "second_source": "no second source"}
-    assert entries["codorna"] == "kuˈdoɾnɐ"
+    assert entries["abelota"] == "ɐbɨˈlotɐ"
     assert set(classes) <= set(entries)
+
+
+def test_the_pt_pt_lexicon_drops_a_class_word_a_second_source_reads_as_the_rules_do():
+    # WikiPron or pt.wiktionary gives the rules' reading of each of these words
+    # and Infopédia gives another one. One source against one does not settle
+    # the word, so the rules keep it.
+    conflicts = {"ameba", "anguiforme", "anguiliforme", "anguípede", "bancarrota", "bauxite",
+                 "bixina", "cairota", "codorna", "cunete", "eba", "longinquidade",
+                 "patinete", "rolete", "sanguento", "saragoça", "sestro", "tormentelo"}
+    meta = o2i_lexicons.load_meta("pt-PT")
+    assert pt_pt_entries().keys() & conflicts == set()
+    assert meta["lexical_classes"].keys() & conflicts == set()
+
+
+def test_the_pt_pt_lexicon_holds_no_demonstrative():
+    # Cunha & Cintra p. 343 list the demonstratives and their contractions with
+    # ⟨de em a⟩. They are a closed class, and stress in the sentence sets
+    # their vowel.
+    demonstratives = {"este", "esta", "esse", "essa", "aquele", "aquela", "isto", "isso",
+                      "aquilo", "deste", "desta", "neste", "nesta", "daquele", "naquele",
+                      "àquele", "àquela"}
+    assert pt_pt_entries().keys() & demonstratives == set()
 
 
 def test_the_pt_pt_lexicon_holds_no_word_that_a_cited_rule_reads():

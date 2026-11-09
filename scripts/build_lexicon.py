@@ -182,10 +182,12 @@ def infopedia_references(bench, engine, code: str):
     row that is in Infopédia and in pt.wiktionary goes under ``merged``: it
     repeats the Infopédia reading. A closed-class word is one that the spec reads unstressed
     (``stress.cliticless_words``), or that a portuguese_unified row tags with
-    a closed-class part of speech (``lexicon_build.CLOSED_CLASS_POS``).
+    a closed-class part of speech (``lexicon_build.CLOSED_CLASS_POS``), or a
+    demonstrative (``lexicon_build.PT_DEMONSTRATIVES``).
     """
     region = bench._PT_UNIFIED_REGIONS[code]
     closed = {lb.lexicon_key(w) for w in engine.spec.stress.cliticless_words}
+    closed |= lb.PT_DEMONSTRATIVES
     references: dict[str, dict[str, list[str]]] = {
         "wikipron": {}, "wiktionary": {}, "merged": {}, "portal_lisbon": {}}
     text = bench._fetch(bench._PT_UNIFIED_URL, "portuguese_pronunciation_lexicon.jsonl")
@@ -256,6 +258,10 @@ def screen_infopedia(bench, engine, code: str, kept: list[lb.Candidate],
                  if lb.lisbon_aj_left(c.word, c.ipa) else None),
                 ("open rule bug", ", ".join(f"o2i#{n}" for n in issues) or None),
                 ("known source defect", defects.get(c.word)),
+                ("conflict-removed", None if c.word not in lexical or sources else "; ".join(
+                     f"{name} {r}" for name in sorted(lb.CORROBORATING_SOURCES)
+                     for r in mapped[name][c.word] if lb.readings_agree(rules, r, form))
+                 or None),
                 ("uncorroborated", None if c.word in lexical
                  or lb.CORROBORATING_SOURCES & set(sources)
                  else "only " + "+".join(sources) if sources

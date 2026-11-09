@@ -342,10 +342,6 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
-  "ameba": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
   "ameboide": {
    "class": "stressed mid vowel",
    "second_source": "wikipron"
@@ -502,19 +498,11 @@
    "class": "⟨qu gu⟩ with [w]",
    "second_source": "no second source"
   },
-  "anguiforme": {
-   "class": "⟨qu gu⟩ with [w]",
-   "second_source": "no second source"
-  },
   "anguilicultor": {
    "class": "⟨qu gu⟩ with [w]",
    "second_source": "no second source"
   },
   "anguilicultura": {
-   "class": "⟨qu gu⟩ with [w]",
-   "second_source": "no second source"
-  },
-  "anguiliforme": {
    "class": "⟨qu gu⟩ with [w]",
    "second_source": "no second source"
   },
@@ -563,10 +551,6 @@
    "second_source": "no second source"
   },
   "anguílula": {
-   "class": "⟨qu gu⟩ with [w]",
-   "second_source": "no second source"
-  },
-  "anguípede": {
    "class": "⟨qu gu⟩ with [w]",
    "second_source": "no second source"
   },
@@ -753,10 +737,6 @@
   "aptérix": {
    "class": "⟨x⟩ as [ks]",
    "second_source": "no second source"
-  },
-  "aquele": {
-   "class": "stressed mid vowel",
-   "second_source": "portal_lisbon"
   },
   "aqueme": {
    "class": "stressed mid vowel",
@@ -1334,10 +1314,6 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
-  "bancarrota": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
   "bandeta": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
@@ -1490,10 +1466,6 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
-  "bauxite": {
-   "class": "⟨x⟩ as [ks]",
-   "second_source": "no second source"
-  },
   "bazofo": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
@@ -1625,10 +1597,6 @@
   "bissulfureto": {
    "class": "stressed mid vowel",
    "second_source": "portal_lisbon"
-  },
-  "bixina": {
-   "class": "⟨x⟩ as [ks]",
-   "second_source": "no second source"
   },
   "bizona": {
    "class": "stressed mid vowel",
@@ -2023,10 +1991,6 @@
    "second_source": "no second source"
   },
   "caiena": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
-  "cairota": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
@@ -2822,10 +2786,6 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
-  "codorna": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
   "codorno": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
@@ -3322,10 +3282,6 @@
    "class": "stressed mid vowel",
    "second_source": "wikipron"
   },
-  "cunete": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
   "cunhete": {
    "class": "stressed mid vowel",
    "second_source": "portal_lisbon"
@@ -3498,10 +3454,6 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
-  "deste": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
   "dezena": {
    "class": "stressed mid vowel",
    "second_source": "portal_lisbon"
@@ -3648,10 +3600,6 @@
   },
   "dóxico": {
    "class": "⟨x⟩ as [ks]",
-   "second_source": "no second source"
-  },
-  "eba": {
-   "class": "stressed mid vowel",
    "second_source": "no second source"
   },
   "eca": {
@@ -3967,10 +3915,6 @@
    "second_source": "no second source"
   },
   "eros": {
-   "class": "stressed mid vowel",
-   "second_source": "wikipron+portal_lisbon"
-  },
-  "essa": {
    "class": "stressed mid vowel",
    "second_source": "wikipron+portal_lisbon"
   },
@@ -5514,10 +5458,6 @@
    "class": "stressed mid vowel",
    "second_source": "portal_lisbon"
   },
-  "longinquidade": {
-   "class": "⟨qu gu⟩ with [w]",
-   "second_source": "no second source"
-  },
   "longirrostro": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
@@ -6310,10 +6250,6 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
-  "naquele": {
-   "class": "stressed mid vowel",
-   "second_source": "wikipron"
-  },
   "narigueta": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
@@ -6373,10 +6309,6 @@
   "nesga": {
    "class": "stressed mid vowel",
    "second_source": "wikipron+merged+portal_lisbon"
-  },
-  "neste": {
-   "class": "stressed mid vowel",
-   "second_source": "wikipron"
   },
   "neurinoma": {
    "class": "stressed mid vowel",
@@ -6681,10 +6613,6 @@
   "patena": {
    "class": "stressed mid vowel",
    "second_source": "wikipron+wiktionary+portal_lisbon"
-  },
-  "patinete": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
   },
   "patorra": {
    "class": "stressed mid vowel",
@@ -7570,10 +7498,6 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
-  "rolete": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
   "romboide": {
    "class": "stressed mid vowel",
    "second_source": "wikipron"
@@ -7682,15 +7606,7 @@
    "class": "stressed mid vowel",
    "second_source": "portal_lisbon"
   },
-  "sanguento": {
-   "class": "⟨qu gu⟩ with [w]",
-   "second_source": "no second source"
-  },
   "sapateta": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
-  "saragoça": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
@@ -7807,10 +7723,6 @@
    "second_source": "no second source"
   },
   "sesgo": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
-  "sestro": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
@@ -8077,10 +7989,6 @@
   "torda": {
    "class": "stressed mid vowel",
    "second_source": "portal_lisbon"
-  },
-  "tormentelo": {
-   "class": "stressed mid vowel",
-   "second_source": "no second source"
   },
   "torniquete": {
    "class": "stressed mid vowel",
@@ -8639,7 +8547,6 @@
   "ambiguização": "unclassified",
   "ambisséxuo": "unclassified",
   "ambreta": "unclassified",
-  "ameba": "unclassified",
   "ameboide": "unclassified",
   "ameno": "unclassified",
   "amiboide": "unclassified",
@@ -8679,10 +8586,8 @@
   "angoreta": "unclassified",
   "anguicida": "unclassified",
   "anguicomado": "unclassified",
-  "anguiforme": "unclassified",
   "anguilicultor": "unclassified",
   "anguilicultura": "unclassified",
-  "anguiliforme": "unclassified",
   "anguiloide": "unclassified",
   "anguilulado": "unclassified",
   "anguilulose": "unclassified",
@@ -8695,7 +8600,6 @@
   "anguífero": "unclassified",
   "anguílida": "unclassified",
   "anguílula": "unclassified",
-  "anguípede": "unclassified",
   "anhanguera": "unclassified",
   "anhoto": "unclassified",
   "aniseta": "unclassified",
@@ -8745,7 +8649,6 @@
   "aprosopo": "unclassified",
   "apráxico": "unclassified",
   "aptérix": "unclassified",
-  "aquele": "unclassified",
   "aqueme": "unclassified",
   "aquesse": "unclassified",
   "aqueste": "unclassified",
@@ -8892,7 +8795,6 @@
   "baloba": "unclassified",
   "balofo": "unclassified",
   "banaboia": "unclassified",
-  "bancarrota": "unclassified",
   "bandeta": "unclassified",
   "bandoba": "unclassified",
   "bandoga": "unclassified",
@@ -8932,7 +8834,6 @@
   "bastonete": "unclassified",
   "batelo": "unclassified",
   "batracoide": "unclassified",
-  "bauxite": "unclassified",
   "bazofo": "unclassified",
   "beberete": "unclassified",
   "bebra": "unclassified",
@@ -8966,7 +8867,6 @@
   "bissexo": "unclassified",
   "bissoide": "unclassified",
   "bissulfureto": "unclassified",
-  "bixina": "unclassified",
   "bizona": "unclassified",
   "blandiloquente": "unclassified",
   "blanqueta": "unclassified",
@@ -9066,7 +8966,6 @@
   "caganeta": "unclassified",
   "caguete": "unclassified",
   "caiena": "unclassified",
-  "cairota": "unclassified",
   "caixeta": "unclassified",
   "caixoto": "unclassified",
   "calabrete": "unclassified",
@@ -9265,7 +9164,6 @@
   "cobrelo": "unclassified",
   "cochicholo": "unclassified",
   "codesso": "unclassified",
-  "codorna": "unclassified",
   "codorno": "unclassified",
   "coeso": "unclassified",
   "cofo": "unclassified",
@@ -9391,7 +9289,6 @@
   "cumbeba": "unclassified",
   "cuneirrostro": "unclassified",
   "cuneta": "unclassified",
-  "cunete": "unclassified",
   "cunhete": "unclassified",
   "curcumeno": "unclassified",
   "curcuminoide": "unclassified",
@@ -9435,7 +9332,6 @@
   "desfrequentado": "unclassified",
   "desmilinguido": "unclassified",
   "despontadora": "unclassified",
-  "deste": "unclassified",
   "dezena": "unclassified",
   "dicroico": "unclassified",
   "dificerco": "unclassified",
@@ -9473,7 +9369,6 @@
   "durex": "unclassified",
   "dêixis": "unclassified",
   "dóxico": "unclassified",
-  "eba": "unclassified",
   "eca": "unclassified",
   "eco": "unclassified",
   "ecoto": "unclassified",
@@ -9553,8 +9448,6 @@
   "ergo": "unclassified",
   "eritroide": "unclassified",
   "eros": "unclassified",
-  "essa": "unclassified",
-  "esta": "unclassified",
   "estro": "unclassified",
   "eta": "unclassified",
   "etanoico": "unclassified",
@@ -9949,7 +9842,6 @@
   "lombricoide": "unclassified",
   "lona": "unclassified",
   "longevo": "unclassified",
-  "longinquidade": "unclassified",
   "longirrostro": "unclassified",
   "loquela": "unclassified",
   "loquete": "unclassified",
@@ -10149,7 +10041,6 @@
   "nafteno": "unclassified",
   "nanholo": "unclassified",
   "napelo": "unclassified",
-  "naquele": "unclassified",
   "narigueta": "unclassified",
   "nautiloide": "unclassified",
   "naveta": "unclassified",
@@ -10165,7 +10056,6 @@
   "nena": "unclassified",
   "nervo": "unclassified",
   "nesga": "unclassified",
-  "neste": "unclassified",
   "neurinoma": "unclassified",
   "nevriloma": "unclassified",
   "nexo": "unclassified",
@@ -10246,7 +10136,6 @@
   "pataleta": "unclassified",
   "patamona": "unclassified",
   "patena": "unclassified",
-  "patinete": "unclassified",
   "patorra": "unclassified",
   "patroa": "unclassified",
   "patrona": "unclassified",
@@ -10471,7 +10360,6 @@
   "rofo": "unclassified",
   "rolda": "unclassified",
   "roleta": "unclassified",
-  "rolete": "unclassified",
   "romboide": "unclassified",
   "roncolho": "unclassified",
   "roquete": "unclassified",
@@ -10500,9 +10388,7 @@
   "samoiedo": "unclassified",
   "sanfeno": "unclassified",
   "sangoma": "unclassified",
-  "sanguento": "unclassified",
   "sapateta": "unclassified",
-  "saragoça": "unclassified",
   "sarampelo": "unclassified",
   "sargueta": "unclassified",
   "sarjeta": "unclassified",
@@ -10533,7 +10419,6 @@
   "serpete": "unclassified",
   "serreta": "unclassified",
   "sesgo": "unclassified",
-  "sestro": "unclassified",
   "shorts": "unclassified",
   "show": "unclassified",
   "sincelo": "unclassified",
@@ -10608,7 +10493,6 @@
   "tomentelo": "unclassified",
   "tonoa": "unclassified",
   "torda": "unclassified",
-  "tormentelo": "unclassified",
   "torniquete": "unclassified",
   "toroide": "unclassified",
   "torpedo": "unclassified",

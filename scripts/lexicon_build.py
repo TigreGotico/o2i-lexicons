@@ -857,6 +857,14 @@ def other_reading_reason(rules: str, reading: str) -> Optional[str]:
 #: and its tag for a contraction (do = de + o).
 CLOSED_CLASS_POS = frozenset({"ADP", "CONJ", "CCONJ", "SCONJ", "DET", "PRON", "CONTR"})
 
+#: The demonstrative pronouns of Portuguese and their contractions with ⟨de em
+#: a⟩ (Cunha & Cintra p. 343). No row of portuguese_unified tags some of them.
+_DEMONSTRATIVES = ("este", "estes", "esta", "estas", "isto", "esse", "esses", "essa",
+                   "essas", "isso", "aquele", "aqueles", "aquela", "aquelas", "aquilo")
+PT_DEMONSTRATIVES = frozenset(
+    [prefix + word for word in _DEMONSTRATIVES for prefix in ("", "d", "n")]
+    + ["à" + word[1:] for word in _DEMONSTRATIVES if word.startswith("a")])
+
 #: An interjection spelled as a vowel letter and a silent ⟨h⟩ (ah, eh, oh): the
 #: source reads it as the name of the letter.
 LETTER_INTERJECTION_RE = re.compile(r"[aeiou]h")
