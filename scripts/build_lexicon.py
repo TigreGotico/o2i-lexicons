@@ -3,7 +3,7 @@
     python scripts/build_lexicon.py en-GB wikipron --cache .cache \\
         --report build-report.json
     python scripts/build_lexicon.py pt-PT infopedia --homographs heterophonic_homographs.csv \\
-        --report build-report.json
+        --preao preao_words.txt --report build-report.json
     python scripts/build_lexicon.py pt-BR nilc --nilc unitex_sample_transcribed.txt \\
         --michaelis entries.jsonl --homographs heterophonic_homographs.csv \\
         --report build-report.json
@@ -45,7 +45,10 @@ An Infopédia entry must pass four tests, in this order:
 
 A word that differs from the rules only in a fact that the spelling cannot show
 never joins a lead and needs no second source (``infopedia_residual``). The
-sources that agree with it are still recorded.
+sources that agree with it are still recorded. An unstressed vowel in a slot of
+``lexicon_build.vowel_slots`` is such a fact. The slot of a vowel where AO90
+dropped a silent consonant needs ``--preao``, a word list in the spelling before
+AO90 (``lexicon_build.ao90_dropped_consonant``).
 
 ``--screened`` lists every word that reaches the screen, with the test it
 fails, or ``kept`` and the sources that agree with it.
@@ -285,7 +288,15 @@ def pt_pt_headwords(bench) -> frozenset[str]:
     return frozenset(lb.lexicon_key(row["word"]) for row in rows if row.get("region") == region)
 
 
-def infopedia_residual(bench, engine, c: lb.Candidate, listed: frozenset[str]):
+@functools.cache
+def read_pre_ao90(path: Path) -> frozenset[str]:
+    """The lexicon keys of a word list in the spelling before AO90."""
+    return frozenset(lb.lexicon_key(line.strip())
+                     for line in path.read_text(encoding="utf-8").splitlines() if line.strip())
+
+
+def infopedia_residual(bench, engine, c: lb.Candidate, listed: frozenset[str],
+                       inputs: dict[str, Path]):
     """``(class, cited rule)`` of an Infopédia candidate, as ``nilc_residual``.
 
     The comparison keeps every difference that the board scores. A stressed
@@ -293,12 +304,27 @@ def infopedia_residual(bench, engine, c: lb.Candidate, listed: frozenset[str]):
     ``PT_LEX`` height rule lists, a written accent, and a rhizotonic form of a
     verb of the first or second conjugation
     (``lexicon_build.rhizotonic_verb_form``).
+
+    The unstressed vowels that the spelling does not show come from the
+    engine's lattice (``lexicon_build.vowel_slots``). A vowel where AO90
+    dropped a silent consonant needs the pre-AO90 word list that ``--preao``
+    names.
     """
     def form(ipa: str) -> str:
         return bench.normalize(ipa, strip_stress=False, broad=True).replace("ˌ", "")
 
+    if "preao" not in inputs:
+        raise SystemExit("the pt-PT build needs --preao, a word list in the spelling before AO90")
+    pre_ao90, headwords = read_pre_ao90(inputs["preao"]), pt_pt_headwords(bench)
+
+    def learned(word: str, end: int) -> bool:
+        return lb.ao90_dropped_consonant(word, end, pre_ao90, headwords)
+
     rules = engine.transcribe_word(c.headword)
-    found = lb.lexical_class(c.word, rules, c.ipa, form, lb.PT_PT_X_VALUES)
+    lattice = [(slot.span[0], slot.span[1], [cand.ipa for cand in slot.candidates])
+               for slot in engine.ipa_lattice(c.headword)]
+    slots = lb.vowel_slots(c.word, rules, lattice, form, learned)
+    found = lb.lexical_class(c.word, rules, c.ipa, form, lb.PT_PT_X_VALUES, slots)
     if found is None or "stressed mid vowel" not in found:
         return found, None
     verb = lb.rhizotonic_verb_form(c.word, pt_pt_headwords(bench))
@@ -420,7 +446,8 @@ def nilc_homograph(word: str, tags: set[str], readings: list[str], others: list[
     return None
 
 
-def nilc_residual(bench, engine, c: lb.Candidate, listed: frozenset[str]):
+def nilc_residual(bench, engine, c: lb.Candidate, listed: frozenset[str],
+                  inputs: dict[str, Path]):
     """``(class, cited rule)`` of a candidate. A class names the lexical facts
     that alone separate it from the rules. A cited rule keeps it a lead."""
     rules = engine.transcribe_word(c.headword)
@@ -655,7 +682,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     if residual is not None:
         listed = spec_listed_words(engine)
         for c in candidates:
-            found, rule = residual(bench, engine, c, listed)
+            found, rule = residual(bench, engine, c, listed, inputs)
             if rule is not None:
                 cited[c.word] = rule
             elif found is not None:
@@ -752,8 +779,10 @@ def main(argv=None) -> None:
     ap.add_argument("--nilc", type=Path, help="the NILC unitex_sample_transcribed.txt")
     ap.add_argument("--michaelis", type=Path, help="the entries.jsonl of the Michaelis crawl")
     ap.add_argument("--homographs", type=Path, help="the heterophonic_homographs.csv of bifonia")
+    ap.add_argument("--preao", type=Path,
+                    help="a pt-PT word list in the spelling before AO90, one word per line")
     args = ap.parse_args(argv)
-    names = ("nilc", "michaelis", "homographs")
+    names = ("nilc", "michaelis", "homographs", "preao")
     files = [arg for name in names if getattr(args, name)
              for arg in (f"--{name}", getattr(args, name).name)]
     command = "python scripts/build_lexicon.py " + shlex.join(
