@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.2a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.6.2a1) (2026-11-09)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.6.1a2...0.6.2a1)
+
+**Merged pull requests:**
+
+- fix: expect no prefix seam in obliquidade [\#32](https://github.com/TigreGotico/o2i-lexicons/pull/32) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.6.1a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.6.1a2) (2026-11-09)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.6.1a1...0.6.1a2)
