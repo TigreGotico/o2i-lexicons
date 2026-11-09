@@ -822,41 +822,62 @@ def test_a_homograph_needs_a_mid_vowel_or_a_second_reading():
                              frozenset()) is None
 
 
-# Infopédia puts the stress mark at its own syllable boundary, the rules at
-# their own onset. The entry keeps its sounds and takes the rules' place.
-@pytest.mark.parametrize("entry, rules, expected", [
-    ("ɐˈɡnelu", "ɐɡˈnɛlu", "ɐɡˈnelu"),                  # agnelo
-    ("ɐdvɛˈktaɾ", "ɐdvɨkˈtaɾ", "ɐdvɛkˈtaɾ"),            # advectar
-    ("ɐkɐtɐlɛˈpsiɐ", "ɐkɐtɐlɨpˈsiɐ", "ɐkɐtɐlɛpˈsiɐ"),   # acatalepsia
-    ("ɐɡɐlaˈktiɐ", "ɐɡɐlɐkˈtiɐ", "ɐɡɐlakˈtiɐ"),         # agalactia
-    ("ɡajˈolu", "ɡaˈjɔlu", "ɡaˈjolu"),                  # gaiolo: a glide onset
-    ("ɐˈbebɾɐ", "ɐˈbɛbɾɐ", "ɐˈbebɾɐ"),                  # abebra: already there
-    ("ˈɡnomu", "ˈɡnɔmu", "ˈɡnomu"),                     # a word-initial cluster
-    ("ɐˈpt͡ʃu", "ɐpˈt͡ʃu", "ɐpˈt͡ʃu"),                    # an affricate before the vowel
-    ("sõˈktu", "sõkˈtu", "sõkˈtu"),               # NFC entry, NFD rules: the entry's bytes stay
+# The mark stands before the onset of the stressed syllable: one consonant, or
+# an obstruent + liquid cluster of Cunha & Cintra (p. 64). A consonant before
+# it has an empty nucleus of its own (Mateus & d'Andrade 1998, pp. 17-18).
+@pytest.mark.parametrize("entry, expected", [
+    ("ɐˈɡnelu", "ɐɡˈnelu"),                    # agnelo: [ɡn] splits
+    ("ɐdvɛˈktaɾ", "ɐdvɛkˈtaɾ"),                # advectar: [kt] splits
+    ("ɐkɐtɐlɛˈpsiɐ", "ɐkɐtɐlɛpˈsiɐ"),          # acatalepsia: [ps] splits
+    ("ɐfiˈksaɾ", "ɐfikˈsaɾ"),                  # afixar: [ks] splits
+    ("awˈksinɐ", "awkˈsinɐ"),                  # auxina: a glide, then [ks]
+    ("ɐˈksjomɐ", "ɐkˈsjomɐ"),                  # axioma: the glide goes with the vowel
+    ("ɐtˈlɔjdɨ", "ɐˈtlɔjdɨ"),                  # atloide: [tl] is a listed cluster
+    ("ɛktˈlipsɨ", "ɛkˈtlipsɨ"),                # ectlipse: [k] before a listed cluster
+    ("ɐˈbebɾɐ", "ɐˈbebɾɐ"),                    # abebra: one consonant, already there
+    ("ɐ̃ˈɡwifɨɾu", "ɐ̃ˈɡwifɨɾu"),                # anguífero: [ɡw] opens the syllable
+    ("ɨʃˈtɾɐɲu", "ɨʃˈtɾɐɲu"),                  # estranho: [ʃ] before [tɾ]
+    ("ɡajˈolu", "ɡajˈolu"),                    # gaiolo: a glide alone is ambisyllabic,
+    ("kilɔˈwɔt", "kilɔˈwɔt"),                  # kilowatt: so the mark stays on either side
+    ("sɐˈudɨ", "sɐˈudɨ"),                      # saúde: a hiatus
+    ("ˈɡnomu", "ˈɡnomu"),                      # gnomo: a word-initial cluster stays whole
+    ("pˈsikɔluɡu", "ˈpsikɔluɡu"),              # a word-initial cluster moves the mark to the start
+    ("kɛtˈʃɐp", "kɛˈtʃɐp"),                    # ketchup: an affricate is one consonant
+    ("adˈʒi", "aˈdʒi"),                        # hadji
+    ("ɐˈpt͡ʃu", "ɐpˈt͡ʃu"),                      # an affricate with the tie bar
+    ("sõˈktu", "sõkˈtu"),                    # an NFD vowel: the entry's bytes stay
 ])
-def test_an_entry_takes_the_rules_place_of_the_stress_mark(entry, rules, expected):
-    assert lb.onset_stress(entry, rules) == expected
+def test_the_stress_mark_stands_before_the_onset_of_the_stressed_syllable(entry, expected):
+    assert lb.onset_stress(entry) == expected
 
 
-@pytest.mark.parametrize("entry, rules", [
-    ("ɐfiˈksaɾ", "ɐfiˈʃaɾ"),          # afixar: [ks] against [ʃ]
-    ("ˈkwezu", "kuˈɛzu"),             # coeso: a glide against a vowel
-    ("kɛˈtʃɐp", "ˈkɛtʃup"),           # ketchup: another stressed vowel
-    ("ɐkˈtaktu", "ɐktɐˈktu"),         # the same consonants before another stressed vowel
-    ("mɐˈkiˈmonu", "mɐkiˈmɔnu"),      # maquimono: two primary marks
-    ("ɐˈɡnaˈɡnu", "ɐɡnɐɡˈnu"),        # two marks, the first before the rules' cluster
-    ("kæt", "ˈkæt"),                  # an entry with no mark
+@pytest.mark.parametrize("entry", ["mɐˈkiˈmonu", "ɐˈɡnaˈɡnu", "kæt", "kˈs"])
+def test_an_entry_with_no_single_mark_or_no_vowel_after_it_has_no_place(entry):
+    assert lb.onset_stress(entry) is None
+
+
+def test_a_prefix_seam_keeps_the_mark_of_the_vowel_after_it():
+    # sub + locar: the seam stands before the second vowel, [l] opens that syllable.
+    assert lb.onset_stress("subˈlɔkɐ̃w̃") == "suˈblɔkɐ̃w̃"
+    assert lb.onset_stress("subˈlɔkɐ̃w̃", 1) is None
+    assert lb.onset_stress("subˈlɔkɐ̃w̃", 2) == "suˈblɔkɐ̃w̃"
+    assert lb.onset_stress("ɐˈɡnelu", 0) == "ɐɡˈnelu"
+
+
+@pytest.mark.parametrize("word, seam", [
+    ("sublocar", 1), ("Subliminar", 1), ("ablegar", 1), ("obliquidade", 1),
+    ("sublime", None), ("abrandar", None), ("distribuidor", None), ("agnelo", None),
 ])
-def test_an_entry_keeps_its_stress_mark_when_the_readings_differ_before_it(entry, rules):
-    assert lb.onset_stress(entry, rules) is None
+def test_the_prefix_seam_comes_from_silabificador(word, seam):
+    assert bl.prefix_seam(word) == seam
 
 
-def test_the_build_writes_the_rules_place_of_the_stress_mark():
-    import orthography2ipa
-    engine = orthography2ipa.G2P("pt-PT", expose_ambiguous_endings=False)
+def test_the_build_writes_the_mark_before_the_onset():
     kept = [lb.Candidate(w, w, "", "", ipa) for w, ipa in
-            (("agnelo", "ɐˈɡnelu"), ("afixar", "ɐfiˈksaɾ"), ("abebra", "ɐˈbebɾɐ"))]
-    entries, counts = bl.rules_stress_place(engine, kept)
-    assert entries == {"agnelo": "ɐɡˈnelu", "afixar": "ɐfiˈksaɾ", "abebra": "ɐˈbebɾɐ"}
-    assert counts == {"moved": 1, "kept": 1, "same": 1}
+            (("agnelo", "ɐˈɡnelu"), ("afixar", "ɐfiˈksaɾ"), ("abebra", "ɐˈbebɾɐ"),
+             ("sublocam", "subˈlɔkɐ̃w̃"), ("cat", "kæt"))]
+    entries, counts, seam = bl.place_stress_marks(kept)
+    assert entries == {"agnelo": "ɐɡˈnelu", "afixar": "ɐfikˈsaɾ", "abebra": "ɐˈbebɾɐ",
+                       "sublocam": "subˈlɔkɐ̃w̃", "cat": "kæt"}
+    assert counts == {"moved": 2, "same": 1, "seam": 1, "kept": 1}
+    assert seam == ["sublocam"]

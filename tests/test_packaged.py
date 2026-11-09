@@ -288,27 +288,32 @@ def test_the_pt_pt_lexicon_holds_no_word_that_a_cited_rule_reads():
                              "alterado"} == set()
 
 
-def test_an_entry_puts_its_stress_mark_where_the_rules_do():
-    # Infopédia writes agnelo ɐˈɡnelu and the rules ɐɡˈnɛlu. An entry takes
-    # the place of the rules' reading, so its mark follows the rules' onset
-    # wherever the two readings have the same sounds before the stressed vowel.
+def test_an_entry_puts_its_stress_mark_before_the_onset_of_the_stressed_syllable():
+    # The onset is one consonant or an obstruent + liquid cluster of Cunha &
+    # Cintra (p. 64); a consonant before it has an empty nucleus of its own
+    # (Mateus & d'Andrade 1998, pp. 17-18). Infopédia writes agnelo ɐˈɡnelu,
+    # afixar ɐfiˈksaɾ, axioma ɐˈksjomɐ and atloide ɐˈtlɔjdɨ.
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    import build_lexicon as bl
     import lexicon_build as lb
-    import orthography2ipa
     entries = pt_pt_entries()
     assert entries["agnelo"] == "ɐɡˈnelu"
     assert entries["advectar"] == "ɐdvɛkˈtaɾ"
     assert entries["agalactia"] == "ɐɡɐlakˈtiɐ"
     assert entries["acatalepsia"] == "ɐkɐtɐlɛpˈsiɐ"
-    assert entries["afixar"] == "ɐfiˈksaɾ"
+    assert entries["afixar"] == "ɐfikˈsaɾ"
+    assert entries["axioma"] == "ɐkˈsjomɐ"
+    assert entries["atloide"] == "ɐˈtlɔjdɨ"
+    assert entries["anguífero"] == "ɐ̃ˈɡwifɨɾu"
+    text = o2i_lexicons.tsv_path("pt-BR").read_text(encoding="utf-8")
+    assert dict(line.split("\t") for line in text.splitlines())["flexão"] == "flekˈsɐ̃w̃"
     found = {}
     for code in o2i_lexicons.available_codes():
-        engine = orthography2ipa.G2P(code, pipeline=orthography2ipa.Pipeline(lexicon={}))
         text = o2i_lexicons.tsv_path(code).read_text(encoding="utf-8")
         moved = [w for w, _, ipa in (line.partition("\t") for line in text.splitlines())
-                 if lb.onset_stress(ipa, engine.transcribe_word(w)) not in (None, ipa)]
+                 if lb.onset_stress(ipa, bl.prefix_seam(w)) not in (None, ipa)]
         if moved:
             found[code] = moved
     assert found == {}
