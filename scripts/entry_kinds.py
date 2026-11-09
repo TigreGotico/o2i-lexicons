@@ -236,11 +236,19 @@ def pt_br_kind(word: str, rules: str, entry: str,
     return "exception", "; ".join(parts)
 
 
-#: The citation of every en-GB exception.
-EN_GB_CITATION = "no source read"
+#: The citation of an en-GB proper noun or acronym. No rule of English
+#: spelling gives the reading of a name or of an acronym, so the class is the
+#: ground, and the reading is the one WikiPron scraped from Wiktionary.
+EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
+
+#: The en-GB reason classes whose entries are exceptions.
+EN_GB_EXCEPTION_REASONS = frozenset({"proper_noun", "acronym"})
 
 #: The gap of an en-GB inflection whose base the rules read right.
 EN_GB_INFLECTION = "lead: en-GB inflection morphology"
+
+#: The gap of any other en-GB entry: nothing shows that a rule cannot reach it.
+EN_GB_UNAUDITED = "lead: en-GB spelling rules not audited"
 
 
 def en_gb_bases(word: str):
@@ -265,16 +273,19 @@ def en_gb_bases(word: str):
 
 def en_gb_kind(word: str, reason: str, headwords: frozenset[str],
                entries: frozenset[str]) -> tuple[str, str]:
-    """The kind of an en-GB entry. English spelling is irregular by nature, so
-    an entry is an exception, except an inflection of a source headword that
-    is not an entry: the rules read that base right, and a morphology rule
+    """The kind of an en-GB entry. A proper noun or an acronym is an
+    exception, because no spelling rule gives the reading of a name or of an
+    acronym. Every other entry is a patch, because nothing shows that a rule
+    cannot reach it. An inflection of a source headword that is not an entry
+    names its own gap: the rules read that base right, and a morphology rule
     could read the inflection.
     """
-    if reason == "unclassified" and any(
-            len(base) >= 2 and base in headwords and base not in entries
-            for base in en_gb_bases(word)):
+    if reason in EN_GB_EXCEPTION_REASONS:
+        return "exception", EN_GB_CITATION
+    if any(len(base) >= 2 and base in headwords and base not in entries
+           for base in en_gb_bases(word)):
         return "patch", EN_GB_INFLECTION
-    return "exception", EN_GB_CITATION
+    return "patch", EN_GB_UNAUDITED
 
 
 #: The sidecar fields that hold one record per word.
