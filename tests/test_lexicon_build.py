@@ -820,3 +820,43 @@ def test_a_homograph_needs_a_mid_vowel_or_a_second_reading():
     # a notation difference between two readings is no homograph
     assert bl.nilc_homograph("pacto", set(), ["ˈpakitu", "ˈpaktu"], [], "ˈpakitu",
                              frozenset()) is None
+
+
+# Infopédia puts the stress mark at its own syllable boundary, the rules at
+# their own onset. The entry keeps its sounds and takes the rules' place.
+@pytest.mark.parametrize("entry, rules, expected", [
+    ("ɐˈɡnelu", "ɐɡˈnɛlu", "ɐɡˈnelu"),                  # agnelo
+    ("ɐdvɛˈktaɾ", "ɐdvɨkˈtaɾ", "ɐdvɛkˈtaɾ"),            # advectar
+    ("ɐkɐtɐlɛˈpsiɐ", "ɐkɐtɐlɨpˈsiɐ", "ɐkɐtɐlɛpˈsiɐ"),   # acatalepsia
+    ("ɐɡɐlaˈktiɐ", "ɐɡɐlɐkˈtiɐ", "ɐɡɐlakˈtiɐ"),         # agalactia
+    ("ɡajˈolu", "ɡaˈjɔlu", "ɡaˈjolu"),                  # gaiolo: a glide onset
+    ("ɐˈbebɾɐ", "ɐˈbɛbɾɐ", "ɐˈbebɾɐ"),                  # abebra: already there
+    ("ˈɡnomu", "ˈɡnɔmu", "ˈɡnomu"),                     # a word-initial cluster
+    ("ɐˈpt͡ʃu", "ɐpˈt͡ʃu", "ɐpˈt͡ʃu"),                    # an affricate before the vowel
+    ("sõˈktu", "sõkˈtu", "sõkˈtu"),               # NFC entry, NFD rules: the entry's bytes stay
+])
+def test_an_entry_takes_the_rules_place_of_the_stress_mark(entry, rules, expected):
+    assert lb.onset_stress(entry, rules) == expected
+
+
+@pytest.mark.parametrize("entry, rules", [
+    ("ɐfiˈksaɾ", "ɐfiˈʃaɾ"),          # afixar: [ks] against [ʃ]
+    ("ˈkwezu", "kuˈɛzu"),             # coeso: a glide against a vowel
+    ("kɛˈtʃɐp", "ˈkɛtʃup"),           # ketchup: another stressed vowel
+    ("ɐkˈtaktu", "ɐktɐˈktu"),         # the same consonants before another stressed vowel
+    ("mɐˈkiˈmonu", "mɐkiˈmɔnu"),      # maquimono: two primary marks
+    ("ɐˈɡnaˈɡnu", "ɐɡnɐɡˈnu"),        # two marks, the first before the rules' cluster
+    ("kæt", "ˈkæt"),                  # an entry with no mark
+])
+def test_an_entry_keeps_its_stress_mark_when_the_readings_differ_before_it(entry, rules):
+    assert lb.onset_stress(entry, rules) is None
+
+
+def test_the_build_writes_the_rules_place_of_the_stress_mark():
+    import orthography2ipa
+    engine = orthography2ipa.G2P("pt-PT", expose_ambiguous_endings=False)
+    kept = [lb.Candidate(w, w, "", "", ipa) for w, ipa in
+            (("agnelo", "ɐˈɡnelu"), ("afixar", "ɐfiˈksaɾ"), ("abebra", "ɐˈbebɾɐ"))]
+    entries, counts = bl.rules_stress_place(engine, kept)
+    assert entries == {"agnelo": "ɐɡˈnelu", "afixar": "ɐfiˈksaɾ", "abebra": "ɐˈbebɾɐ"}
+    assert counts == {"moved": 1, "kept": 1, "same": 1}

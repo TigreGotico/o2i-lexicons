@@ -57,6 +57,13 @@ A reading with a stress mark between a consonant and the vowel after it
 places the mark inside the onset (jakˈuzɐ for jaˈkuzɐ). The build takes the
 next reading of the word, or leaves the word out.
 
+An entry takes the place of the mark from the rules (``lexicon_build.onset_stress``).
+Infopédia puts the mark at its own syllable boundary (ɐˈɡnelu), and the rules
+put it at their own onset (ɐɡˈnɛlu). When both readings stress the same vowel
+and have the same sounds before it, the entry keeps its sounds and takes the
+rules' place of the mark (ɐɡˈnelu). Any other entry keeps its mark, and the
+build report counts each case.
+
 A NILC entry passes the same screen (``screen_nilc``). Its reading is first put
 in the pt-BR norm (``lexicon_build.nilc_to_pt_br``). Its second source is a
 hand-typed pt.wiktionary Brazil line, Michaelis where the correction is one that
@@ -598,6 +605,20 @@ def held_out_rows(leads: list[lb.Lead]) -> list[str]:
             for w, l in sorted(first.items())]
 
 
+def rules_stress_place(engine, kept: list[lb.Candidate]) -> tuple[dict[str, str], Counter]:
+    """The entry of each word of *kept*, with its stress mark where the rules
+    put theirs (``lexicon_build.onset_stress``), and the count of the entries
+    whose mark ``moved``, stood in the rules' place already (``same``), or
+    stays where the source put it (``kept``)."""
+    entries: dict[str, str] = {}
+    counts = Counter()
+    for c in kept:
+        moved = lb.onset_stress(c.ipa, engine.transcribe_word(c.headword))
+        counts["kept" if moved is None else "moved" if moved != c.ipa else "same"] += 1
+        entries[c.word] = moved or c.ipa
+    return entries, counts
+
+
 def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
           command: str, held_out_file: Path | None = None,
           screened_file: Path | None = None, excluded_file: Path | None = None,
@@ -694,7 +715,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     screened: list[tuple[lb.Candidate, str, str, str]] = []
     if screen is not None:
         kept, screened = screen(bench, engine, code, kept, norm, inputs, lexical)
-    entries = {c.word: c.ipa for c in kept}
+    entries, stress_onset = rules_stress_place(engine, kept)
     reasons = {c.word: lb.reason_for(c.headword) for c in kept}
     used = set(reasons.values()) - {"unclassified"}
     meta = {
@@ -755,6 +776,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         "held_out_words": len(held),
         "screen": {stage: dict(reasons) for stage, reasons in stages.items()},
         "entries": len(entries),
+        "stress_onset": dict(stress_onset),
         "entries_per_reason": dict(Counter(reasons.values())),
         "tsv": str(tsv.relative_to(ROOT)) if tsv.is_relative_to(ROOT) else str(tsv),
         "meta": str(meta_file.relative_to(ROOT)) if meta_file.is_relative_to(ROOT) else str(meta_file),

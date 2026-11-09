@@ -872,6 +872,64 @@ def misplaced_stress(ipa: str) -> bool:
     return False
 
 
+def _units(ipa: str) -> list[str]:
+    """*ipa* cut into units: a letter with its combining and length marks, or a mark."""
+    units: list[str] = []
+    for ch in ipa:
+        if units and (unicodedata.combining(ch) or ch in "ːˑ"):
+            units[-1] += ch
+        else:
+            units.append(ch)
+    return units
+
+
+def _is_nucleus(unit: str) -> bool:
+    return unicodedata.normalize("NFD", unit)[0] in VOWELS and NON_SYLLABIC not in unit
+
+
+def _stress_onset(ipa: str) -> Optional[tuple[list[str], int, int, int]]:
+    """``(sounds, start, end, offset)`` of a reading with one primary stress.
+
+    *sounds* are the units of *ipa* without the mark. The sounds from
+    *start* to *end* stand between the vowel before the stressed vowel and the
+    stressed vowel, and the mark stands before the sound at *start* + *offset*.
+    """
+    units = _units(ipa)
+    if units.count("ˈ") != 1:
+        return None
+    mark = units.index("ˈ")
+    sounds = units[:mark] + units[mark + 1:]
+    end = next((i for i in range(mark, len(sounds)) if _is_nucleus(sounds[i])), None)
+    if end is None:
+        return None
+    start = next((i + 1 for i in range(mark - 1, -1, -1) if _is_nucleus(sounds[i])), 0)
+    return sounds, start, end, mark - start
+
+
+def onset_stress(entry: str, rules: str) -> Optional[str]:
+    """*entry* with its primary stress mark where *rules* put theirs, or ``None``.
+
+    Infopédia puts the mark at its own syllable boundary, often before a stop
+    cluster (ɐˈɡnelu), and orthography2ipa at its own onset (ɐɡˈnɛlu). An
+    entry replaces the rules' reading, so a mark at the source's boundary mixes
+    two syllable divisions in one output. The mark moves only when both
+    readings stress the same vowel and the sounds between the vowel before it
+    and the stressed vowel are the same in both: ɐˈɡnelu becomes ɐɡˈnelu. The
+    result differs from *entry* only in the place of the mark. ``None`` means
+    that a reading has no single primary mark, the readings stress different
+    vowels, or the sounds before the stressed vowel differ (afixar: rules [ʃ],
+    Infopédia [ks]).
+    """
+    own, theirs = _stress_onset(entry), _stress_onset(rules)
+    if own is None or theirs is None or not same_stress(entry, rules):
+        return None
+    sounds, start, end, _ = own
+    other, other_start, other_end, offset = theirs
+    if sounds[start:end] != other[other_start:other_end]:
+        return None
+    return "".join(sounds[:start + offset] + ["ˈ"] + sounds[start + offset:])
+
+
 def strong_r_is_ambiguous(word: str, reading: str) -> bool:
     """Whether *reading* writes [r] where the spelling of *word* has the strong
     rhotic, so that its [r] cannot be read as the tap."""

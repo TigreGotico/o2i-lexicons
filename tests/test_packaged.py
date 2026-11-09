@@ -286,3 +286,29 @@ def test_the_pt_pt_lexicon_holds_no_word_that_a_cited_rule_reads():
     entries = pt_pt_entries()
     assert entries.keys() & {"abordo", "choro", "achego", "corro", "cupé", "desvelo",
                              "alterado"} == set()
+
+
+def test_an_entry_puts_its_stress_mark_where_the_rules_do():
+    # Infopédia writes agnelo ɐˈɡnelu and the rules ɐɡˈnɛlu. An entry takes
+    # the place of the rules' reading, so its mark follows the rules' onset
+    # wherever the two readings have the same sounds before the stressed vowel.
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    import lexicon_build as lb
+    import orthography2ipa
+    entries = pt_pt_entries()
+    assert entries["agnelo"] == "ɐɡˈnelu"
+    assert entries["advectar"] == "ɐdvɛkˈtaɾ"
+    assert entries["agalactia"] == "ɐɡɐlakˈtiɐ"
+    assert entries["acatalepsia"] == "ɐkɐtɐlɛpˈsiɐ"
+    assert entries["afixar"] == "ɐfiˈksaɾ"
+    found = {}
+    for code in o2i_lexicons.available_codes():
+        engine = orthography2ipa.G2P(code, pipeline=orthography2ipa.Pipeline(lexicon={}))
+        text = o2i_lexicons.tsv_path(code).read_text(encoding="utf-8")
+        moved = [w for w, _, ipa in (line.partition("\t") for line in text.splitlines())
+                 if lb.onset_stress(ipa, engine.transcribe_word(w)) not in (None, ipa)]
+        if moved:
+            found[code] = moved
+    assert found == {}
