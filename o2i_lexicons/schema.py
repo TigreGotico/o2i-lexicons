@@ -2,6 +2,9 @@
 
 A ``<source>.meta.json`` sidecar is a JSON object with these keys:
 
+``kind``
+    ``exception`` for the file under ``data/<code>/`` and ``patch`` for the
+    file under ``data/patches/<code>/``.
 ``code``
     The language code. It is the name of the directory that holds the file.
 ``source``
@@ -30,6 +33,20 @@ A ``<source>.meta.json`` sidecar is a JSON object with these keys:
     A map from each reason class in use, other than ``unclassified``, to the
     evidence for it. A class claims a linguistic fact, so it needs a stated
     basis. A word that has no basis other than the data is ``unclassified``.
+
+An exception sidecar also has:
+
+``citations``
+    A map from each word in the TSV file to the source that states that the
+    spelling cannot give its reading, with the page or section. The reading
+    itself comes from ``source``, or from pt.wiktionary for a word that
+    ``wiktionary_readings`` names.
+
+A patch sidecar also has:
+
+``gaps``
+    A map from each word in the TSV file to the gap that keeps the rules from
+    it: the orthography2ipa pull request or the rule lead that will reach it.
 """
 from __future__ import annotations
 
@@ -41,6 +58,7 @@ __all__ = [
     "REASON_CLASSES",
     "ALLOWED_TIERS",
     "REQUIRED_META_KEYS",
+    "KIND_KEYS",
     "STRESS_ORIGINS",
     "validate_tsv",
     "validate_meta",
@@ -67,11 +85,15 @@ ALLOWED_TIERS = frozenset({
 })
 
 REQUIRED_META_KEYS = (
-    "code", "source", "source_url", "tier", "licence", "build_command",
+    "kind", "code", "source", "source_url", "tier", "licence", "build_command",
     "o2i_version", "stress", "reasons", "reason_basis",
 )
 
 STRESS_ORIGINS = frozenset({"source", "rules"})
+
+#: The per-word key that each kind of sidecar adds: the citation of an
+#: exception, the gap of a patch.
+KIND_KEYS = {"exception": "citations", "patch": "gaps"}
 
 #: The primary and secondary stress marks.
 STRESS_MARKS = "ˈˌ"
@@ -103,16 +125,30 @@ def validate_tsv(text: str) -> list[tuple[int, str]]:
     return problems
 
 
-def validate_meta(meta: dict, code: str, entries: dict[str, str]) -> list[str]:
-    """Return the problems in the sidecar *meta* of the TSV file for *code*.
+def validate_meta(meta: dict, code: str, entries: dict[str, str],
+                  kind: str = "exception") -> list[str]:
+    """Return the problems in the sidecar *meta* of the *kind* TSV file for *code*.
 
     *entries* maps each word of that TSV file to its IPA, in file order.
     """
     words = list(entries)
-    missing = [k for k in REQUIRED_META_KEYS if k not in meta]
+    missing = [k for k in (*REQUIRED_META_KEYS, KIND_KEYS[kind]) if k not in meta]
     if missing:
         return [f"missing key: {k}" for k in missing]
     problems: list[str] = []
+    if meta["kind"] != kind:
+        problems.append(f"kind {meta['kind']!r} does not match the {kind} file")
+    key = KIND_KEYS[kind]
+    notes = meta[key]
+    if not isinstance(notes, dict):
+        problems.append(f"{key} must be an object")
+    else:
+        for word in words:
+            note = notes.get(word)
+            if not isinstance(note, str) or not note.strip():
+                problems.append(f"{key} has no entry for {word!r}")
+        problems += [f"{key} names {word!r}, which is not in the TSV file"
+                     for word in notes if word not in entries]
     if meta["code"] != code:
         problems.append(f"code {meta['code']!r} does not match directory {code!r}")
     for key in ("source", "source_url", "licence", "build_command"):

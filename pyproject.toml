@@ -10,7 +10,7 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [{ name = "JarbasAi", email = "jarbasai@mailfence.com" }]
 requires-python = ">=3.11"
-dependencies = ["orthography2ipa>=7.122.11a2"]
+dependencies = ["orthography2ipa>=7.122.11a4"]
 keywords = ["ipa", "lexicon", "g2p", "phonetics", "orthography2ipa"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -28,19 +28,28 @@ test = ["pytest", "silabificador>=2.1.1a5"]
 Homepage = "https://github.com/TigreGotico/o2i-lexicons"
 Repository = "https://github.com/TigreGotico/o2i-lexicons"
 
-# One entry point per packaged language code. Each loads tsv_path, which
-# orthography2ipa calls with the entry point's name.
+# One entry point per packaged language code in each group. orthography2ipa
+# calls the provider with the entry point's name. The exceptions load
+# tsv_path, and the patches, which a caller reads only on request, load
+# patch_tsv_path.
 [project.entry-points."orthography2ipa.lexicons"]
 "en-GB" = "o2i_lexicons:tsv_path"
 "pt-PT" = "o2i_lexicons:tsv_path"
 "pt-BR" = "o2i_lexicons:tsv_path"
+
+[project.entry-points."orthography2ipa.lexicon_patches"]
+"en-GB" = "o2i_lexicons:patch_tsv_path"
+"pt-PT" = "o2i_lexicons:patch_tsv_path"
+"pt-BR" = "o2i_lexicons:patch_tsv_path"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["o2i_lexicons*"]
 
 [tool.setuptools.package-data]
-o2i_lexicons = ["data/*/*.tsv", "data/*/*.meta.json", "data/*/LICENSE.*"]
+o2i_lexicons = ["data/*/*.tsv", "data/*/*.meta.json", "data/*/LICENSE.*",
+                "data/patches/*/*.tsv", "data/patches/*/*.meta.json",
+                "data/patches/*/LICENSE.*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "o2i_lexicons.version.VERSION_STR" }

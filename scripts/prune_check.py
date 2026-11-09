@@ -1,15 +1,19 @@
 """Find the entries that the installed orthography2ipa rules now get right.
 
     python scripts/prune_check.py            # exit 1 when an entry is stale
-    python scripts/prune_check.py --write    # remove stale entries in place
+    python scripts/prune_check.py --write    # remove stale patches in place
 
 Each entry is transcribed by an engine with an empty lexicon, so the check sees
 the rules alone, and compared with the entry's IPA under the board's broad,
 stress-free normalisation. An entry that now matches is stale: the rules reach
 it, so the lexicon must not hold it.
 
-``--write`` removes the stale entries and their reasons, and records the
-installed version as the one where the remaining entries last failed.
+The two kinds of entry are stale for different reasons. A stale patch is the
+expected result: the rule of its gap landed. ``--write`` removes it and its
+records, and records the installed version as the one where the remaining
+patches last failed. A stale exception means that its class is wrong, because
+the spelling does give its reading. The check lists it and exits 1, also with
+``--write``, and never removes it: a person decides where the word goes.
 """
 from __future__ import annotations
 
@@ -54,7 +58,8 @@ def stale_entries(code: str, entries: dict[str, str], bench) -> list[str]:
 def forget(meta: dict, words: list[str]) -> None:
     """Remove from the sidecar *meta* each record of *words*."""
     for word in words:
-        del meta["reasons"][word]
+        for key in ("reasons", "citations", "gaps", "lexical_classes"):
+            meta.get(key, {}).pop(word, None)
     used = set(meta["reasons"].values())
     meta["reason_basis"] = {r: b for r, b in meta["reason_basis"].items() if r in used}
     if "wiktionary_readings" in meta:
@@ -70,27 +75,35 @@ def main(argv=None) -> int:
 
     bench = o2i_harness.load_benchmark(args.cache)
     report = {"o2i_version": VERSION_STR, "codes": {}}
-    for code in o2i_lexicons.available_codes():
-        tsv = o2i_lexicons.tsv_path(code)
-        entries = parse_lexicon_text(tsv.read_text(encoding="utf-8"))
-        stale = stale_entries(code, entries, bench)
-        report["codes"][code] = {"entries": len(entries), "stale": stale}
-        print(f"{code}: {len(entries)} entries, {len(stale)} now right under "
-              f"orthography2ipa {VERSION_STR}")
-        for word in stale:
-            print(f"  {word}\t{entries[word]}")
-        if args.write and stale:
-            meta = o2i_lexicons.load_meta(code)
+    files = {"exception": (o2i_lexicons.tsv_path, o2i_lexicons.meta_path),
+             "patch": (o2i_lexicons.patch_tsv_path, o2i_lexicons.patch_meta_path)}
+    for kind, (tsv_of, meta_of) in files.items():
+        for code in o2i_lexicons.available_codes(kind):
+            tsv = tsv_of(code)
+            entries = parse_lexicon_text(tsv.read_text(encoding="utf-8"))
+            stale = stale_entries(code, entries, bench)
+            report["codes"].setdefault(code, {})[kind] = {"entries": len(entries),
+                                                          "stale": stale}
+            print(f"{code} {kind} file: {len(entries)} entries, {len(stale)} now right under "
+                  f"orthography2ipa {VERSION_STR}")
             for word in stale:
-                del entries[word]
-            forget(meta, stale)
-            meta["o2i_version"] = VERSION_STR
-            lb.write_lexicon(tsv.parent, tsv.stem, entries, meta)
+                print(f"  {word}\t{entries[word]}")
+            if kind == "patch" and args.write and stale:
+                meta = json.loads(meta_of(code).read_text(encoding="utf-8"))
+                for word in stale:
+                    del entries[word]
+                forget(meta, stale)
+                meta["o2i_version"] = VERSION_STR
+                lb.write_lexicon(tsv.parent, tsv.stem, entries, meta)
     if args.report:
         args.report.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n",
                                encoding="utf-8")
-    stale_total = sum(len(c["stale"]) for c in report["codes"].values())
-    return 1 if stale_total and not args.write else 0
+    stale = {kind: sum(len(c[kind]["stale"]) for c in report["codes"].values() if kind in c)
+             for kind in files}
+    if stale["exception"]:
+        print(f"{stale['exception']} exceptions are right under the rules, so their class "
+              f"is wrong; move each one by hand")
+    return 1 if stale["exception"] or (stale["patch"] and not args.write) else 0
 
 
 if __name__ == "__main__":

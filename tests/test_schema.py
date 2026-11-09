@@ -5,6 +5,7 @@ from o2i_lexicons.schema import REASON_CLASSES, validate_meta, validate_tsv
 
 def good_meta(**overrides):
     meta = {
+        "kind": "exception",
         "code": "en-GB",
         "source": "wikipron",
         "source_url": "https://example.org/eng_latn_uk_broad.tsv",
@@ -15,6 +16,7 @@ def good_meta(**overrides):
         "stress": "rules",
         "reasons": {"colonel": "unclassified", "nato": "acronym"},
         "reason_basis": {"acronym": "the source headword is all capitals"},
+        "citations": {"colonel": "no source read", "nato": "no source read"},
     }
     meta.update(overrides)
     return meta
@@ -124,3 +126,43 @@ def test_rules_stress_means_no_stress_mark_in_the_file():
     assert validate_meta(good_meta(), "en-GB", entries) == [
         "stress is 'rules' but 1 entries carry a stress mark, the first 'colonel'"]
     assert validate_meta(good_meta(stress="source"), "en-GB", entries) == []
+
+
+def good_patch_meta(**overrides):
+    meta = good_meta(kind="patch", gaps={"colonel": "lead: x", "nato": "o2i#1"})
+    del meta["citations"]
+    meta.update(overrides)
+    return meta
+
+
+def test_clean_patch_meta_has_no_problems():
+    assert validate_meta(good_patch_meta(), "en-GB", WORDS, kind="patch") == []
+
+
+def test_an_exception_sidecar_needs_citations_and_a_patch_sidecar_gaps():
+    assert validate_meta(good_patch_meta(), "en-GB", WORDS) == ["missing key: citations"]
+    assert validate_meta(good_meta(), "en-GB", WORDS, kind="patch") == ["missing key: gaps"]
+
+
+def test_the_kind_must_match_the_file():
+    meta = good_meta(gaps={"colonel": "o2i#1", "nato": "o2i#1"})
+    assert validate_meta(meta, "en-GB", WORDS, kind="patch") == [
+        "kind 'exception' does not match the patch file"]
+
+
+def test_every_exception_needs_a_citation_and_every_citation_a_word():
+    meta = good_meta(citations={"colonel": " ", "choir": "Carney p. 1"})
+    assert validate_meta(meta, "en-GB", WORDS) == [
+        "citations has no entry for 'colonel'",
+        "citations has no entry for 'nato'",
+        "citations names 'choir', which is not in the TSV file"]
+
+
+def test_every_patch_needs_a_gap():
+    meta = good_patch_meta(gaps={"colonel": "o2i#1"})
+    assert validate_meta(meta, "en-GB", WORDS, kind="patch") == ["gaps has no entry for 'nato'"]
+
+
+def test_an_empty_patch_file_is_valid():
+    meta = good_patch_meta(reasons={}, reason_basis={}, gaps={})
+    assert validate_meta(meta, "en-GB", {}, kind="patch") == []
