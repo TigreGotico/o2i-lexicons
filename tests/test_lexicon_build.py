@@ -336,6 +336,17 @@ def test_lisbon_prepalatal_vowel(rules, reading, lisbon):
     assert lb.lisbon_prepalatal_vowel(rules, reading, naive_align) is lisbon
 
 
+@pytest.mark.parametrize("rules, reading, lisbon", [
+    # velho, brecha: the rules give the close [e] before a palatal (o2i#2215).
+    # The Lisbon [ɐ] stays out, and the pt-PT [ɛ] is no Lisbon feature.
+    ("veʎu", "vɐʎu", True),
+    ("bɾeʃɐ", "bɾɐʃɐ", True),
+    ("bɾeʃɐ", "bɾɛʃɐ", False),
+])
+def test_the_lisbon_vowel_stays_out_where_the_rules_give_close_e(rules, reading, lisbon):
+    assert lb.lisbon_prepalatal_vowel(rules, reading, naive_align) is lisbon
+
+
 def test_pola_is_a_homograph():
     assert "pola" in lb.HOMOGRAPHS["pt-PT"]
 
@@ -591,6 +602,111 @@ def test_the_pt_pt_lexical_classes(word, rules, entry, expected):
 ])
 def test_anything_else_stays_out_of_the_pt_pt_classes(word, rules, entry):
     assert lb.lexical_class(word, rules, entry, pt_pt_form, lb.PT_PT_X_VALUES) is None
+
+
+def letter_lattice(readings, others=None):
+    """One lattice grapheme per letter: its reading in the rules' reading
+    *readings*, then the readings that *others* lists for it."""
+    others = others or {}
+    return [(i, i + 1, [reading, *others.get(i, "")]) for i, reading in enumerate(readings)]
+
+
+def never_learned(word, end):
+    return False
+
+
+def always_learned(word, end):
+    return True
+
+
+def pt_pt_class(word, rules, entry, readings, others, learned=never_learned):
+    slots = lb.vowel_slots(word, rules, letter_lattice(readings, others), pt_pt_form, learned)
+    return lb.lexical_class(word, rules, entry, pt_pt_form, lb.PT_PT_X_VALUES, slots)
+
+
+# Each entry is the Infopédia row in the spec's symbols. The lattice lists the
+# rules' readings of the vowel in rank order, as orthography2ipa 7.122.11a2 does.
+@pytest.mark.parametrize("word, rules, entry, readings, others, expected", [
+    # odrada oˈdradɐ: the rules rank [ɔ u o] for an unstressed initial ⟨o⟩
+    ("odrada", "ɔˈdɾadɐ", "oˈdɾadɐ", ["ɔ", "d", "ɾ", "a", "d", "ɐ"], {0: "uo"},
+     "unstressed initial ⟨o⟩"),
+    # honesto uˈnɛʃtu: the same vowel after a silent initial ⟨h⟩
+    ("honesto", "ɔˈnɛʃtu", "uˈnɛʃtu", ["", "ɔ", "n", "ɛ", "ʃ", "t", "u"], {1: "uo"},
+     "unstressed initial ⟨o⟩"),
+    # ebó eˈbɔ: the rules rank [i e ɛ] for an unstressed initial ⟨e⟩
+    ("ebó", "iˈbɔ", "eˈbɔ", ["i", "b", "ɔ"], {0: "eɛ"}, "unstressed initial ⟨e⟩"),
+    # golpada ɡɔɫˈpadɐ: an ⟨o⟩ before a coda ⟨l⟩
+    ("golpada", "ɡoɫˈpadɐ", "ɡɔɫˈpadɐ", ["ɡ", "o", "ɫ", "p", "a", "d", "ɐ"], {1: "ɔu"},
+     "unstressed vowel before a coda ⟨l⟩"),
+    # adactilia ɐdaktiˈliɐ: an ⟨a⟩ before a stop that closes the syllable
+    ("adactilia", "ɐdɐktiˈliɐ", "ɐdaktiˈliɐ", ["ɐ", "d", "ɐ", "k", "t", "i", "l", "i", "ɐ"],
+     {2: "a"}, "unstressed vowel before a coda stop"),
+])
+def test_an_unstressed_vowel_slot_is_a_lexical_class(word, rules, entry, readings, others,
+                                                     expected):
+    assert pt_pt_class(word, rules, entry, readings, others) == expected
+
+
+def test_a_vowel_where_ao90_dropped_a_consonant_is_a_lexical_class():
+    # ativo aˈtivu, pre-AO90 activo: Cunha & Cintra p. 53 keep the vowel of a
+    # learned word unreduced.
+    readings, others = ["ɐ", "t", "i", "v", "u"], {0: "a"}
+    assert pt_pt_class("ativo", "ɐˈtivu", "aˈtivu", readings, others,
+                       always_learned) == "unreduced learned vowel"
+    assert pt_pt_class("ativo", "ɐˈtivu", "aˈtivu", readings, others) is None
+
+
+@pytest.mark.parametrize("word, rules, entry, readings, others", [
+    # a second difference outside the slot: the final [ɔ] against [u]
+    ("ebó", "iˈbɔ", "eˈbu", ["i", "b", "ɔ"], {0: "eɛ", 2: "u"}),
+    # the Lisbon [ɐ] is no reading of ⟨e⟩ that the slot admits
+    ("ebó", "iˈbɔ", "ɐˈbɔ", ["i", "b", "ɔ"], {0: "eɛɐ"}),
+    # a value of the letter that the lattice does not rank there
+    ("golpada", "ɡoɫˈpadɐ", "ɡuɫˈpadɐ", ["ɡ", "o", "ɫ", "p", "a", "d", "ɐ"], {1: "ɔ"}),
+    # the stressed vowel before a coda ⟨l⟩ is no slot: alto ˈaɫtu
+    ("alto", "ˈaɫtu", "ˈɐɫtu", ["a", "ɫ", "t", "u"], {0: "ɐ"}),
+    # an ⟨a⟩ before a stop and ⟨r⟩: the stop starts the next syllable (abrir ɐˈbrir)
+    ("abrir", "ɐˈbɾiɾ", "aˈbɾiɾ", ["ɐ", "b", "ɾ", "i", "ɾ"], {0: "a"}),
+    # an initial ⟨o⟩ before a vowel letter
+    ("oeste", "ɔˈɛʃtɨ", "oˈɛʃtɨ", ["ɔ", "ɛ", "ʃ", "t", "ɨ"], {0: "uo"}),
+])
+def test_a_difference_outside_a_vowel_slot_is_no_class(word, rules, entry, readings, others):
+    assert pt_pt_class(word, rules, entry, readings, others) is None
+
+
+@pytest.mark.parametrize("word, rules, readings", [
+    ("ebó", "iˈbɔ", ["e", "b", "ɔ"]),      # the first grapheme reads apart
+    ("ebós", "iˈbɔʃ", ["i", "b", "ɔ"]),    # the lattice stops short of ⟨s⟩
+])
+def test_a_lattice_that_does_not_spell_the_rules_places_no_slot(word, rules, readings):
+    assert lb.vowel_slots(word, rules, letter_lattice(readings, {0: "eɛ"}),
+                          pt_pt_form, never_learned) == []
+
+
+@pytest.mark.parametrize("word, end, pre_ao90, headwords, dropped", [
+    ("ativo", 1, {"activo"}, set(), True),           # activo
+    ("adoção", 3, {"adopção"}, set(), True),         # adopção
+    ("direção", 4, {"direcção"}, set(), True),       # direcção
+    ("pato", 2, {"pacto"}, {"pacto"}, False),        # pacto is a word of its own
+    ("pato", 2, {"pacto", "pato"}, set(), False),    # so is pato
+    ("apagar", 1, {"acpagar"}, set(), False),        # no AO90 drop before ⟨p⟩
+])
+def test_ao90_dropped_consonant(word, end, pre_ao90, headwords, dropped):
+    assert lb.ao90_dropped_consonant(word, end, frozenset(pre_ao90),
+                                     frozenset(headwords)) is dropped
+
+
+def test_a_reading_with_two_primary_stresses_has_no_class():
+    # Infopédia maquimono mɐˈkiˈmonu shows no single stressed vowel.
+    assert lb.lexical_class("maquimono", "mɐkiˈmɔnu", "mɐˈkiˈmonu", pt_pt_form,
+                            lb.PT_PT_X_VALUES) is None
+
+
+@pytest.mark.parametrize("word", ["mesmo", "mesma", "mesmos", "mesmas"])
+def test_mesmo_is_a_demonstrative(word):
+    # Cunha & Cintra p. 343: "Podem também ser demonstrativos o (a, os, as),
+    # mesmo, próprio, semelhante e tal".
+    assert lb.closed_class_reason(word, lb.PT_DEMONSTRATIVES) == "closed class"
 
 
 def test_pt_br_reads_only_x_as_ks_by_word():

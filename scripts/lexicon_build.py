@@ -569,9 +569,146 @@ def _fold_stressed_mid_vowel(ipa: str) -> str:
     return unicodedata.normalize("NFC", "".join(out))
 
 
+@dataclass(frozen=True)
+class VowelSlot:
+    """An unstressed vowel of the rules' reading whose value the spelling does
+    not show. *start* and *end* index the reading without stress marks, in the
+    notation of the comparison. *values* holds the other readings of the vowel
+    that the slot admits."""
+    start: int
+    end: int
+    name: str
+    values: frozenset[str]
+
+
+#: The vowel letters of a spelling. Every other letter is a consonant letter.
+VOWEL_LETTERS = frozenset("aeiouyáéíóúâêôãõàü")
+
+#: The readings of an unstressed word-initial ⟨o⟩ and ⟨e⟩, as the pt-PT rules
+#: rank them (orthography2ipa#2204, #2206, #2208).
+INITIAL_VOWEL_VALUES = {"o": frozenset("ɔou"), "e": frozenset("ieɛ")}
+
+#: The full and the reduced readings of an unstressed ⟨a e o⟩.
+VOWEL_LETTER_VALUES = {"a": frozenset("aɐ"), "e": frozenset("ɛeɨ"), "o": frozenset("oɔu")}
+
+#: The stop letters, and the letters after a stop that make an onset cluster
+#: or a digraph with it.
+STOP_LETTERS = frozenset("pbtdcgk")
+_ONSET_AFTER_STOP = frozenset("lrh")
+
+#: The letters that AO90 removed after a vowel, and the letters before which
+#: it removed them (acção ação, adopção adoção, actor ator).
+AO90_SILENT_LETTERS = "cp"
+_AO90_NEXT_RE = re.compile(r"[tç]|c(?=[ei])")
+
+
+def _consonant_letter(ch: str) -> bool:
+    return ch.isalpha() and ch not in VOWEL_LETTERS
+
+
+def ao90_dropped_consonant(word: str, end: int, pre_ao90: frozenset[str],
+                           headwords: frozenset[str]) -> bool:
+    """Whether AO90 dropped a silent ⟨c p⟩ at *end* of *word*.
+
+    The pre-AO90 spelling with the letter put back must be in *pre_ao90*, and
+    it must not be a headword of the source: a headword spells a spoken
+    consonant (pacto beside pato, facto beside fato). *word* itself must not
+    be in *pre_ao90*, where it is a word of its own and not a new spelling.
+    """
+    if word in pre_ao90 or not _AO90_NEXT_RE.match(word, end):
+        return False
+    return any(form in pre_ao90 and form not in headwords
+               for form in (word[:end] + letter + word[end:] for letter in AO90_SILENT_LETTERS))
+
+
+def vowel_slot_name(word: str, start: int, end: int,
+                    learned: Callable[[str, int], bool]) -> Optional[str]:
+    """The class of the unstressed vowel spelled ``word[start:end]``, or ``None``.
+
+    - An initial ⟨o e⟩, or one after an initial ⟨h⟩, before a consonant letter:
+      the rules rank its readings, and the word decides (orelha [o], horror [u],
+      erguer [e]).
+    - An ⟨a e o⟩ before a coda ⟨l⟩: the rules give the full vowel (Cunha &
+      Cintra p. 53), and some words keep [ɐ ɨ u ɔ] (golpear [ɔ], polvorosa [u]).
+    - An ⟨a e o⟩ before a stop that closes the syllable (pacto, infetar): no
+      source gives the vowel.
+    - An ⟨a e o⟩ where AO90 dropped a silent ⟨c p⟩ (*learned*): Cunha & Cintra
+      p. 53 keep the vowel of a learned word unreduced (ator [a], direção [ɛ],
+      adoção [ɔ]), and no letter shows it now.
+    """
+    letter = word[start:end]
+    after, second = word[end:end + 1], word[end + 1:end + 2]
+    if letter in INITIAL_VOWEL_VALUES and word[:start] in ("", "h") and _consonant_letter(after):
+        return f"unstressed initial ⟨{letter}⟩"
+    if letter not in VOWEL_LETTER_VALUES:
+        return None
+    if after == "l" and (not second or (_consonant_letter(second) and second != "h")):
+        return "unstressed vowel before a coda ⟨l⟩"
+    if after in STOP_LETTERS and _consonant_letter(second) and second not in _ONSET_AFTER_STOP:
+        return "unstressed vowel before a coda stop"
+    if learned(word, end):
+        return "unreduced learned vowel"
+    return None
+
+
+def _stressed_index(marked: str) -> Optional[int]:
+    """The index of the stressed vowel of *marked* once its stress marks are
+    gone, or ``None`` when it marks no stress."""
+    text = marked.replace("ˌ", "")
+    mark = text.find("ˈ")
+    if mark < 0:
+        return None
+    rest = text[mark + 1:]
+    at = next((i for i, ch in enumerate(rest)
+               if unicodedata.normalize("NFD", ch)[0] in VOWELS), None)
+    return None if at is None else mark + at
+
+
+def vowel_slots(word: str, rules: str, lattice: list[tuple[int, int, list[str]]],
+                form: Callable[[str], str],
+                learned: Callable[[str, int], bool]) -> list[VowelSlot]:
+    """The unstressed vowel slots of the rules' reading *rules* of *word*.
+
+    *lattice* holds ``(start, end, readings)`` per grapheme of the engine's
+    lattice: the span of the grapheme in *word* and its readings in rank
+    order, the rules' reading first. A slot admits only the readings of its
+    vowel letter that the lattice also ranks there. When the first readings
+    do not spell *rules*, the graphemes cannot be placed, and there is no slot.
+    """
+    marked = form(rules)
+    stressed = _stressed_index(marked)
+    bare = unicodedata.normalize("NFC", marked.replace("ˈ", "").replace("ˌ", ""))
+    # A grapheme can read as a lone combining mark (the nasal tilde of ⟨in⟩),
+    # so each span is measured on the composed text up to its grapheme.
+    pieces, text, at = [], "", 0
+    for start, end, readings in lattice:
+        readings = [form(r) for r in readings]
+        text += readings[0] if readings else ""
+        end_at = len(unicodedata.normalize("NFC", text))
+        pieces.append((start, end, readings, (at, end_at)))
+        at = end_at
+    if stressed is None or unicodedata.normalize("NFC", text) != bare:
+        return []
+    slots = []
+    for start, end, readings, span in pieces:
+        top = readings[0] if readings else ""
+        if len(top) != 1 or bare[span[0]:span[1]] != top or span[0] == stressed:
+            continue
+        name = vowel_slot_name(word, start, end, learned)
+        if name is None:
+            continue
+        letter = word[start:end]
+        allowed = (INITIAL_VOWEL_VALUES[letter] if name.startswith("unstressed initial")
+                   else VOWEL_LETTER_VALUES[letter])
+        if top in allowed:
+            slots.append(VowelSlot(*span, name, frozenset(readings[1:]) & allowed - {top}))
+    return slots
+
+
 def lexical_class(word: str, rules: str, entry: str,
                   form: Callable[[str], str] = pt_br_form,
-                  x_values: frozenset[tuple[str, str]] = PT_BR_X_VALUES) -> Optional[str]:
+                  x_values: frozenset[tuple[str, str]] = PT_BR_X_VALUES,
+                  slots: Iterable[VowelSlot] = ()) -> Optional[str]:
     """The classes of lexical fact that alone separate *entry* from *rules*, or
     ``None`` when anything else differs.
 
@@ -582,21 +719,43 @@ def lexical_class(word: str, rules: str, entry: str,
     of the comparison, with the stress mark kept, and *x_values* holds the
     ``(rules, entry)`` pairs of ⟨x⟩ values that the language reads by word.
     Each changed ⟨x⟩ value needs its own ⟨x⟩ in the spelling.
+
+    *slots* are the unstressed vowels of *rules* whose value is lexical
+    (``vowel_slots``). A change of one such vowel to a value its slot admits
+    is the class of the slot. A reading with two primary stress marks
+    (ˈlũpɛktuˈmiɐ) shows no single stressed vowel, so it has no class.
     """
     def plain(ipa: str) -> str:
         return form(ipa).replace("ˈ", "")
 
-    def bare(ipa: str) -> str:
+    def bare(ipa: str) -> tuple[str, list[int]]:
+        """The compared text, and the index of each of its letters in the
+        reading without stress marks."""
         text = _fold_stressed_mid_vowel(form(ipa))
+        kept = list(range(len(text)))
         if _QU_GU_RE.search(word):
-            text = text.replace("kw", "k").replace("ɡw", "ɡ")
-        return text
+            kept = [i for i in kept if not (text[i] == "w" and i and text[i - 1] in "kɡ")]
+        return "".join(text[i] for i in kept), kept
 
-    if not same_stress(rules, entry):
+    def slot_class(i1: int, i2: int, j1: int, j2: int) -> Optional[str]:
+        if i2 - i1 != 1 or j2 - j1 != 1:
+            return None
+        at = where[i1]
+        return next((s.name for s in slots if s.start <= at < s.end and b[j1] in s.values), None)
+
+    if form(entry).count("ˈ") > 1 or not same_stress(rules, entry):
         return None
-    a, b = bare(rules), bare(entry)
-    changes = [(a[i1:i2], b[j1:j2]) for op, i1, i2, j1, j2
-               in SequenceMatcher(None, a, b, autojunk=False).get_opcodes() if op != "equal"]
+    (a, where), (b, _) = bare(rules), bare(entry)
+    slots = list(slots)
+    changes, slotted = [], set()
+    for op, i1, i2, j1, j2 in SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op == "equal":
+            continue
+        name = slot_class(i1, i2, j1, j2) if op == "replace" else None
+        if name is None:
+            changes.append((a[i1:i2], b[j1:j2]))
+        else:
+            slotted.add(name)
     if (any(change not in x_values for change in changes)
             or len(changes) > len(_X_BEFORE_VOWEL_RE.findall(word))):
         return None
@@ -606,6 +765,7 @@ def lexical_class(word: str, rules: str, entry: str,
     classes += sorted({f"⟨x⟩ as [{value}]" for _, value in changes})
     if re.findall("[kɡ]w", plain(entry)) != re.findall("[kɡ]w", plain(rules)):
         classes.append("⟨qu gu⟩ with [w]")
+    classes += sorted(slotted)
     return "+".join(classes) or None
 
 
@@ -858,12 +1018,14 @@ def other_reading_reason(rules: str, reading: str) -> Optional[str]:
 CLOSED_CLASS_POS = frozenset({"ADP", "CONJ", "CCONJ", "SCONJ", "DET", "PRON", "CONTR"})
 
 #: The demonstrative pronouns of Portuguese and their contractions with ⟨de em
-#: a⟩ (Cunha & Cintra p. 343). No row of portuguese_unified tags some of them.
+#: a⟩, and mesmo, which Cunha & Cintra name as a demonstrative too (p. 343).
+#: No row of portuguese_unified tags some of them.
 _DEMONSTRATIVES = ("este", "estes", "esta", "estas", "isto", "esse", "esses", "essa",
                    "essas", "isso", "aquele", "aqueles", "aquela", "aquelas", "aquilo")
 PT_DEMONSTRATIVES = frozenset(
     [prefix + word for word in _DEMONSTRATIVES for prefix in ("", "d", "n")]
-    + ["à" + word[1:] for word in _DEMONSTRATIVES if word.startswith("a")])
+    + ["à" + word[1:] for word in _DEMONSTRATIVES if word.startswith("a")]
+    + ["mesmo", "mesma", "mesmos", "mesmas"])
 
 #: An interjection spelled as a vowel letter and a silent ⟨h⟩ (ah, eh, oh): the
 #: source reads it as the name of the letter.

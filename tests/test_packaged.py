@@ -254,12 +254,35 @@ def test_the_pt_pt_lexicon_holds_no_demonstrative():
     assert pt_pt_entries().keys() & demonstratives == set()
 
 
+def test_the_pt_pt_lexicon_holds_the_unstressed_vowel_classes():
+    # The Infopédia rows, in the spec's symbols: orelhado orəˈʎadu, ebó eˈbɔ,
+    # golpada ɡɔɫˈpadɐ, adactilia ɐdaktiˈliɐ, ativo aˈtivu.
+    entries = pt_pt_entries()
+    classes = o2i_lexicons.load_meta("pt-PT")["lexical_classes"]
+    expected = {
+        "orelhado": ("oɾɨˈʎadu", "unstressed initial ⟨o⟩"),
+        "ebó": ("eˈbɔ", "unstressed initial ⟨e⟩"),
+        "golpada": ("ɡɔɫˈpadɐ", "unstressed vowel before a coda ⟨l⟩"),
+        "adactilia": ("ɐdaktiˈliɐ", "unstressed vowel before a coda stop"),
+        "ativo": ("aˈtivu", "unreduced learned vowel"),
+    }
+    assert {w: (entries.get(w), classes.get(w, {}).get("class")) for w in expected} == expected
+
+
+def test_the_pt_pt_lexicon_holds_no_mesmo():
+    # Cunha & Cintra p. 343 name mesmo as a demonstrative too.
+    assert pt_pt_entries().keys() & {"mesmo", "mesma", "mesmos", "mesmas"} == set()
+
+
+def test_no_pt_pt_entry_has_two_primary_stresses():
+    assert [w for w, ipa in pt_pt_entries().items() if ipa.count("ˈ") > 1] == []
+
+
 def test_the_pt_pt_lexicon_holds_no_word_that_a_cited_rule_reads():
     # Cunha & Cintra pp. 429-433 give the stem vowel of a rhizotonic verb form:
     # abordo, choro (lograr), achego (levar), corro (mover). A written accent
     # gives the height of cupé, and desvelo is in the bifonia homograph list.
-    # alterado aɫtəˈradu differs from the rules in an unstressed vowel, which
-    # is no lexical class.
+    # The rules read alterado aɫtəˈradu right.
     entries = pt_pt_entries()
     assert entries.keys() & {"abordo", "choro", "achego", "corro", "cupé", "desvelo",
                              "alterado"} == set()
