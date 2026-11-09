@@ -2,11 +2,12 @@
 
 The wheel of orthography2ipa does not hold ``scripts/benchmark.py``, which owns
 the gold loaders, the tiers and the scoring normalisation of the board. This
-module checks out ``scripts/`` and ``orthography2ipa/data/gold/`` from the git
-tag of the installed version, with a sparse, shallow clone of a few
-megabytes. The scoring here is then the scoring of the board for that exact
-version. The checkout holds none of the engine's Python files, so the
-installed engine is the one that is measured.
+module checks out ``scripts/``, ``orthography2ipa/data/gold/`` and the
+``ep_dialects`` sentences of ``tests/data/`` from the git tag of the installed
+version, with a sparse, shallow clone of a few megabytes. The scoring here is
+then the scoring of the board for that exact version. The checkout holds none
+of the engine's Python files, so the installed engine is the one that is
+measured.
 
 The checkout goes under ``<cache>/o2i-harness/<version>/``. Gold files are
 read from ``<cache>/gold/``, which may be a symlink to an existing benchmark
@@ -24,7 +25,8 @@ from types import ModuleType
 from orthography2ipa.version import VERSION_STR
 
 REPO = "https://github.com/TigreGotico/orthography2ipa.git"
-SPARSE_PATHS = ("/scripts/", "/orthography2ipa/data/gold/")
+SPARSE_PATHS = ("/scripts/", "/orthography2ipa/data/gold/",
+                "/tests/data/ep_dialect_sentences.csv")
 
 
 def harness_dir(cache: Path, version: str = VERSION_STR) -> Path:

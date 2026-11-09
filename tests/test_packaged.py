@@ -113,14 +113,14 @@ def test_the_pt_br_entries_use_the_spec_symbols():
 
 
 def test_the_pt_pt_entries_use_the_spec_symbols():
-    # Infopédia writes exame iˈzɐm(ə), rap ˈʀɛp and bisbilhotar bəʒbiʎuˈtar.
+    # Infopédia writes abete ɐˈbet(ə), rap ˈʀɛp and retrorso ʀəˈtrorsu.
     # The pt-PT spec writes the reduced vowel ɨ, the strong rhotic ʁ and the
     # tap ɾ, and the full form of an optional vowel.
     text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
     entries = dict(line.split("\t") for line in text.splitlines())
-    assert entries["exame"] == "iˈzɐmɨ"
+    assert entries["abete"] == "ɐˈbetɨ"
     assert entries["rap"] == "ˈʁɛp"
-    assert entries["bisbilhotar"] == "bɨʒbiʎuˈtaɾ"
+    assert entries["retrorso"] == "ʁɨˈtɾoɾsu"
     assert [w for w, ipa in entries.items() if set(ipa) & set("əʀr")] == []
 
 
@@ -201,3 +201,43 @@ def test_a_pt_pt_entry_may_end_a_nasal_diphthong_in_a_nasal_glide():
     text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
     entries = dict(line.split("\t") for line in text.splitlines())
     assert entries["proibição"] == "pɾuibiˈsɐ̃w̃"
+
+
+def pt_pt_entries():
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    return dict(line.split("\t") for line in text.splitlines())
+
+
+def test_the_pt_pt_lexicon_holds_the_lexical_classes():
+    # The Infopédia rows, in the spec's symbols: acetona ɐsəˈtonɐ, exógamo
+    # eˈzɔɡɐmu, próximo ˈprɔsimu, táxi ˈtaksi, cinquenta sĩˈkwẽtɐ.
+    entries = pt_pt_entries()
+    assert entries["acetona"] == "ɐsɨˈtonɐ"
+    assert entries["exógamo"] == "eˈzɔɡɐmu"
+    assert entries["próximo"] == "ˈpɾɔsimu"
+    assert entries["táxi"] == "ˈtaksi"
+    assert entries["cinquenta"] == "sĩˈkwẽtɐ"
+
+
+def test_a_pt_pt_class_word_needs_no_second_source():
+    # No WikiPron or pt.wiktionary reading agrees with Infopédia exógamo
+    # eˈzɔɡɐmu or codorna kuˈdornɐ, and both are entries. The sidecar keeps
+    # the class and the result of the second-source test of each such entry.
+    entries = pt_pt_entries()
+    classes = o2i_lexicons.load_meta("pt-PT")["lexical_classes"]
+    assert classes["exógamo"] == {"class": "⟨x⟩ as [z]", "second_source": "no second source"}
+    assert classes["codorna"] == {"class": "stressed mid vowel",
+                                  "second_source": "no second source"}
+    assert entries["codorna"] == "kuˈdoɾnɐ"
+    assert set(classes) <= set(entries)
+
+
+def test_the_pt_pt_lexicon_holds_no_word_that_a_cited_rule_reads():
+    # Cunha & Cintra pp. 429-433 give the stem vowel of a rhizotonic verb form:
+    # abordo, choro (lograr), achego (levar), corro (mover). A written accent
+    # gives the height of cupé, and desvelo is in the bifonia homograph list.
+    # alterado aɫtəˈradu differs from the rules in an unstressed vowel, which
+    # is no lexical class.
+    entries = pt_pt_entries()
+    assert entries.keys() & {"abordo", "choro", "achego", "corro", "cupé", "desvelo",
+                             "alterado"} == set()

@@ -558,6 +558,70 @@ def test_anything_else_stays_out_of_the_lexical_classes(word, rules, entry):
     assert lb.lexical_class(word, rules, entry) is None
 
 
+def test_a_height_outside_the_stressed_vowel_is_not_lexical():
+    # The open pretonic [ɛ] of texano is not the height of the stressed vowel.
+    assert lb.lexical_class("texano", "teˈʃɐ̃nu", "tɛˈksɐ̃nu") is None
+    assert lb.lexical_class("sete", "ˈsetɛ", "ˈsɛte") is None
+
+
+def pt_pt_form(ipa):
+    """The Infopédia readings below are in the spec's symbols already."""
+    return ipa
+
+
+# Each entry is the Infopédia row in the spec's symbols (ə -> ɨ, r -> ɾ).
+@pytest.mark.parametrize("word, rules, entry, expected", [
+    ("acetona", "ɐsɨˈtɔnɐ", "ɐsɨˈtonɐ", "stressed mid vowel"),       # ɐsəˈtonɐ
+    ("abeto", "ɐˈbɛtu", "ɐˈbetu", "stressed mid vowel"),             # ɐˈbetu
+    ("táxi", "ˈtaʃi", "ˈtaksi", "⟨x⟩ as [ks]"),                      # ˈtaksi
+    ("exógamo", "eˈʃɔɡɐmu", "eˈzɔɡɐmu", "⟨x⟩ as [z]"),               # eˈzɔɡɐmu
+    ("próximo", "ˈpɾɔʃimu", "ˈpɾɔsimu", "⟨x⟩ as [s]"),               # ˈprɔsimu
+    ("cinquenta", "sĩˈkẽtɐ", "sĩˈkwẽtɐ", "⟨qu gu⟩ with [w]"),        # sĩˈkwẽtɐ
+    ("aguentar", "ɐɡẽˈtaɾ", "ɐɡwẽˈtaɾ", "⟨qu gu⟩ with [w]"),         # ɐɡwẽˈtar
+])
+def test_the_pt_pt_lexical_classes(word, rules, entry, expected):
+    assert lb.lexical_class(word, rules, entry, pt_pt_form, lb.PT_PT_X_VALUES) == expected
+
+
+@pytest.mark.parametrize("word, rules, entry", [
+    ("alterado", "ɐɫtɨˈɾadu", "aɫtɨˈɾadu"),     # aɫtəˈradu: an unreduced pretonic vowel
+    ("colete", "koˈlɛtɨ", "kɔˈletɨ"),           # a second height, on an unstressed vowel
+    ("exclamar", "ɨʃklɐˈmaɾ", "ɨsklɐˈmaɾ"),     # ⟨x⟩ before a consonant is a coda
+    ("fixos", "ˈfiʃuʃ", "ˈfiksus"),             # one ⟨x⟩ cannot change twice
+])
+def test_anything_else_stays_out_of_the_pt_pt_classes(word, rules, entry):
+    assert lb.lexical_class(word, rules, entry, pt_pt_form, lb.PT_PT_X_VALUES) is None
+
+
+def test_pt_br_reads_only_x_as_ks_by_word():
+    # pt-BR takes only [ks] for the rules' [ʃ] as a lexical value of ⟨x⟩.
+    assert lb.lexical_class("próximo", "ˈpɾɔʃimu", "ˈpɾɔsimu") is None
+
+
+def test_pt_pt_has_no_nasal_closing_rule():
+    # fome is [ˈfɔmɨ] in pt-PT; BR_NASAL_STRESSED is a pt-BR rule.
+    assert lb.cited_rule_reason("fome", "ˈfɔmɨ", frozenset(), nasal_closes=False) is None
+    assert lb.cited_rule_reason("fome", "ˈfɔmi", frozenset()) is not None
+
+
+# Cunha & Cintra pp. 429-433 give the stem vowel of these verb forms.
+@pytest.mark.parametrize("word, headwords, infinitive", [
+    ("rogo", {"rogar"}, "rogar"),        # lograr: rogo [ɔ]
+    ("rogue", {"rogar"}, "rogar"),       # the subjunctive spells ⟨gu⟩
+    ("toque", {"tocar"}, "tocar"),
+    ("levas", {"levar"}, "levar"),       # levar: levas [ɛ]
+    ("voo", {"voar"}, "voar"),           # -oar: voo [o]
+    ("corro", {"correr"}, "correr"),     # mover: corro [o], corres [ɔ]
+    ("deves", {"dever"}, "dever"),
+    ("conheço", {"conhecer"}, "conhecer"),
+    ("canto", {"cantar"}, None),         # the stem vowel is ⟨a⟩
+    ("pernoito", {"pernoitar"}, None),   # ⟨oi⟩ is a diphthong
+    ("rogo", set(), None),               # no such infinitive
+])
+def test_a_rhizotonic_verb_form_has_its_vowel_by_rule(word, headwords, infinitive):
+    assert lb.rhizotonic_verb_form(word, frozenset(headwords)) == infinitive
+
+
 def test_a_w_that_the_spelling_cannot_hide_is_not_lexical():
     # ⟨qua⟩ always has [w], so [k] against [kw] there is no ⟨qu gu⟩ fact
     assert lb.lexical_class("quatro", "ˈkatɾu", "ˈkwatɾu") is None
