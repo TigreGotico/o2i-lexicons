@@ -22,7 +22,7 @@ classifiers = [
 
 [project.optional-dependencies]
 # The build scripts read the prefix seams of silabificador.morphology.
-test = ["pytest", "silabificador>=2.1.1a5"]
+test = ["pytest", "silabificador>=2.1.2a1"]
 
 [project.urls]
 Homepage = "https://github.com/TigreGotico/o2i-lexicons"
