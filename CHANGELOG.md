@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.5.0a2) (2026-11-09)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.5.0a1...0.5.0a2)
+
+**Merged pull requests:**
+
+- fix: prune entries the rules now get right [\#24](https://github.com/TigreGotico/o2i-lexicons/pull/24) ([github-actions[bot]](https://github.com/apps/github-actions))
+
 ## [0.5.0a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.5.0a1) (2026-11-09)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.4.1a1...0.5.0a1)
