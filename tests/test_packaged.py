@@ -113,14 +113,14 @@ def test_the_pt_br_entries_use_the_spec_symbols():
 
 
 def test_the_pt_pt_entries_use_the_spec_symbols():
-    # Infopédia writes exame iˈzɐm(ə), rap ˈʀɛp and bisbilhotar bəʒbiʎuˈtar.
+    # Infopédia writes abete ɐˈbet(ə), rap ˈʀɛp and retrorso ʀəˈtrorsu.
     # The pt-PT spec writes the reduced vowel ɨ, the strong rhotic ʁ and the
     # tap ɾ, and the full form of an optional vowel.
     text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
     entries = dict(line.split("\t") for line in text.splitlines())
-    assert entries["exame"] == "iˈzɐmɨ"
+    assert entries["abete"] == "ɐˈbetɨ"
     assert entries["rap"] == "ˈʁɛp"
-    assert entries["bisbilhotar"] == "bɨʒbiʎuˈtaɾ"
+    assert entries["retrorso"] == "ʁɨˈtɾoɾsu"
     assert [w for w, ipa in entries.items() if set(ipa) & set("əʀr")] == []
 
 
@@ -201,3 +201,65 @@ def test_a_pt_pt_entry_may_end_a_nasal_diphthong_in_a_nasal_glide():
     text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
     entries = dict(line.split("\t") for line in text.splitlines())
     assert entries["proibição"] == "pɾuibiˈsɐ̃w̃"
+
+
+def pt_pt_entries():
+    text = o2i_lexicons.tsv_path("pt-PT").read_text(encoding="utf-8")
+    return dict(line.split("\t") for line in text.splitlines())
+
+
+def test_the_pt_pt_lexicon_holds_the_lexical_classes():
+    # The Infopédia rows, in the spec's symbols: acetona ɐsəˈtonɐ, exógamo
+    # eˈzɔɡɐmu, próximo ˈprɔsimu, táxi ˈtaksi, cinquenta sĩˈkwẽtɐ.
+    entries = pt_pt_entries()
+    assert entries["acetona"] == "ɐsɨˈtonɐ"
+    assert entries["exógamo"] == "eˈzɔɡɐmu"
+    assert entries["próximo"] == "ˈpɾɔsimu"
+    assert entries["táxi"] == "ˈtaksi"
+    assert entries["cinquenta"] == "sĩˈkwẽtɐ"
+
+
+def test_a_pt_pt_class_word_needs_no_second_source():
+    # No WikiPron or pt.wiktionary reading agrees with Infopédia exógamo
+    # eˈzɔɡɐmu or abelota ɐbɨˈlotɐ, and both are entries. The sidecar keeps
+    # the class and the result of the second-source test of each such entry.
+    entries = pt_pt_entries()
+    classes = o2i_lexicons.load_meta("pt-PT")["lexical_classes"]
+    assert classes["exógamo"] == {"class": "⟨x⟩ as [z]", "second_source": "no second source"}
+    assert classes["abelota"] == {"class": "stressed mid vowel",
+                                  "second_source": "no second source"}
+    assert entries["abelota"] == "ɐbɨˈlotɐ"
+    assert set(classes) <= set(entries)
+
+
+def test_the_pt_pt_lexicon_drops_a_class_word_a_second_source_reads_as_the_rules_do():
+    # WikiPron or pt.wiktionary gives the rules' reading of each of these words
+    # and Infopédia gives another one. One source against one does not settle
+    # the word, so the rules keep it.
+    conflicts = {"ameba", "anguiforme", "anguiliforme", "anguípede", "bancarrota", "bauxite",
+                 "bixina", "cairota", "codorna", "cunete", "eba", "longinquidade",
+                 "patinete", "rolete", "sanguento", "saragoça", "sestro", "tormentelo"}
+    meta = o2i_lexicons.load_meta("pt-PT")
+    assert pt_pt_entries().keys() & conflicts == set()
+    assert meta["lexical_classes"].keys() & conflicts == set()
+
+
+def test_the_pt_pt_lexicon_holds_no_demonstrative():
+    # Cunha & Cintra p. 343 list the demonstratives and their contractions with
+    # ⟨de em a⟩. They are a closed class, and stress in the sentence sets
+    # their vowel.
+    demonstratives = {"este", "esta", "esse", "essa", "aquele", "aquela", "isto", "isso",
+                      "aquilo", "deste", "desta", "neste", "nesta", "daquele", "naquele",
+                      "àquele", "àquela"}
+    assert pt_pt_entries().keys() & demonstratives == set()
+
+
+def test_the_pt_pt_lexicon_holds_no_word_that_a_cited_rule_reads():
+    # Cunha & Cintra pp. 429-433 give the stem vowel of a rhizotonic verb form:
+    # abordo, choro (lograr), achego (levar), corro (mover). A written accent
+    # gives the height of cupé, and desvelo is in the bifonia homograph list.
+    # alterado aɫtəˈradu differs from the rules in an unstressed vowel, which
+    # is no lexical class.
+    entries = pt_pt_entries()
+    assert entries.keys() & {"abordo", "choro", "achego", "corro", "cupé", "desvelo",
+                             "alterado"} == set()

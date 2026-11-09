@@ -10,6 +10,7 @@ import re
 import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass, field
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
@@ -543,40 +544,78 @@ def michaelis_agrees(rules: str, entry: str, readings: Iterable[str]) -> bool:
 #: A ⟨qu gu⟩ before ⟨e i⟩, where the spelling cannot show whether [w] follows.
 _QU_GU_RE = re.compile(r"[qg][uü][eiéíêî]")
 
+#: An ⟨x⟩ before a vowel letter or at the end of the word. Before a consonant
+#: ⟨x⟩ is a coda sibilant, which a rule reads.
+_X_BEFORE_VOWEL_RE = re.compile(r"x(?=[aeiouáéíóúâêôãõày]|$)")
 
-def lexical_class(word: str, rules: str, entry: str) -> Optional[str]:
+#: The ``(rules, entry)`` pairs of ⟨x⟩ values that are lexical. In pt-BR it is
+#: [ks] where the rules read [ʃ] (táxi, fixo). In pt-PT any of the four values
+#: [ʃ ks z s] can stand for the other (xadrez, táxi, exame, próximo).
+PT_BR_X_VALUES = frozenset({("ʃ", "ks")})
+PT_PT_X_VALUES = frozenset((a, b) for a in ("ʃ", "ks", "z", "s")
+                           for b in ("ʃ", "ks", "z", "s") if a != b)
+
+
+def _fold_stressed_mid_vowel(ipa: str) -> str:
+    """*ipa* with the height of its stressed mid vowel folded, and no stress mark."""
+    out, marked = [], False
+    for ch in unicodedata.normalize("NFD", ipa):
+        if ch == "ˈ":
+            marked = True
+            continue
+        if marked and ch in VOWELS:
+            ch, marked = MID_VOWEL_FOLD.get(ch, ch), False
+        out.append(ch)
+    return unicodedata.normalize("NFC", "".join(out))
+
+
+def lexical_class(word: str, rules: str, entry: str,
+                  form: Callable[[str], str] = pt_br_form,
+                  x_values: frozenset[tuple[str, str]] = PT_BR_X_VALUES) -> Optional[str]:
     """The classes of lexical fact that alone separate *entry* from *rules*, or
     ``None`` when anything else differs.
 
     The spelling does not show the height of a stressed mid vowel (o2i#1824),
-    whether ⟨x⟩ is [ks] (táxi, fixo), or whether ⟨qu gu⟩ before ⟨e i⟩ has [w]
-    (frequente). So a word that differs in these only is a residual word and
-    not a rule lead.
+    the value of an ⟨x⟩ before a vowel (táxi, fixo), or whether ⟨qu gu⟩ before
+    ⟨e i⟩ has [w] (frequente). So a word that differs in these only is a
+    residual word and not a rule lead. *form* puts a reading in the notation
+    of the comparison, with the stress mark kept, and *x_values* holds the
+    ``(rules, entry)`` pairs of ⟨x⟩ values that the language reads by word.
+    Each changed ⟨x⟩ value needs its own ⟨x⟩ in the spelling.
     """
+    def plain(ipa: str) -> str:
+        return form(ipa).replace("ˈ", "")
+
     def bare(ipa: str) -> str:
-        text = "".join(MID_VOWEL_FOLD.get(c, c) for c in _plain(ipa))
-        if "x" in word:
-            text = text.replace("ks", "ʃ")
+        text = _fold_stressed_mid_vowel(form(ipa))
         if _QU_GU_RE.search(word):
             text = text.replace("kw", "k").replace("ɡw", "ɡ")
         return text
 
-    if not same_stress(rules, entry) or bare(rules) != bare(entry):
+    if not same_stress(rules, entry):
+        return None
+    a, b = bare(rules), bare(entry)
+    changes = [(a[i1:i2], b[j1:j2]) for op, i1, i2, j1, j2
+               in SequenceMatcher(None, a, b, autojunk=False).get_opcodes() if op != "equal"]
+    if (any(change not in x_values for change in changes)
+            or len(changes) > len(_X_BEFORE_VOWEL_RE.findall(word))):
         return None
     classes = []
     if stressed_vowel(rules) != stressed_vowel(entry):
         classes.append("stressed mid vowel")
-    if _plain(entry).count("ks") > _plain(rules).count("ks"):
-        classes.append("⟨x⟩ as [ks]")
-    if re.findall("[kɡ]w", _plain(entry)) != re.findall("[kɡ]w", _plain(rules)):
+    classes += sorted({f"⟨x⟩ as [{value}]" for _, value in changes})
+    if re.findall("[kɡ]w", plain(entry)) != re.findall("[kɡ]w", plain(rules)):
         classes.append("⟨qu gu⟩ with [w]")
     return "+".join(classes) or None
 
 
-def cited_rule_reason(word: str, entry: str, listed: frozenset[str]) -> Optional[str]:
-    """The cited pt-BR rule that decides the height of the stressed vowel of
-    *word*, or ``None``. *listed* holds the words of the height rules ``PT_LEX_CLOSE_*``
-    and ``PT_LEX_OPEN_*``.
+def cited_rule_reason(word: str, entry: str, listed: frozenset[str],
+                      nasal_closes: bool = True) -> Optional[str]:
+    """The cited rule that decides the height of the stressed vowel of *word*,
+    or ``None``. *listed* holds the words of the height rules ``PT_LEX_CLOSE_*``
+    and ``PT_LEX_OPEN_*``. *nasal_closes* is true for pt-BR, where
+    ``BR_NASAL_STRESSED`` closes a stressed vowel before a nasal. pt-PT has no
+    such rule (fome [ˈfɔmɨ]).
 
     A word under such a rule stays a lead: the spec settles it, so a source
     that disagrees is a question for the spec and not an entry.
@@ -585,8 +624,57 @@ def cited_rule_reason(word: str, entry: str, listed: frozenset[str]) -> Optional
         return "a PT_LEX height rule lists the word"
     if re.search("[éêóô]", word):
         return "a written accent gives the height"
-    if re.search("[ɛɔ](?:[mnɲ]|\u0303)", unicodedata.normalize("NFD", entry)):
+    if nasal_closes and re.search("[ɛɔ](?:[mnɲ]|\u0303)", unicodedata.normalize("NFD", entry)):
         return "BR_NASAL_STRESSED closes a vowel before a nasal"
+    return None
+
+
+#: The rhizotonic present forms of the first and second conjugations: the
+#: infinitive ending, and the endings of the present indicative and subjunctive
+#: whose stress falls on the stem.
+RHIZOTONIC_ENDINGS = (
+    ("ar", ("as", "am", "es", "em", "o", "a", "e")),    # levo, leve
+    ("er", ("as", "am", "es", "em", "o", "a", "e")),    # devo, deves, deva
+)
+
+#: A stem before the ending and the infinitive stem it is spelled from, per
+#: infinitive ending: rogue, toque, comece (rogar, tocar, começar); conheço,
+#: proteja (conhecer, proteger).
+STEM_SPELLINGS = {
+    "ar": (("qu", "c"), ("gu", "g"), ("c", "ç")),
+    "er": (("ç", "c"), ("j", "g")),
+}
+
+#: The last vowel letters of a stem, and the consonants after them. A stem
+#: can end in its vowel: voo, of voar.
+_STEM_VOWEL_RE = re.compile(r"([aeiouáéíóúâêôãõ]+)[^aeiouáéíóúâêôãõ]*$")
+
+
+def rhizotonic_verb_form(word: str, headwords: frozenset[str]) -> Optional[str]:
+    """The infinitive of which *word* is a rhizotonic present form, when the
+    stressed stem vowel is a single ⟨e⟩ or ⟨o⟩, or ``None``.
+
+    Cunha & Cintra (pp. 429-433) give that vowel for every verb of the first
+    and second conjugations. It is open in each rhizotonic form of the models
+    levar and lograr (levo [ɛ], logro [ɔ]). In the models dever and mover it is
+    close in the first person singular and in the subjunctive (devo, deva) and
+    open in the other forms (deves, move). The exceptions are stated by class.
+    A noun or an adjective with the same spelling can have the other height
+    (rogo, gosto), so a lexicon entry cannot stand for every use of the word.
+    *headwords* holds the headwords of the source, the infinitives among them.
+    """
+    for infinitive, endings in RHIZOTONIC_ENDINGS:
+        for ending in endings:
+            stem = word[:-len(ending)]
+            if not word.endswith(ending) or len(stem) < 2:
+                continue
+            stems = [stem] + [stem[:-len(spelled)] + base
+                              for spelled, base in STEM_SPELLINGS[infinitive]
+                              if stem.endswith(spelled)]
+            for base in stems:
+                vowel = _STEM_VOWEL_RE.search(base)
+                if vowel and vowel[1] in ("e", "o") and base + infinitive in headwords:
+                    return base + infinitive
     return None
 
 
@@ -768,6 +856,14 @@ def other_reading_reason(rules: str, reading: str) -> Optional[str]:
 #: The Universal Dependencies closed-class tags that portuguese_unified writes,
 #: and its tag for a contraction (do = de + o).
 CLOSED_CLASS_POS = frozenset({"ADP", "CONJ", "CCONJ", "SCONJ", "DET", "PRON", "CONTR"})
+
+#: The demonstrative pronouns of Portuguese and their contractions with ⟨de em
+#: a⟩ (Cunha & Cintra p. 343). No row of portuguese_unified tags some of them.
+_DEMONSTRATIVES = ("este", "estes", "esta", "estas", "isto", "esse", "esses", "essa",
+                   "essas", "isso", "aquele", "aqueles", "aquela", "aquelas", "aquilo")
+PT_DEMONSTRATIVES = frozenset(
+    [prefix + word for word in _DEMONSTRATIVES for prefix in ("", "d", "n")]
+    + ["à" + word[1:] for word in _DEMONSTRATIVES if word.startswith("a")])
 
 #: An interjection spelled as a vowel letter and a silent ⟨h⟩ (ah, eh, oh): the
 #: source reads it as the name of the letter.

@@ -80,10 +80,14 @@ The build compares the rules with the mapped reading, so a word whose only diffe
 
 Each token of an entry must be in the spec's token inventory. A nasal glide after a nasal vowel counts as inside it when the spec emits that glide in a nasal diphthong (mãe `ˈmɐ̃j̃`), so proibição `pɾuibiˈsɐ̃w̃` can be an entry. `build_lexicon.py --excluded` lists each reading and headword that the build leaves out, with the reason.
 
-A word that the rules get wrong, and that no lead holds out, must pass four more tests before it becomes a pt-PT entry. `build_lexicon.py --screened` lists each word with the test it fails, or with the sources that agree with it.
+Three kinds of word are residual words in pt-PT too, because the spelling cannot show the fact: the height of a stressed mid vowel (orthography2ipa#1824), the value of an ⟨x⟩ before a vowel or at the end of a word ([ʃ] xadrez, [ks] táxi, [z] exame, [s] próximo), and ⟨qu gu⟩ with [w] before ⟨e i⟩ (cinquenta). `lexical_class` finds a word that differs from the rules in these only, and that word never joins a lead. The comparison keeps every difference that the board scores, so a word that also differs in an unstressed vowel is not a residual word. An unreduced unstressed vowel in a learned word (actor [a], adopção [ɔ]) is no class: the words with that difference fall into large spelling patterns, such as a vowel before a coda ⟨l⟩ or the first part of a compound, which are rule leads.
+
+A word under a cited rule stays a lead: a word that a `PT_LEX_CLOSE_*` or `PT_LEX_OPEN_*` rule lists, a written accent, and a rhizotonic present form of a verb of the first or second conjugation with ⟨e⟩ or ⟨o⟩ in the stem. Cunha & Cintra (pp. 429-433) give the stem vowel of such a form by the models levar, lograr, dever and mover and their stated exceptions, and a noun with the same spelling can have the other height (rogo, gosto). `lexicon_build.rhizotonic_verb_form` finds the form when the source holds its infinitive.
+
+A word that the rules get wrong, and that no lead holds out, must pass four more tests before it becomes a pt-PT entry. A residual word must pass the first three tests only, and it is out when no source agrees with it and pt.wiktionary or WikiPron pt-PT gives the rules' reading: one source against one does not settle the word, so the rules keep it. `build_lexicon.py --screened` lists each word with the test it fails, or with the sources that agree with it. The sidecar field `lexical_classes` names each residual entry, its class, and the second sources that agree with it, or `no second source`.
 
 1. The reading is of the same headword. An Infopédia row can transcribe a neighbouring headword or a cut reading. The first syllable must start with a consonant of the same class, and the consonants differ by at most one edit plus one per four consonants. The syllable count is the same, or differs by one where a vowel deletes or a glide forms. The reading ends on the same consonant class and keeps a final coda. This test also drops some correct loanwords, such as *kiwi* and *pipeline*.
-2. The word is not a one-letter headword, an interjection spelled as a vowel and ⟨h⟩ (*ah*, *eh*, *oh*), a closed-class word, or a homograph with two readings by sense (*pola*: the archaic contraction [pulɐ] and the noun [ˈpɔlɐ]), because the lexicon cannot choose by context. A dictionary reads these as a letter name or a stressed citation form, which would replace the reduced article *o* [u] in every sentence. A closed-class word is one that the spec reads unstressed (`stress.cliticless_words`), or that a row of the dataset tags as a preposition, conjunction, determiner, pronoun or contraction.
+2. The word is not a one-letter headword, an interjection spelled as a vowel and ⟨h⟩ (*ah*, *eh*, *oh*), a closed-class word, or a homograph with two readings by sense (*pola*: the archaic contraction [pulɐ] and the noun [ˈpɔlɐ]), because the lexicon cannot choose by context. A word in the bifonia list of heterophonic homographs is out for the same reason. A dictionary reads these as a letter name or a stressed citation form, which would replace the reduced article *o* [u] in every sentence. A closed-class word is one that the spec reads unstressed (`stress.cliticless_words`), or that a row of the dataset tags as a preposition, conjunction, determiner, pronoun or contraction, or a demonstrative or its contraction with ⟨de em a⟩ (Cunha & Cintra p. 343: *esta*, *neste*, *daquele*).
 3. The only difference from the rules is not an open orthography2ipa defect, such as ⟨ã⟩ read [ã] (*afã*, *fã*). Such an entry would hide the defect. `lexicon_build.OPEN_RULE_BUGS` lists each defect by its issue number. A reading that a hand check found wrong is also left out (`lexicon_build.KNOWN_SOURCE_DEFECTS`), and so is a reading with the Lisbon [ɐ] before a palatal or a Lisbon [ɐj] that has no pt-PT [ej].
 4. A second source gives the same reading: a hand-typed pt.wiktionary reading for European Portuguese or with no region, or WikiPron pt-PT where it gives the word exactly one reading. A dataset row merged from Infopédia and pt.wiktionary repeats the Infopédia reading, so its agreement is recorded, but it keeps no entry on its own. WikiPron pt comes from the en.wiktionary `{{pt-IPA}}` template, which lists several variants for many words, and a match against one of them is no evidence. The Lisbon reading of the Portal da Língua Portuguesa is generator output: its agreement is recorded, but it keeps no entry on its own. The stress is compared only where both readings mark it, and WikiPron marks none.
 
@@ -93,18 +97,19 @@ The scripts run the installed orthography2ipa. They score with the board harness
 
 ```bash
 python scripts/build_lexicon.py en-GB wikipron --report build-report.json
-python scripts/build_lexicon.py pt-PT infopedia --report build-report.json
+python scripts/build_lexicon.py pt-PT infopedia --homographs heterophonic_homographs.csv \
+    --report build-report.json
 python scripts/build_lexicon.py pt-BR nilc --nilc unitex_sample_transcribed.txt \
     --michaelis entries.jsonl --homographs heterophonic_homographs.csv \
     --report build-report.json
 python scripts/measure.py en-GB ipadict:en-GB cmudict:en
-python scripts/measure.py pt-PT wikipron:pt-PT
+python scripts/measure.py pt-PT ep_dialects:pt-PT wikipron:pt-PT
 python scripts/prune_check.py
 ```
 
 `build_lexicon.py` keeps a word only when the rules get it wrong under the board's scoring. Words that share a spelling pattern and the same error at it form a lead. A lead is a question for the linguistic literature, not a rule. Its words stay out of the lexicon until a cited source states a rule for the pattern, or states that the pattern is lexical. The build report lists each lead.
 
-`measure.py` scores a lexicon on a gold from a different source, with the rules only and with the lexicon. It refuses the gold that supplied the lexicon, and the board dataset that holds that gold. The pt-PT screen keeps only the entries that a second source corroborates, WikiPron pt-PT among them, so a pt-PT measure on WikiPron is not independent of the selection.
+`measure.py` scores a lexicon on a gold from a different source, with the rules only and with the lexicon. It refuses the gold that supplied the lexicon, and the board dataset that holds that gold. The pt-PT screen keeps the entries outside the residual classes only when a second source corroborates them, WikiPron pt-PT among them, so a pt-PT measure on WikiPron is not independent of the selection. The residual entries that WikiPron does not corroborate are independent of it. `ep_dialects` is a small expert-human set of European Portuguese sentences that no build reads.
 
 `prune_check.py` exits with status 1 when the rules alone now get an entry right. CI runs it on each pull request, and a weekly job removes the stale entries and opens a draft pull request.
 
