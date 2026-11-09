@@ -882,3 +882,23 @@ def test_the_build_writes_the_mark_before_the_onset():
                        "sublocam": "subˈlɔkɐ̃w̃", "cat": "kæt"}
     assert counts == {"moved": 2, "same": 1, "seam": 1, "kept": 1}
     assert seam == ["sublocam"]
+
+
+# Roach 2004, JIPA 34(2): no r-coloured vowel in the RP inventory (p. 243),
+# and /r/ before a vowel only in the phonemic transcription (p. 244). The
+# words are those of the transcription, in WikiPron notation.
+@pytest.mark.parametrize("reading, segment", [
+    ("n ɔː θ", None),                      # north
+    ("m ɔː", None),                        # more
+    ("s t ɹ ɒ ŋ ɡ ə", None),               # stronger, before a pause
+    ("ə ɹ aʊ n d", None),                  # around
+    ("s t ɹ ɒ ŋ ɡ ɹ̩ ə v", None),          # stronger of: a syllabic /r/ before a vowel
+    ("n ɔː ɹ θ", "ɹ"),                     # /r/ before a consonant
+    ("m ɔː ɹ", "ɹ"),                       # /r/ at the end of the word
+    ("s t ɹ ɒ ŋ ɡ ɹ̩", "ɹ̩"),               # a final syllabic /r/
+    ("f ɝ s t", "ɝ"),                      # an r-coloured vowel
+    ("s t ɹ ɒ ŋ ɡ ɚ", "ɚ"),
+    ("f ɜ˞ s t", "ɜ˞"),
+])
+def test_rhotic_segment(reading, segment):
+    assert lb.rhotic_segment(reading) == segment
