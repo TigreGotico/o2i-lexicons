@@ -78,6 +78,10 @@ of Michaelis and pt.wiktionary that the file lacks.
 
 The gold must sit on a tier that can gate a quality decision in
 orthography2ipa. A silver set or a competitor's output is refused.
+
+The build sorts each entry into an exception or a patch (``entry_kinds``) and
+writes the exceptions under ``<out>/<code>/`` and the patches under
+``<out>/patches/<code>/``. Each kind gets a file, which can be empty.
 """
 from __future__ import annotations
 
@@ -102,11 +106,13 @@ import silabificador
 from silabificador import graphemes as silabificador_graphemes
 from silabificador import morphology as silabificador_morphology
 
+import entry_kinds as ek
 import lexicon_build as lb
 import o2i_harness
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+from o2i_lexicons import PATCH_DIR  # noqa: E402
 from o2i_lexicons.schema import ALLOWED_TIERS, STRESS_MARKS  # noqa: E402
 
 #: The sources of the portuguese_unified gold that are Infopédia rows: an
@@ -369,6 +375,25 @@ def read_nilc(path: Path) -> dict[str, dict[str, set[str]]]:
             words.setdefault(word, {}).setdefault(lb.nilc_to_ipa(transcription), set()).add(
                 nilc_tag(entry))
     return words
+
+
+def nilc_verb_tenses(path: Path) -> dict[str, frozenset[str]]:
+    """word -> the DELAF tense codes of its lines, for each word that every
+    line of the NILC file tags as a verb (``erar.V:P3p`` gives ``P``)."""
+    tenses: dict[str, set[str]] = {}
+    nominal: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        head, _, transcription = line.rpartition(";")
+        surface, _, entry = head.partition(",")
+        if not transcription:
+            continue
+        word = lb.lexicon_key(surface)
+        tag, _, flexions = entry.rpartition(".")[2].partition(":")
+        if tag != NILC_VERB_TAG:
+            nominal.add(word)
+            continue
+        tenses.setdefault(word, set()).update(f[0] for f in flexions.split(":") if f)
+    return {w: frozenset(t) for w, t in tenses.items() if w not in nominal and t}
 
 
 def load_nilc(bench, code: str, inputs: dict[str, Path]):
@@ -652,6 +677,24 @@ def place_stress_marks(kept: list[lb.Candidate]) -> tuple[dict[str, str], Counte
     return entries, counts, seam_words
 
 
+def entry_kinds(code: str, engine, entries: dict[str, str], reasons: dict[str, str],
+                lexical: dict[str, str], headwords: frozenset[str],
+                inputs: dict[str, Path]) -> dict[str, tuple[str, str]]:
+    """word -> ``(kind, note)`` of each entry, by the rules of
+    ``entry_kinds`` for *code*. *headwords* are the lexicon keys of the gold."""
+    if code == "pt-PT":
+        return {w: ek.pt_pt_kind(w, engine.transcribe_word(w), ipa, lexical.get(w))
+                for w, ipa in entries.items()}
+    if code == "pt-BR":
+        tenses = nilc_verb_tenses(inputs["nilc"])
+        return {w: ek.pt_br_kind(w, engine.transcribe_word(w), ipa, tenses.get(w, frozenset()))
+                for w, ipa in entries.items()}
+    if code == "en-GB":
+        return {w: ek.en_gb_kind(w, reasons[w], headwords, frozenset(entries))
+                for w in entries}
+    raise SystemExit(f"entry_kinds has no rules for {code}; an entry of it has no kind")
+
+
 def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
           command: str, held_out_file: Path | None = None,
           screened_file: Path | None = None, excluded_file: Path | None = None,
@@ -772,7 +815,12 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
                        if stage == "kept" and c.word in lexical}
     if lexical_entries:
         meta["lexical_classes"] = lexical_entries
-    tsv, meta_file = lb.write_lexicon(out_root / code, dataset, entries, meta)
+    kinds = entry_kinds(code, engine, entries, reasons, lexical,
+                        frozenset(lb.lexicon_key(h) for h in golds), inputs)
+    files = {}
+    for kind, (part, part_meta) in ek.split(entries, meta, kinds).items():
+        out_dir = out_root / code if kind == "exception" else out_root / PATCH_DIR / code
+        files[kind] = lb.write_lexicon(out_dir, dataset, part, part_meta)
     if held_out_file is not None:
         held_out_file.write_text("\n".join(held_out_rows(leads)) + "\n", encoding="utf-8")
     if excluded_file is not None:
@@ -812,8 +860,9 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         "stress_onset": dict(stress_onset),
         "stress_seam_words": stress_seam,
         "entries_per_reason": dict(Counter(reasons.values())),
-        "tsv": str(tsv.relative_to(ROOT)) if tsv.is_relative_to(ROOT) else str(tsv),
-        "meta": str(meta_file.relative_to(ROOT)) if meta_file.is_relative_to(ROOT) else str(meta_file),
+        "entries_per_kind": dict(Counter(kind for kind, _ in kinds.values())),
+        "files": {kind: [str(f.relative_to(ROOT)) if f.is_relative_to(ROOT) else str(f)
+                         for f in pair] for kind, pair in files.items()},
     }
 
 

@@ -51,3 +51,40 @@ def test_two_sources_for_one_code_are_ambiguous(data_dir):
 def test_a_wheel_with_no_data_directory_lists_nothing(tmp_path, monkeypatch):
     monkeypatch.setattr(o2i_lexicons, "DATA_DIR", tmp_path / "data")
     assert o2i_lexicons.available_codes() == []
+
+
+def test_the_patch_tree_is_not_a_code(data_dir):
+    write_lexicon(data_dir, "en-GB", "wikipron")
+    write_lexicon(data_dir / "patches", "en-GB", "wikipron", body="")
+    assert o2i_lexicons.available_codes() == ["en-GB"]
+    assert o2i_lexicons.available_codes("patch") == ["en-GB"]
+
+
+def test_patch_tsv_path_and_meta(data_dir):
+    write_lexicon(data_dir, "en-GB", "wikipron")
+    write_lexicon(data_dir / "patches", "en-GB", "wikipron", body="cats\tkæts\n",
+                  meta={"code": "en-GB", "kind": "patch"})
+    path = o2i_lexicons.patch_tsv_path("en-GB")
+    assert path == data_dir / "patches" / "en-GB" / "wikipron.tsv"
+    assert path.read_text(encoding="utf-8") == "cats\tkæts\n"
+    assert o2i_lexicons.patch_meta_path("en-GB") == path.with_name("wikipron.meta.json")
+    assert o2i_lexicons.load_patch_meta("en-GB") == {"code": "en-GB", "kind": "patch"}
+    assert o2i_lexicons.tsv_path("en-GB") == data_dir / "en-GB" / "wikipron.tsv"
+
+
+def test_a_code_with_no_patch_file_raises_lookup_error(data_dir):
+    write_lexicon(data_dir, "en-GB", "wikipron")
+    with pytest.raises(LookupError, match="no packaged patch for 'en-GB'"):
+        o2i_lexicons.patch_tsv_path("en-GB")
+
+
+def test_two_patch_files_for_one_code_are_ambiguous(data_dir):
+    write_lexicon(data_dir / "patches", "en-GB", "wikipron")
+    write_lexicon(data_dir / "patches", "en-GB", "other")
+    with pytest.raises(LookupError, match="2 patch files"):
+        o2i_lexicons.patch_tsv_path("en-GB")
+
+
+def test_an_unknown_kind_is_refused(data_dir):
+    with pytest.raises(ValueError, match="kind must be one of"):
+        o2i_lexicons.available_codes("patches")

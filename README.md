@@ -2,18 +2,23 @@
 
 Default residual lexicons for [orthography2ipa](https://github.com/TigreGotico/orthography2ipa).
 
-A lexicon in this package holds only the words that the orthography2ipa rules get wrong and that no rule can fix. Each entry names the gold it came from, the tier and licence of that gold, and a reason class.
+A lexicon in this package holds only words that the orthography2ipa rules get wrong. Each entry is one of two kinds:
+
+- An **exception** is a word whose reading the spelling cannot give, such as the height of a stressed mid vowel or the value of ⟨x⟩. A cited source states this for its class. An exception is always meant to be used.
+- A **patch** is a word that a rule could reach and that the rules of the recorded orthography2ipa version get wrong. Each patch names its gap: the orthography2ipa pull request or the rule lead that will reach it. The patches shrink as rules land, and a caller reads them only on request.
+
+Each entry names the gold it came from, the tier and licence of that gold, and a reason class.
 
 The package is enabled in code, never by installing it. An installed package changes no output until the caller enables it.
 
 ## Data layout
 
-Each language has one directory, `o2i_lexicons/data/<code>/`. It holds two files:
+Each language has an exception directory, `o2i_lexicons/data/<code>/`, and a patch directory, `o2i_lexicons/data/patches/<code>/`. Each directory holds one pair of files, and no word is in both:
 
 | File | Content |
 | :--- | :--- |
-| `<source>.tsv` | One `word<TAB>ipa` pair per line. UTF-8, NFC, lowercase words, sorted, no duplicate word. |
-| `<source>.meta.json` | The source dataset, its URL, tier and licence, the build command, the orthography2ipa version whose rules got each entry wrong, where the stress of the entries comes from, and the reason class of each word. |
+| `<source>.tsv` | One `word<TAB>ipa` pair per line. UTF-8, NFC, lowercase words, sorted, no duplicate word. A patch file can be empty. |
+| `<source>.meta.json` | The `kind` of the file, the source dataset, its URL, tier and licence, the build command, the orthography2ipa version whose rules got each entry wrong, where the stress of the entries comes from, and the reason class of each word. An exception sidecar gives the citation of each word in `citations`, and a patch sidecar gives the gap of each word in `gaps`. |
 
 `o2i_lexicons/schema.py` states the contract, and the tests apply it to every packaged file.
 
@@ -33,23 +38,30 @@ from orthography2ipa import G2P, Pipeline, packaged_lexicon
 engine = G2P("en-GB", pipeline=Pipeline(lexicon=packaged_lexicon("en-GB")))
 ```
 
+The patches are in a second entry-point group, `orthography2ipa.lexicon_patches`, whose entry points load `o2i_lexicons.patch_tsv_path`. `packaged_lexicon(code, patches=True)` adds them to the exceptions, and an exception wins over a patch of the same word.
+
 The lexicon belongs to that engine. Another engine in the process does not see it, and an engine with no pipeline runs on the rules. The `word_exceptions` of a spec win over the lexicon. The package's own API:
 
 ```python
 import o2i_lexicons
 
-o2i_lexicons.available_codes()     # the packaged codes
-o2i_lexicons.tsv_path("en-GB")     # the TSV file for a code
-o2i_lexicons.load_meta("en-GB")    # its sidecar
+o2i_lexicons.available_codes()            # the codes with an exception file
+o2i_lexicons.available_codes("patch")     # the codes with a patch file
+o2i_lexicons.tsv_path("en-GB")            # the exception file for a code
+o2i_lexicons.load_meta("en-GB")           # its sidecar
+o2i_lexicons.patch_tsv_path("en-GB")      # the patch file for a code
+o2i_lexicons.load_patch_meta("en-GB")     # its sidecar
 ```
 
 ## Packaged lexicons
 
 | Code | File | Source | Tier | Licence |
 | :--- | :--- | :--- | :--- | :--- |
-| `en-GB` | `o2i_lexicons/data/en-GB/wikipron.tsv` | [WikiPron](https://github.com/CUNY-CL/wikipron) `eng_latn_uk_broad.tsv`, scraped from Wiktionary | crowd-scraped | CC BY-SA 4.0 |
-| `pt-PT` | `o2i_lexicons/data/pt-PT/infopedia.tsv` | The Infopédia rows of [portuguese-unified-pronunciation-lexicon](https://huggingface.co/datasets/TigreGotico/portuguese-unified-pronunciation-lexicon), from the Porto Editora dictionary | lexicon-derived | CC BY-SA 4.0 |
-| `pt-BR` | `o2i_lexicons/data/pt-BR/nilc.tsv` | The training file of the NILC Aeiouadô transcriber (`etc/unitex_sample_transcribed.txt`), human-revised by one research team and not independently verified, with some readings from hand-typed pt.wiktionary lines | expert-human | CC BY-SA 4.0 |
+| `en-GB` | `wikipron.tsv` | [WikiPron](https://github.com/CUNY-CL/wikipron) `eng_latn_uk_broad.tsv`, scraped from Wiktionary | crowd-scraped | CC BY-SA 4.0 |
+| `pt-PT` | `infopedia.tsv` | The Infopédia rows of [portuguese-unified-pronunciation-lexicon](https://huggingface.co/datasets/TigreGotico/portuguese-unified-pronunciation-lexicon), from the Porto Editora dictionary | lexicon-derived | CC BY-SA 4.0 |
+| `pt-BR` | `nilc.tsv` | The training file of the NILC Aeiouadô transcriber (`etc/unitex_sample_transcribed.txt`), human-revised by one research team and not independently verified, with some readings from hand-typed pt.wiktionary lines | expert-human | CC BY-SA 4.0 |
+
+Each code has the file in its exception directory and in its patch directory.
 
 Stress on the en-GB entries comes from the orthography2ipa rules, not from the source. WikiPron scrapes Wiktionary with stress removed (`"stress": False` in its `data/scrape/lib/scrape.py`), so the published file holds no stress mark. The sidecar records this as `"stress": "rules"`, and the orthography2ipa stress rules mark each entry on output, as they mark an entry of `word_exceptions`.
 
@@ -131,7 +143,23 @@ python scripts/prune_check.py
 
 `measure.py` scores a lexicon on a gold from a different source, with the rules only and with the lexicon. It refuses the gold that supplied the lexicon, and the board dataset that holds that gold. The pt-PT screen keeps the entries outside the residual classes only when a second source corroborates them, WikiPron pt-PT among them, so a pt-PT measure on WikiPron is not independent of the selection. The residual entries that WikiPron does not corroborate are independent of it. `ep_dialects` is a small expert-human set of European Portuguese sentences that no build reads.
 
-`prune_check.py` exits with status 1 when the rules alone now get an entry right. CI runs it on each pull request, and a weekly job removes the stale entries and opens a draft pull request.
+`build_lexicon.py` sorts each entry into an exception or a patch with the rules of `entry_kinds.py`, which the next section states.
+
+`prune_check.py` exits with status 1 when the rules alone now get an entry right. A patch that the rules get right is the expected result: its rule landed, and `--write` removes it. An exception that the rules get right means that its class is wrong, because the spelling does give its reading. The check lists it and fails, also with `--write`, and never removes it: a person decides where the word goes. CI runs the check on each pull request, and a weekly job removes the stale patches and opens a draft pull request.
+
+## Exceptions and patches
+
+An entry is an exception when its class is one that the spelling cannot show, by a cited source. An entry with an exception part is an exception, because it stays needed after the rule of its patch part lands. Every other entry is a patch, and its gap is the rule that could reach it. A gap is an orthography2ipa pull request, a spec rule that misfires, a section of `rule-leads.md` in the o2i-lexicons audit of the workspace wiki, or a lead that this file states.
+
+| Code | Exception | Patch |
+| :--- | :--- | :--- |
+| `pt-PT` | the height of a stressed mid vowel (Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩), ⟨x⟩ (AO90 Base III; Ciberdúvidas 4068), ⟨qu gu⟩ with [w] (AO90 Base XIV 1.º; Cunha & Cintra p. 79), an initial ⟨e⟩ in an open syllable of a learned word (Cunha & Cintra p. 53; Mateus & d'Andrade 1998 p. 26 (b)) or before /R/ (Mateus & d'Andrade 1998 p. 26 (c)), an initial ⟨o⟩ as [o] or [ɔ] (Mateus & d'Andrade 1998 p. 27), a loan spelled outside the native system (AO90 Base I 2.º-3.º) | a stressed vowel in an ending that takes one value in at least 90% of the Infopédia words (⟨-oide -dora -eno -ona -oma -ena -edo -ostro -olho -osto -orro⟩), a misfire of a `PT_SUFFIX_*` or prepalatal rule, a learned first element under an initial ⟨e⟩, a vowel before a coda stop or a coda ⟨l⟩, an unreduced learned vowel, and a word with no class |
+| `pt-BR` | the height of a stressed mid vowel (Cunha & Cintra p. 40; orthography2ipa#1824), ⟨x⟩ (AO90 Base III), a loan spelled outside the native system | a verb form that the NILC file tags only as a verb: the stem vowel of a rhizotonic form follows the model verbs of Cunha & Cintra pp. 429-433, and the preterite and imperfect forms are a lead; the ⟨s⟩ of trans- before a vowel |
+| `en-GB` | every entry other than a patch, because English spelling is irregular by nature; no source on English spelling was read, and each citation says so | an inflection in -s -es -ies -ed -ing whose base is a WikiPron headword and no entry: the rules read the base right, so a morphology rule could read the inflection |
+
+orthography2ipa#2218 keeps an unstressed ⟨e o⟩ full before a coda stop and leaves ⟨a⟩ reduced. So the gap of a vowel before a coda stop is #2218 only where the rules reduce an ⟨e o⟩ that the source keeps full. An ⟨a⟩ that the source keeps as [a], a vowel that the source reduces where #2218 keeps it full, and a close [e o] where #2218 gives [ɛ ɔ] are leads of their own.
+
+The sources: Celso Cunha and Lindley Cintra, *Nova Gramática do Português Contemporâneo*, 7th ed.; Maria Helena Mateus and Ernesto d'Andrade, "The syllable structure in European Portuguese", *D.E.L.T.A.* 14(1), 1998; the Acordo Ortográfico da Língua Portuguesa de 1990 (AO90); Ciberdúvidas da Língua Portuguesa, answer 4068.
 
 ## The pt-BR lexicon
 
