@@ -61,6 +61,37 @@ def lexicon_key(headword: str) -> str:
     return unicodedata.normalize("NFC", headword).lower()
 
 
+#: The vowel letters of the IPA chart, with the r-coloured vowels.
+IPA_VOWELS = frozenset("iyɨʉɯuɪʏʊeøɘɵɤoəɛœɜɞʌɔæɐaɶɑɒᵻᵿɚɝ")
+
+#: The /r/ sounds of a reading, and the marks of an r-coloured vowel.
+R_SOUNDS = frozenset("ɹɻr")
+R_COLOUR = frozenset("ɚɝ˞ʴ")
+
+
+def rhotic_segment(reading: str) -> Optional[str]:
+    """The first segment of *reading*, a WikiPron reading with one space
+    between segments, that a non-rhotic accent does not have, or ``None``.
+
+    Received Pronunciation is non-rhotic. Its vowel inventory has no
+    r-coloured vowel (Roach 2004, JIPA 34(2), p. 243), and its /r/ stands
+    only before a vowel: the phonemic transcription of p. 244 has north
+    [nɔːθ], warm [wɔːm], first [fɜːst], hard [hɑːd], more [mɔː] and stronger
+    [strɒŋɡə] before a pause, and [r] before a vowel only (around [əraʊnd],
+    stronger of [strɒŋɡr̩ əv]). A syllabic /r/ is one of the syllabic
+    sonorants of p. 241, so it follows the same rule. An r-coloured vowel,
+    and an /r/ before a consonant or at the end of the word, are rhotic.
+    """
+    segments = reading.split()
+    for i, segment in enumerate(segments):
+        if R_COLOUR.intersection(segment):
+            return segment
+        if segment[0] in R_SOUNDS and (
+                i + 1 == len(segments) or segments[i + 1][0] not in IPA_VOWELS):
+            return segment
+    return None
+
+
 #: The tie bars. The board scoring drops them as notation, and a spec may
 #: write an affricate without one.
 TIE_BARS = "\u0361\u035c"

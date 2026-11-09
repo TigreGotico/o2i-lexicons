@@ -359,6 +359,25 @@ def notes(code, kind):
     return FILES[kind][1](code)["citations" if kind == "exception" else "gaps"]
 
 
+def test_no_en_gb_entry_is_rhotic():
+    # The en-GB spec models Received Pronunciation, which has no r-coloured
+    # vowel (Roach 2004, JIPA 34(2), p. 243) and /r/ before a vowel only
+    # (p. 244).
+    import re
+    vowels = "iyɨʉɯuɪʏʊeøɘɵɤoəɛœɜɞʌɔæɐaɶɑɒ"
+    rhotic = re.compile(f"[ɚɝ˞ʴ]|[ɹɻr][\u0300-\u036fː]*(?![{vowels}])")
+    entries = {**file_entries("en-GB", "exception"), **file_entries("en-GB", "patch")}
+    assert {w: ipa for w, ipa in entries.items() if rhotic.search(ipa)} == {}
+
+
+def test_an_en_gb_entry_is_the_non_rhotic_reading():
+    # WikiPron gives cupboard [kʊbəɹd] and [kʌbəd], and drawer [dɹɑɚ] ...
+    # [dɹɔː]; the build takes the non-rhotic reading.
+    entries = {**file_entries("en-GB", "exception"), **file_entries("en-GB", "patch")}
+    assert entries["cupboard"] == "kʌbəd"
+    assert entries["drawer"] == "dɹɔː"
+
+
 def test_english_spelling_keeps_yacht_an_exception():
     # ⟨yacht⟩ /jɒt/: no rule of English spelling reads ⟨ch⟩ as silent here.
     assert file_entries("en-GB", "exception")["yacht"] == "jɒt"

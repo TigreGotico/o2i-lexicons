@@ -65,6 +65,8 @@ Each code has the file in its exception directory and in its patch directory.
 
 Stress on the en-GB entries comes from the orthography2ipa rules, not from the source. WikiPron scrapes Wiktionary with stress removed (`"stress": False` in its `data/scrape/lib/scrape.py`), so the published file holds no stress mark. The sidecar records this as `"stress": "rules"`, and the orthography2ipa stress rules mark each entry on output, as they mark an entry of `word_exceptions`.
 
+An en-GB entry is a non-rhotic reading, because the en-GB spec models Received Pronunciation. WikiPron gives some words several readings, some of them rhotic (course [kuːɹs], drawer [dɹɑɚ]). The build takes the first reading that has no r-coloured vowel and no /r/ before a consonant or at the end of the word. Roach (2004, "British English: Received Pronunciation", *JIPA* 34(2)) lists no r-coloured vowel in the inventory (p. 243), and his transcription has /r/ before a vowel only (p. 244: north [nɔːθ], more [mɔː], around [əraʊnd]). The build never edits a reading. A word with no non-rhotic reading leaves the lexicon, and `build_lexicon.py --excluded` lists it.
+
 The pt-PT entries are the Infopédia rows of the dataset: the rows with an `infopedia_url`, including the rows that Infopédia and Wiktionary share with the same reading. Infopédia transcribes the European Portuguese standard, and the orthography2ipa `pt-PT` spec models that standard. A lexicon on `pt-PT` does not reach its child lects, such as `pt-PT-x-lisbon`.
 
 The entries carry the stress marks of Infopédia (`"stress": "source"`). Infopédia writes three sounds with other symbols than the spec does, and the build writes the spec's symbols:
