@@ -864,8 +864,9 @@ def test_a_prefix_seam_keeps_the_mark_of_the_vowel_after_it():
     assert lb.onset_stress("ɐˈɡnelu", 0) == "ɐɡˈnelu"
 
 
+# Every source writes o.bli.qui.da.de, so ob + liqu is no seam (silabificador#26).
 @pytest.mark.parametrize("word, seam", [
-    ("sublocar", 1), ("Subliminar", 1), ("ablegar", 1), ("obliquidade", 1),
+    ("sublocar", 1), ("Subliminar", 1), ("ablegar", 1), ("obliquidade", None),
     ("sublime", None), ("abrandar", None), ("distribuidor", None), ("agnelo", None),
 ])
 def test_the_prefix_seam_comes_from_silabificador(word, seam):
