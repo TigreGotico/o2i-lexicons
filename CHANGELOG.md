@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.6.0a1) (2026-11-09)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.5.0a2...0.6.0a1)
+
+**Merged pull requests:**
+
+- feat: admit pt-PT words whose only miss is an unstressed vowel slot [\#26](https://github.com/TigreGotico/o2i-lexicons/pull/26) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.5.0a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.5.0a2) (2026-11-09)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.5.0a1...0.5.0a2)
