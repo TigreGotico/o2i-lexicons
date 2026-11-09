@@ -887,14 +887,94 @@ def _is_nucleus(unit: str) -> bool:
     return unicodedata.normalize("NFD", unit)[0] in VOWELS and NON_SYLLABIC not in unit
 
 
-def _stress_onset(ipa: str) -> Optional[tuple[list[str], int, int, int]]:
-    """``(sounds, start, end, offset)`` of a reading with one primary stress.
+#: The obstruent + liquid clusters that Cunha & Cintra (7th ed., p. 64) list
+#: as inseparable, in the spec's symbols. Mateus & d'Andrade (1998, D.E.L.T.A.
+#: 14(1), pp. 14-15, examples (2)) list the same fourteen as the onset clusters
+#: of European Portuguese.
+ONSET_CLUSTERS = frozenset({"bl", "bɾ", "kl", "kɾ", "dɾ", "fl", "fɾ", "ɡl", "ɡɾ",
+                            "pl", "pɾ", "tl", "tɾ", "vɾ"})
 
-    *sounds* are the units of *ipa* without the mark. The sounds from
-    *start* to *end* stand between the vowel before the stressed vowel and the
-    stressed vowel, and the mark stands before the sound at *start* + *offset*.
+#: The affricates of loanwords, which the spec writes with or without the tie
+#: bar. An affricate is one consonant (ketchup kɛˈtʃɐp, hadji aˈdʒi, ɐpˈt͡ʃu).
+AFFRICATES = frozenset({"tʃ", "dʒ", "ts", "dz"})
+
+
+def _plain_unit(unit: str) -> str:
+    return "".join(ch for ch in unicodedata.normalize("NFC", unit) if ch not in TIE_BARS)
+
+
+def _consonants(units: list[str]) -> list[list[str]]:
+    """*units* grouped into consonants: an affricate is one group."""
+    groups: list[list[str]] = []
+    for unit in units:
+        if groups and len(groups[-1]) == 1 and _plain_unit(groups[-1][0] + unit) in AFFRICATES:
+            groups[-1].append(unit)
+        else:
+            groups.append([unit])
+    return groups
+
+
+def _is_glide(unit: str) -> bool:
+    return _plain_unit(unit)[:1] in GLIDES
+
+
+def _onset_size(run: list[str]) -> int:
+    """How many units at the end of *run* are the onset of the syllable after it.
+
+    *run* is the sequence between two vowels, with a consonant in it. A glide
+    after a consonant goes with the vowel after it, so the onset ends before
+    it: anguífero ɐ̃ˈɡwifɨɾu, axioma ɐkˈsjomɐ. The onset is then the longest
+    legal sequence of consonants at the end: one consonant, or a cluster of
+    ``ONSET_CLUSTERS``. A glide after a vowel closes the syllable before
+    (auxina awkˈsinɐ).
     """
-    units = _units(ipa)
+    glide = int(len(run) > 1 and _is_glide(run[-1]) and not _is_glide(run[-2]))
+    groups = _consonants(run[:len(run) - glide])
+    if _is_glide(groups[-1][0]):
+        return glide
+    size = len(groups[-1])
+    if len(groups) > 1 and _plain_unit("".join(groups[-2] + groups[-1])) in ONSET_CLUSTERS:
+        size += len(groups[-2])
+    return size + glide
+
+
+def onset_stress(entry: str, seam: Optional[int] = None) -> Optional[str]:
+    """*entry* with its primary stress mark before the onset of the stressed
+    syllable, or ``None``.
+
+    The onset is the longest sequence before the stressed vowel that a
+    Portuguese syllable can open with (``_onset_size``). Cunha & Cintra (7th
+    ed., p. 64) list the obstruent + liquid clusters as inseparable, and say
+    that gn, pn, ps, pt, tm inside a word can stand in one syllable or in two.
+    Mateus & d'Andrade (1998, D.E.L.T.A. 14(1)) decide this for European
+    Portuguese. The clusters of their example (1), [ɡn pt ks tm] among them, "do
+    not belong to the same syllable" (p. 15). They "hypothesise ... the existence
+    of an empty nucleus between the consonants ... and we propose that this
+    nucleus is not filled at the phonetic level in EP" (pp. 17-18). So a
+    consonant before the onset opens a syllable of its own with an empty
+    nucleus, and the mark goes after it: agnelo ɐɡˈnelu, afixar ɐfikˈsaɾ, but
+    atleta ɐˈtlɛtɐ.
+
+    Between two vowels with no consonant, the mark stays where *entry* has it.
+    A glide there closes a diphthong and "can associate with the onset of the
+    following syllable ... and it becomes then ambisyllabic" (Mateus &
+    d'Andrade 1998, p. 29), so both places are right: gaiolo ɡajˈolu, kilowatt
+    kilɔˈwɔt. A hiatus has no onset to place: saúde sɐˈudɨ.
+
+    At the start of a word the whole sequence before the first vowel is the
+    onset: Cunha & Cintra (p. 64) say that an initial gn, pn, ps is
+    inseparable (gno-mo, psi-có-lo-go), so gnomo stays ˈɡnomu.
+
+    *seam* is the index of the vowel, counted from 0, that a live prefix seam
+    stands before (sub.lo.car, ``build_lexicon.prefix_seam``). A morpheme
+    boundary outranks the onset rule, so when the stressed vowel is that vowel
+    the entry keeps its mark and the result is ``None``.
+
+    The result differs from *entry* only in the place of the mark, and keeps
+    its stressed vowel. ``None`` also means that *entry* has no single primary
+    mark or no vowel after it.
+    """
+    units = _units(entry)
     if units.count("ˈ") != 1:
         return None
     mark = units.index("ˈ")
@@ -902,32 +982,17 @@ def _stress_onset(ipa: str) -> Optional[tuple[list[str], int, int, int]]:
     end = next((i for i in range(mark, len(sounds)) if _is_nucleus(sounds[i])), None)
     if end is None:
         return None
-    start = next((i + 1 for i in range(mark - 1, -1, -1) if _is_nucleus(sounds[i])), 0)
-    return sounds, start, end, mark - start
-
-
-def onset_stress(entry: str, rules: str) -> Optional[str]:
-    """*entry* with its primary stress mark where *rules* put theirs, or ``None``.
-
-    Infopédia puts the mark at its own syllable boundary, often before a stop
-    cluster (ɐˈɡnelu), and orthography2ipa at its own onset (ɐɡˈnɛlu). An
-    entry replaces the rules' reading, so a mark at the source's boundary mixes
-    two syllable divisions in one output. The mark moves only when both
-    readings stress the same vowel and the sounds between the vowel before it
-    and the stressed vowel are the same in both: ɐˈɡnelu becomes ɐɡˈnelu. The
-    result differs from *entry* only in the place of the mark. ``None`` means
-    that a reading has no single primary mark, the readings stress different
-    vowels, or the sounds before the stressed vowel differ (afixar: rules [ʃ],
-    Infopédia [ks]).
-    """
-    own, theirs = _stress_onset(entry), _stress_onset(rules)
-    if own is None or theirs is None or not same_stress(entry, rules):
+    nuclei = [i for i in range(end) if _is_nucleus(sounds[i])]
+    if seam is not None and seam == len(nuclei):
         return None
-    sounds, start, end, _ = own
-    other, other_start, other_end, offset = theirs
-    if sounds[start:end] != other[other_start:other_end]:
-        return None
-    return "".join(sounds[:start + offset] + ["ˈ"] + sounds[start + offset:])
+    if not nuclei:
+        at = 0
+    else:
+        run = sounds[nuclei[-1] + 1:end]
+        if all(_is_glide(unit) for unit in run):
+            return entry
+        at = end - _onset_size(run)
+    return "".join(sounds[:at] + ["ˈ"] + sounds[at:])
 
 
 def strong_r_is_ambiguous(word: str, reading: str) -> bool:

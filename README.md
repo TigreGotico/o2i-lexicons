@@ -78,7 +78,23 @@ Infopédia marks the nasality of a nasal diphthong once, on the glide (trem `ˈt
 
 The build compares the rules with the mapped reading, so a word whose only difference was [ɐj] against [ej] is not a rules miss. A reading with a stress mark between a consonant and the vowel after it (yakuza `jakˈuzɐ` for `jaˈkuzɐ`) places the mark inside the onset, and the build takes the next reading of the word or leaves the word out.
 
-Infopédia puts the stress mark at its own syllable boundary, often before a consonant cluster (agnelo `ɐˈɡnelu`). The orthography2ipa rules put it at their own onset (`ɐɡˈnɛlu`). An entry replaces the rules' reading, so the build writes the mark where the rules put it (`ɐɡˈnelu`), and the output keeps one syllable division. The mark moves only when both readings stress the same vowel and have the same sounds between the vowel before it and the stressed vowel. Any other entry keeps the Infopédia mark (afixar `ɐfiˈksaɾ`, where the rules read [ʃ]). The build report counts the entries in `stress_onset`.
+The primary stress mark of an entry stands before the onset of the stressed syllable. The onset is the longest sequence before the stressed vowel that a Portuguese syllable can open with: one consonant, or one of the fourteen obstruent + liquid clusters that Cunha & Cintra list as inseparable (bl, br, cl, cr, dr, fl, fr, gl, gr, pl, pr, tl, tr, vr; *Nova Gramática do Português Contemporâneo*, 7th ed., p. 64). Mateus & d'Andrade give the same fourteen as the onset clusters of European Portuguese ("The syllable structure in European Portuguese", D.E.L.T.A. 14(1), 1998, pp. 14-15, examples (2)).
+
+Cunha & Cintra (p. 64) say that a medial gn, pn, ps, pt or tm can stand in one syllable or in two (a-pto, ap-to). Mateus & d'Andrade decide this for European Portuguese. The clusters of their example (1), [ɡn pt ks tm] among them, "do not belong to the same syllable" (p. 15), and they place "an empty nucleus between the consonants" that "is not filled at the phonetic level in EP" (pp. 17-18). So a consonant before the onset opens a syllable of its own, and the mark goes after it. Infopédia often puts the mark before the whole cluster, and the build moves it:
+
+| Word | Infopédia | Entry |
+| :--- | :--- | :--- |
+| agnelo | `ɐˈɡnelu` | `ɐɡˈnelu` |
+| afixar | `ɐfiˈksaɾ` | `ɐfikˈsaɾ` |
+| axioma | `ɐˈksjomɐ` | `ɐkˈsjomɐ` |
+| atloide | `ɐˈtlɔjdɨ` | `ɐˈtlɔjdɨ` |
+| anguífero | `ɐ̃ˈɡwifɨɾu` | `ɐ̃ˈɡwifɨɾu` |
+
+A glide after a consonant goes with the vowel after it ([kw ɡw], and [sj] in axioma). An affricate of a loanword is one consonant (ketchup `kɛˈtʃɐp`). A cluster at the start of a word stays whole, because Cunha & Cintra (p. 64) call an initial gn, pn, ps inseparable (gnomo `ˈɡnomu`). A glide alone between two vowels "can associate with the onset of the following syllable ... and it becomes then ambisyllabic" (Mateus & d'Andrade, p. 29), so the entry keeps its mark on either side of it (gaiolo `ɡajˈolu`, kilowatt `kilɔˈwɔt`).
+
+A morpheme boundary outranks the onset rule. The mark never moves across a prefix seam that `silabificador.morphology` lists (sub + locar, but not sublime). The build reads the seam with `build_lexicon.prefix_seam`, keeps the entry's mark there, and lists the word in `stress_seam_words` of the build report.
+
+The build moves only the mark: each entry keeps its sounds and its stressed vowel. `lexicon_build.onset_stress` places the mark, and the build report counts the entries in `stress_onset`. The pt-BR entries follow the same rule. In Brazilian Portuguese the split clusters take an epenthetic vowel (Mateus & d'Andrade, p. 16: pa[ki]to), so their first consonant is outside the stressed syllable there too (flexão `flekˈsɐ̃w̃`).
 
 Each token of an entry must be in the spec's token inventory. A nasal glide after a nasal vowel counts as inside it when the spec emits that glide in a nasal diphthong (mãe `ˈmɐ̃j̃`), so proibição `pɾuibiˈsɐ̃w̃` can be an entry. `build_lexicon.py --excluded` lists each reading and headword that the build leaves out, with the reason.
 

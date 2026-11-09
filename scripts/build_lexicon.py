@@ -57,12 +57,16 @@ A reading with a stress mark between a consonant and the vowel after it
 places the mark inside the onset (jakˈuzɐ for jaˈkuzɐ). The build takes the
 next reading of the word, or leaves the word out.
 
-An entry takes the place of the mark from the rules (``lexicon_build.onset_stress``).
-Infopédia puts the mark at its own syllable boundary (ɐˈɡnelu), and the rules
-put it at their own onset (ɐɡˈnɛlu). When both readings stress the same vowel
-and have the same sounds before it, the entry keeps its sounds and takes the
-rules' place of the mark (ɐɡˈnelu). Any other entry keeps its mark, and the
-build report counts each case.
+An entry's primary stress mark stands before the onset of the stressed
+syllable (``lexicon_build.onset_stress``). The onset is one consonant or an
+obstruent + liquid cluster that Cunha & Cintra (7th ed., p. 64) list as
+inseparable. Mateus & d'Andrade (1998, D.E.L.T.A. 14(1), pp. 14-18) give any
+consonant before it an empty nucleus of its own in European Portuguese. So
+Infopédia's ɐˈɡnelu and ɐfiˈksaɾ become ɐɡˈnelu and ɐfikˈsaɾ, and ɐˈtlɔjdɨ
+stays. A cluster at the start of a word stays whole (ˈɡnomu). The mark never
+moves across a live prefix seam of ``silabificador.morphology``
+(``prefix_seam``). Only the mark moves: the sounds and the stressed vowel stay,
+and the build report counts each case.
 
 A NILC entry passes the same screen (``screen_nilc``). Its reading is first put
 in the pt-BR norm (``lexicon_build.nilc_to_pt_br``). Its second source is a
@@ -80,6 +84,7 @@ from __future__ import annotations
 import argparse
 import csv
 import functools
+import itertools
 import json
 import shlex
 import sys
@@ -93,6 +98,9 @@ import orthography2ipa
 from orthography2ipa.inventory import phoneme_inventory, tokenize as inventory_tokenize
 from orthography2ipa.lexicon import is_ipa_string
 from orthography2ipa.version import VERSION_STR
+import silabificador
+from silabificador import graphemes as silabificador_graphemes
+from silabificador import morphology as silabificador_morphology
 
 import lexicon_build as lb
 import o2i_harness
@@ -605,18 +613,43 @@ def held_out_rows(leads: list[lb.Lead]) -> list[str]:
             for w, l in sorted(first.items())]
 
 
-def rules_stress_place(engine, kept: list[lb.Candidate]) -> tuple[dict[str, str], Counter]:
-    """The entry of each word of *kept*, with its stress mark where the rules
-    put theirs (``lexicon_build.onset_stress``), and the count of the entries
-    whose mark ``moved``, stood in the rules' place already (``same``), or
-    stays where the source put it (``kept``)."""
+def prefix_seam(word: str) -> int | None:
+    """The index of the vowel, counted from 0, that a live prefix seam of
+    *word* stands before, or ``None``.
+
+    ``silabificador.morphology`` keeps the prefix + stem morphemes that
+    speakers still feel (sub + locar), and leaves out the words whose prefix is
+    dead (sublime). Only a seam before a consonant can split an onset cluster.
+    """
+    word = word.lower()
+    units = silabificador_graphemes.tokenize(word)
+    offsets = [sum(len(u) for u in units[:i]) for i in silabificador_morphology.boundaries(word, units)]
+    seams = [o for o in offsets if word[o] not in lb.VOWEL_LETTERS]
+    if not seams:
+        return None
+    ends = list(itertools.accumulate(len(s) for s in silabificador.syllabify(word)))
+    return sum(1 for e in ends if e <= min(seams))
+
+
+def place_stress_marks(kept: list[lb.Candidate]) -> tuple[dict[str, str], Counter, list[str]]:
+    """The entry of each word of *kept*, with its stress mark before the onset
+    of the stressed syllable (``lexicon_build.onset_stress``), the count of the
+    entries whose mark ``moved``, stood there already (``same``), stays because
+    the move would cross a prefix seam (``seam``), or stays because the reading
+    has no single primary mark (``kept``), and the words of ``seam``."""
     entries: dict[str, str] = {}
     counts = Counter()
+    seam_words: list[str] = []
     for c in kept:
-        moved = lb.onset_stress(c.ipa, engine.transcribe_word(c.headword))
-        counts["kept" if moved is None else "moved" if moved != c.ipa else "same"] += 1
-        entries[c.word] = moved or c.ipa
-    return entries, counts
+        placed = lb.onset_stress(c.ipa)
+        if placed is not None and placed != c.ipa and lb.onset_stress(c.ipa, prefix_seam(c.headword)) is None:
+            seam_words.append(c.word)
+            placed = None
+            counts["seam"] += 1
+        else:
+            counts["kept" if placed is None else "moved" if placed != c.ipa else "same"] += 1
+        entries[c.word] = placed or c.ipa
+    return entries, counts, seam_words
 
 
 def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
@@ -715,7 +748,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     screened: list[tuple[lb.Candidate, str, str, str]] = []
     if screen is not None:
         kept, screened = screen(bench, engine, code, kept, norm, inputs, lexical)
-    entries, stress_onset = rules_stress_place(engine, kept)
+    entries, stress_onset, stress_seam = place_stress_marks(kept)
     reasons = {c.word: lb.reason_for(c.headword) for c in kept}
     used = set(reasons.values()) - {"unclassified"}
     meta = {
@@ -777,6 +810,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         "screen": {stage: dict(reasons) for stage, reasons in stages.items()},
         "entries": len(entries),
         "stress_onset": dict(stress_onset),
+        "stress_seam_words": stress_seam,
         "entries_per_reason": dict(Counter(reasons.values())),
         "tsv": str(tsv.relative_to(ROOT)) if tsv.is_relative_to(ROOT) else str(tsv),
         "meta": str(meta_file.relative_to(ROOT)) if meta_file.is_relative_to(ROOT) else str(meta_file),
