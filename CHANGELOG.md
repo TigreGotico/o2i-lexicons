@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.1a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.6.1a1) (2026-11-09)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.6.0a1...0.6.1a1)
+
+**Merged pull requests:**
+
+- fix: put an entry's stress mark where the rules put it [\#28](https://github.com/TigreGotico/o2i-lexicons/pull/28) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.6.0a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.6.0a1) (2026-11-09)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.5.0a2...0.6.0a1)
