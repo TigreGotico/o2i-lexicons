@@ -73,7 +73,8 @@ LEARNED_E = ("eco", "epi", "equi", "eritr", "etil", "etol", "ego", "endo", "ecto
 #: single-word Infopédia pt-PT rows, with at least 25 words. The spelling
 #: shows the value, so a rule could take it.
 DOMINANT_ENDINGS = {"oide": "ɔ", "orro": "o", "osto": "o", "ostro": "o", "olho": "o",
-                    "oma": "o", "ona": "o", "ena": "e", "eno": "e", "edo": "e", "dora": "o"}
+                    "oma": "o", "ona": "o", "ena": "e", "eno": "e", "edo": "e", "dora": "o",
+                    "queta": "e", "eso": "e", "eca": "ɛ", "ose": "ɔ"}
 
 #: A gap named by a section of rule-leads.md, by ending.
 ENDING_SECTIONS = {"oide": "Entries in ⟨-oide⟩", "dora": "Entries in ⟨-dora⟩"}

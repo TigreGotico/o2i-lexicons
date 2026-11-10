@@ -646,3 +646,33 @@ def test_a_loan_a_rule_could_read_is_a_patch(word, lead):
     assert word not in notes("pt-PT", "exception")
     gap = notes("pt-PT", "patch")[word]
     assert gap.startswith("lead: ") and lead in gap
+
+
+# Infopédia gives [e] in 93% of the 29 words in ⟨-queta⟩ and 93% of the 28 in
+# ⟨-eso⟩, [ɛ] in all 104 longer words in ⟨-eca⟩ and [ɔ] in 96% of the 296 in
+# ⟨-ose⟩, so the spelling shows the vowel and a rule could take it. No source
+# read states the height of these endings, so each entry is a patch with the
+# family as its lead.
+@pytest.mark.parametrize("word, ending, value", [
+    ("etiqueta", "queta", "e"), ("obeso", "eso", "e"), ("aceso", "eso", "e"),
+    ("eca", "eca", "ɛ"), ("ose", "ose", "ɔ"),
+])
+def test_an_ending_family_entry_is_a_patch_with_its_lead(word, ending, value):
+    assert word in file_entries("pt-PT", "patch")
+    assert word not in file_entries("pt-PT", "exception")
+    assert notes("pt-PT", "patch")[word] == (
+        f"lead: ⟨-{ending}⟩ takes [{value}] in at least 90% of the Infopédia words")
+
+
+# With the feminines of the 18 ⟨-reto⟩ adjectives that have [ɛ], ⟨-reta⟩ has
+# [e] in 47 of 64 Infopédia words, under 90%. ⟨gu⟩ + ⟨-eta⟩ has 9 words.
+@pytest.mark.parametrize("word", ["preta", "careta", "creta", "malagueta", "fugueta"])
+def test_a_reta_or_gueta_entry_stays_an_exception(word):
+    assert word not in file_entries("pt-PT", "patch")
+    assert notes("pt-PT", "exception")[word] == "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
+
+
+def test_an_eso_word_with_an_initial_e_cites_only_that_part():
+    # equeso is in ⟨-eso⟩, so its stressed vowel is a patch part, and only the
+    # unstressed initial ⟨e⟩ remains an exception part.
+    assert "Cunha & Cintra p. 40" not in notes("pt-PT", "exception")["equeso"]

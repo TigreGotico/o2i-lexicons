@@ -28,6 +28,22 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
      ("patch", "rule-leads.md § Entries in ⟨-dora⟩")),
     ("abertona", "ɐbɨɾˈtɔnɐ", "ɐbɨɾˈtonɐ", "stressed mid vowel",
      ("patch", "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words")),
+    # ⟨-queta -eso⟩ are [e], ⟨-eca⟩ is [ɛ] and ⟨-ose⟩ is [ɔ] in at least 90%
+    # of at least 25 Infopédia words.
+    ("etiqueta", "itiˈkɛtɐ", "itiˈketɐ", "stressed mid vowel",
+     ("patch", "lead: ⟨-queta⟩ takes [e] in at least 90% of the Infopédia words")),
+    ("obeso", "ɔˈbɛzu", "ɔˈbezu", "stressed mid vowel",
+     ("patch", "lead: ⟨-eso⟩ takes [e] in at least 90% of the Infopédia words")),
+    ("eca", "ˈekɐ", "ˈɛkɐ", "stressed mid vowel",
+     ("patch", "lead: ⟨-eca⟩ takes [ɛ] in at least 90% of the Infopédia words")),
+    ("ose", "ˈozɨ", "ˈɔzɨ", "stressed mid vowel",
+     ("patch", "lead: ⟨-ose⟩ takes [ɔ] in at least 90% of the Infopédia words")),
+    # Infopédia lists an adjective under its masculine. 18 adjectives in
+    # ⟨-reto⟩ have [ɛ] (concreto, secreto), so with their feminines ⟨-reta⟩
+    # has [e] in 47 of 64 words. ⟨gu⟩ + ⟨-eta⟩ has 9 words, under the floor of
+    # 25. The spelling does not show the vowel of either.
+    ("preta", "ˈpɾɛtɐ", "ˈpɾetɐ", "stressed mid vowel", ("exception", CC_40)),
+    ("malagueta", "mɐlɐˈɡɛtɐ", "mɐlɐˈɡetɐ", "stressed mid vowel", ("exception", CC_40)),
     # Cunha & Cintra p. 431 name frechar among the verbs with [ɛ] before a
     # palatal; any other such [ɛ] is a misfire of the prepalatal rule.
     ("frecha", "ˈfɾeʃɐ", "ˈfɾɛʃɐ", "stressed mid vowel", ("exception", "Cunha & Cintra p. 431")),
