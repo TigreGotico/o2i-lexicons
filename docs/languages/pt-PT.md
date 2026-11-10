@@ -66,14 +66,16 @@ A residual word is out when no second source agrees with it and pt.wiktionary or
 
 | Kind | Classes |
 | :--- | :--- |
-| Exception | the height of a stressed mid vowel, ⟨x⟩, ⟨qu gu⟩ with [w], an unstressed initial ⟨e⟩ or ⟨o⟩ in the classes that `entry_kinds.py` names, and a loan spelled outside the native system |
-| Patch | a stressed vowel in an ending that `entry_kinds.DOMINANT_ENDINGS` lists, a misfire of a `PT_SUFFIX_*` or prepalatal rule, a learned first element under an initial ⟨e⟩, a vowel before a coda stop or a coda ⟨l⟩, an unreduced learned vowel, and a word with no class |
+| Exception | the height of a stressed mid vowel, ⟨x⟩, ⟨qu gu⟩ with [w], an unstressed initial ⟨e⟩ or ⟨o⟩ in the classes that `entry_kinds.py` names, and kilowatt, a unit that AO90 Base I 2.º c) names |
+| Patch | a stressed vowel in an ending that `entry_kinds.DOMINANT_ENDINGS` lists, a misfire of a `PT_SUFFIX_*` or prepalatal rule, a learned first element under an initial ⟨e⟩, a vowel before a coda stop or a coda ⟨l⟩, an unreduced learned vowel, a loan spelled outside the native system, and a word with no class |
 
 An ending is in `DOMINANT_ENDINGS` when its stressed vowel takes one value in at least 90% of at least 25 single-word Infopédia rows. The spelling then shows the value, so a rule could take it. The sidecars give the exact citation or gap of each word.
 
 ## Known limits
 
-Some exception citations support the class more weakly than the contract asks. Cunha & Cintra p. 40 show that the height of a stressed mid vowel is distinctive. They do not state that no ending predicts it. [AO90](https://www.portaldalinguaportuguesa.org/acordo.php?action=acordo&version=1990) Base I 2.º-3.º lists ⟨k w y⟩ in foreign names and their derivatives. It does not state that the reading of a common loanword is lexical. For an unstressed initial vowel, the cited pages state the class or a variation, and the reading of the word comes from Infopédia.
+Some exception citations support the class more weakly than the contract asks. Cunha & Cintra p. 40 show that the height of a stressed mid vowel is distinctive. They do not state that no ending predicts it. For an unstressed initial vowel, the cited pages state the class or a variation, and the reading of the word comes from Infopédia.
+
+No source states that the reading of a loan is lexical, so a loan is a patch. A loan that differs from the rules only in a doubled consonant letter or an initial ⟨s⟩ before a consonant has the lead of that spelling. Every other loan has the gap `lead: pt-PT English loan spelling`, with ⟨tch⟩, ⟨zz⟩ or a final ⟨-ing⟩ when the word has one, and Infopédia gives its reading. That gap names the spelling of the loan, not the error of the rules. [AO90](https://www.portaldalinguaportuguesa.org/acordo.php?action=acordo&version=1990) Base I 2.º c) names kW-kilowatt among the units of measure that keep ⟨k w y⟩, so kilowatt is an exception. The Base gives the spelling and Infopédia gives the reading.
 
 A patch with no class has the gap `no lead: the rules miss the word outside every class and lead`, which names no rule. Some gaps name a section of `rule-leads.md`, an audit file that this repository does not hold.
 

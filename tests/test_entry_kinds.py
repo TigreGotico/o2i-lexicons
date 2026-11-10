@@ -77,8 +77,25 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
      ("exception", f"{CC_40}; AO90 Base III; Ciberdúvidas 4068")),
     ("aceleradora", "ɐsɨlɨɾɐˈdɔɾɐ", "ɐsɨlɨɾɐˈdoɾɐ", "stressed mid vowel+⟨qu gu⟩ with [w]",
      ("exception", "AO90 Base XIV 1.º; Cunha & Cintra p. 79")),
-    # No class: a spelling outside the native system is a loan.
-    ("antidumping", "ɐ̃tiˈdũpĩɡ", "ɐ̃tiˈdɐ̃pĩɡ", None, ("exception", "AO90 Base I 2.º-3.º")),
+    # No class: a spelling outside the native system is a loan. No source
+    # states that the reading of a loan is lexical, so a loan is a patch.
+    # A loan that differs from the rules only in a doubled consonant letter
+    # or an initial ⟨s⟩ before a consonant names that lead. Every other loan
+    # names the English loan spelling, with ⟨tch⟩, ⟨zz⟩ or a final ⟨-ing⟩.
+    ("lobby", "ˈlɔbbi", "ˈlɔbi", None, ("patch", ek.LOAN_DOUBLED)),
+    ("swing", "ˈʃwĩɡ", "ˈswĩɡ", None, ("patch", ek.LOAN_INITIAL_S)),
+    ("antidumping", "ɐ̃tiˈdũpĩɡ", "ɐ̃tiˈdɐ̃pĩɡ", None,
+     ("patch", "lead: pt-PT English loan spelling (final ⟨-ing⟩); Infopédia gives the reading")),
+    ("puzzle", "ˈpuzzlɨ", "ˈpɐzlɨ", None,
+     ("patch", "lead: pt-PT English loan spelling (⟨zz⟩); Infopédia gives the reading")),
+    ("jogging", "ˈʒɔɡʒĩɡ", "ˈʒɔɡĩɡ", None,
+     ("patch", "lead: pt-PT English loan spelling (final ⟨-ing⟩); Infopédia gives the reading")),
+    ("ketchup", "ˈkɛtʃup", "kɛˈtʃɐp", None,
+     ("patch", "lead: pt-PT English loan spelling (⟨tch⟩); Infopédia gives the reading")),
+    ("rap", "ˈʁap", "ˈʁɛp", None,
+     ("patch", "lead: pt-PT English loan spelling; Infopédia gives the reading")),
+    # AO90 Base I 2.º c): "kg-quilograma, km-quilómetro, kW-kilowatt".
+    ("kilowatt", "kiˈlɔwɐtt", "kilɔˈwɔt", None, ("exception", ek.AO90_UNIT)),
     ("breja", "ˈbɾeʒɐ", "ˈbɾɛʒɐ", None, ("patch", ek.NO_LEAD)),
 ])
 def test_pt_pt_kind(word, rules, entry, cls, expected):
@@ -94,7 +111,8 @@ def test_an_unknown_pt_pt_class_is_refused():
     ("foto", "ˈfotu", "ˈfɔtu", frozenset(), ("exception", "Cunha & Cintra p. 40; orthography2ipa#1824")),
     ("táxi", "ˈtaʃi", "ˈtaksi", frozenset(), ("exception", "AO90 Base III; Ciberdúvidas 4068")),
     ("exu", "eˈzu", "eˈʃu", frozenset(), ("exception", "AO90 Base III; Ciberdúvidas 4068")),
-    ("sexy", "ˈsesi", "ˈsɛksi", frozenset(), ("exception", "AO90 Base I 2.º-3.º")),
+    ("sexy", "ˈsesi", "ˈsɛksi", frozenset(),
+     ("patch", "lead: pt-BR English loan spelling; NILC gives the reading")),
     ("melo", "ˈmelu", "ˈmɛlu", frozenset("P"),
      ("patch", "Cunha & Cintra pp. 429-433: the stem vowel of a rhizotonic verb form")),
     ("joga", "ˈʒoɡa", "ˈʒɔɡa", frozenset("PY"),

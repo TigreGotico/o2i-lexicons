@@ -44,9 +44,22 @@ PT_SUFFIX_RULES = (
 
 #: A spelling outside the native system: ⟨k w y⟩, a doubled consonant or vowel
 #: that Portuguese does not write, ⟨s⟩ + consonant at the start, or a final
-#: consonant letter that Portuguese does not end a word with (AO90 Base I 2.º-3.º).
+#: consonant letter that Portuguese does not end a word with.
 LOAN_SPELLING = re.compile(
     r"[kwy]|pp|bb|zz|tt|gg|ee(?!m)|ng$|^s[^aeiouáéíóúâêôãõh]|sh|[bcdfgkpt]$")
+
+#: A doubled consonant letter other than ⟨cc rr ss⟩, and an initial ⟨s⟩ before
+#: a consonant: two loan spellings that Infopédia reads one way.
+DOUBLED_CONSONANT = re.compile(r"bb|dd|ff|gg|kk|ll|mm|nn|pp|tt|zz")
+INITIAL_S = re.compile(r"^s[^aeiouáéíóúâêôãõh]")
+
+#: AO90 Base I 2.º c) keeps ⟨k w y⟩ in "palavras adotadas como unidades de
+#: medida de curso internacional" and names kW-kilowatt.
+AO90_UNITS = frozenset({"kilowatt"})
+
+#: Spellings that mark an English loan, named in the gap of a loan patch.
+LOAN_MARKS = (("⟨tch⟩", re.compile(r"tch")), ("⟨zz⟩", re.compile(r"zz")),
+              ("final ⟨-ing⟩", re.compile(r"ing$")))
 
 PREPALATAL = re.compile(r"e(lh|nh|j|ch)[aeiou]")
 
@@ -68,7 +81,11 @@ ENDING_SECTIONS = {"oide": "Entries in ⟨-oide⟩", "dora": "Entries in ⟨-dor
 CC_STRESSED_MID = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
 X_VALUE = "AO90 Base III; Ciberdúvidas 4068"
 QU_GU = "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
-LOAN = "AO90 Base I 2.º-3.º"
+AO90_UNIT = "AO90 Base I 2.º c) for the spelling; Infopédia gives the reading"
+LOAN_DOUBLED = ("lead: a doubled consonant letter is one consonant in every Infopédia "
+                "word that has one")
+LOAN_INITIAL_S = ("lead: an initial ⟨s⟩ before a consonant is [s] in at least 90% of the "
+                  "Infopédia words")
 CODA_STOP = "orthography2ipa#2218"
 CODA_STOP_A = "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out"
 CODA_STOP_REDUCED = ("lead: the source reduces a vowel before a coda stop that "
@@ -128,6 +145,39 @@ def _pt_pt_coda_stop(rules: str, entry: str) -> Optional[str]:
     if changes - CODA_STOP_OPENS - {("ɐ", "a"), ("ɛ", "ɨ"), ("ɔ", "u")}:
         gaps.append(CODA_STOP_CLOSE)
     return "; ".join(gaps)
+
+
+def _loan_gap(word: str, rules: str, entry: str) -> Optional[str]:
+    """The gap of a pt-PT loan that differs from the rules only in a doubled
+    consonant letter or an initial ⟨s⟩ before a consonant, or ``None``."""
+    a, b = _plain(rules), _plain(entry)
+    gaps = []
+    for op, i1, i2, j1, j2 in SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op == "equal":
+            continue
+        if (op == "delete" and i2 - i1 == 1 and i1 and a[i1] == a[i1 - 1]
+                and DOUBLED_CONSONANT.search(word)):
+            gaps.append(LOAN_DOUBLED)
+        elif (op == "replace" and i1 == 0 and (a[i1:i2], b[j1:j2]) == ("ʃ", "s")
+                and INITIAL_S.match(word)):
+            gaps.append(LOAN_INITIAL_S)
+        else:
+            return None
+    return "; ".join(dict.fromkeys(gaps)) or None
+
+
+def loan_lead(code: str, word: str, source: str) -> str:
+    """The gap of a loan that no narrower lead covers. No source states that
+    the reading of a loan is lexical, so a loan is a patch."""
+    marks = ", ".join(name for name, mark in LOAN_MARKS if mark.search(word))
+    return (f"lead: {code} English loan spelling{f' ({marks})' if marks else ''}; "
+            f"{source} gives the reading")
+
+
+def _pt_pt_loan(word: str, rules: str, entry: str) -> tuple[str, str]:
+    if word in AO90_UNITS:
+        return "exception", AO90_UNIT
+    return "patch", _loan_gap(word, rules, entry) or loan_lead("pt-PT", word, "Infopédia")
 
 
 def _pt_pt_stressed(word: str, rules: str, entry: str) -> tuple[str, str]:
@@ -190,7 +240,9 @@ def pt_pt_kind(word: str, rules: str, entry: str, lexical_class: Optional[str]) 
     The note of an exception joins the citations of its exception parts.
     """
     if lexical_class is None:
-        return ("exception", LOAN) if LOAN_SPELLING.search(word) else ("patch", NO_LEAD)
+        if LOAN_SPELLING.search(word):
+            return _pt_pt_loan(word, rules, entry)
+        return "patch", NO_LEAD
     parts = [part for name in lexical_class.split("+")
              if (part := _pt_pt_part(word, rules, entry, name))[1] is not None]
     if not parts:
@@ -222,7 +274,7 @@ def pt_br_kind(word: str, rules: str, entry: str,
     if re.match(r"trans[aeiouáéíóúâêôãõ]", word):
         return "patch", "lead: the ⟨s⟩ of the prefix trans- before a vowel is [z]"
     if LOAN_SPELLING.search(word):
-        return "exception", LOAN
+        return "patch", loan_lead("pt-BR", word, "NILC")
     lexical_class = find_lexical_class(word, rules, entry)
     if lexical_class is None:
         return ("exception", X_VALUE) if "x" in word else ("patch", NO_LEAD)
