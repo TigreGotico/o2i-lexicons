@@ -86,7 +86,7 @@ Run the test suite with `python -m pytest -q tests`. It validates every packaged
 
 ## Known limits
 
-The sidecar records only the base name of each input file, with no version or hash. The pt-PT `source_url` names the main branch of the dataset, not a revision. The Michaelis snapshot is in a private dataset, so only project members can rebuild the pt-BR files.
+The pt-PT and pt-BR sidecars record only the base name of each input file, with no version or hash. The en-GB sidecars record the sha256 of the WikiPron file and the Britfone file. The pt-PT `source_url` names the main branch of the dataset, not a revision. The Michaelis snapshot is in a private dataset, so only project members can rebuild the pt-BR files.
 
 ---
 [← pt-PT](languages/pt-PT.md) · [Home](index.md) · [Contributing →](contributing.md)
