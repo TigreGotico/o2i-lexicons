@@ -588,6 +588,19 @@ def test_the_oide_and_dora_rules_took_their_entries():
     assert {w for w, g in patches.items() if "⟨-oide⟩" in g or "⟨-dora⟩" in g} == set()
 
 
+# orthography2ipa#2265 gives the open [ɔj] of a stressed ⟨oi⟩ in ⟨-oia⟩ and
+# ⟨-oico⟩, so the rules alone read these words as Infopédia does.
+OIA_OICO = {"boia": "ˈbɔjɐ", "joia": "ˈʒɔjɐ", "jiboia": "ʒiˈbɔjɐ", "paranoia": "pɐɾɐˈnɔjɐ",
+            "paranoico": "pɐɾɐˈnɔjku", "troica": "ˈtɾɔjkɐ", "zoico": "ˈzɔjku"}
+
+
+def test_the_oia_and_oico_rule_took_its_exceptions():
+    import orthography2ipa
+    assert pt_pt_entries().keys() & OIA_OICO.keys() == set()
+    g2p = orthography2ipa.G2P("pt-PT")
+    assert {w: g2p.transcribe_word(w) for w in OIA_OICO} == OIA_OICO
+
+
 def test_a_pt_br_verb_form_is_a_patch():
     # NILC tags melo melar.V:P1s only, a rhizotonic form of the levar model.
     patches = notes("pt-BR", "patch")
@@ -788,7 +801,7 @@ def test_the_pt_pt_loans_are_loanwords(kind):
 def test_every_other_pt_pt_exception_is_irregular():
     other = {w for w, r in reasons("pt-PT", "exception").items()
              if w not in PT_PT_LOANS["exception"] and r != "proper_noun"}
-    assert len(other) == 1880
+    assert len(other) == 1842
     assert words_of_class("pt-PT", "exception", "irregular") == other
 
 
