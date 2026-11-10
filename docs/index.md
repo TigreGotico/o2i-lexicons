@@ -6,7 +6,7 @@ Read the pages in this order:
 
 1. [Exceptions and patches](kinds.md): the two kinds of entry, which kind wins, and how the package drops a patch when its rule lands.
 2. [Data format](data-format.md): the TSV files, the `.meta.json` sidecars, the entry points and the Python API.
-3. [en-GB](languages/en-GB.md): the WikiPron data and the Received Pronunciation target.
+3. [en-GB](languages/en-GB.md): the WikiPron data, the Britfone check and the Received Pronunciation target.
 4. [pt-BR](languages/pt-BR.md): the NILC data and the map to the `pt-BR` norm.
 5. [pt-PT](languages/pt-PT.md): the Infopédia data and the map to the `pt-PT` norm.
 6. [Building and pruning](building.md): the build, measure and prune scripts, their inputs, and the CI jobs.

@@ -30,7 +30,7 @@ An exception is a word that no spelling rule can reach, and it carries a citatio
 
 | Code | Source | Page |
 | :--- | :--- | :--- |
-| `en-GB` | [WikiPron](https://github.com/CUNY-CL/wikipron), from Wiktionary | [docs/languages/en-GB.md](docs/languages/en-GB.md) |
+| `en-GB` | [WikiPron](https://github.com/CUNY-CL/wikipron), from Wiktionary, checked against [Britfone](https://github.com/JoseLlarena/Britfone) 3.0.1 | [docs/languages/en-GB.md](docs/languages/en-GB.md) |
 | `pt-BR` | the NILC Aeiouadô training file | [docs/languages/pt-BR.md](docs/languages/pt-BR.md) |
 | `pt-PT` | the Infopédia rows of portuguese-unified-pronunciation-lexicon | [docs/languages/pt-PT.md](docs/languages/pt-PT.md) |
 
