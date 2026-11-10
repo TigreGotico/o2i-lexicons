@@ -738,7 +738,10 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     for headword in golds:
         casings.setdefault(lb.lexicon_key(headword), set()).add(headword)
 
-    engine = orthography2ipa.G2P(code, expose_ambiguous_endings=False)
+    # An empty lexicon, not None: None reads the process-wide lexicon, and
+    # the build must compare each gold reading with the rules alone.
+    engine = orthography2ipa.G2P(code, expose_ambiguous_endings=False,
+                                 pipeline=orthography2ipa.Pipeline(lexicon={}))
     spec = engine.spec
     inventory = phoneme_inventory(spec)
     extra = bench._prosody_marks(code)

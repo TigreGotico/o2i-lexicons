@@ -5,15 +5,21 @@
 
 Each entry is transcribed by an engine with an empty lexicon, so the check sees
 the rules alone, and compared with the entry's IPA under the board's broad,
-stress-free normalisation. An entry that now matches is stale: the rules reach
-it, so the lexicon must not hold it.
+stress-free normalisation. In a file whose sidecar gives ``"stress": "source"``,
+the entry's stress is part of its reading, so the rules must also stress the
+same vowel. In a ``rules`` file the entry has no stress mark and the rules place
+the stress anyway. An entry that now matches is stale: the rules reach it, so
+the lexicon must not hold it.
 
 The two kinds of entry are stale for different reasons. A stale patch is the
 expected result: the rule of its gap landed. ``--write`` removes it and its
 records, and records the installed version as the one where the remaining
-patches last failed. A stale exception means that its class is wrong, because
-the spelling does give its reading. The check lists it and exits 1, also with
-``--write``, and never removes it: a person decides where the word goes.
+patches last failed. It then reads each file it wrote back from disk and
+checks it against the schema; a file that fails stops the run with exit 1
+before the report is written. A stale exception means that its class is
+wrong, because the spelling does give its reading. The check lists it and
+exits 1, also with ``--write``, and never removes it: a person decides where
+the word goes.
 
 The script checks the files of this checkout, never an installed copy.
 """
@@ -36,25 +42,40 @@ from orthography2ipa.version import VERSION_STR  # noqa: E402
 import lexicon_build as lb  # noqa: E402
 import o2i_harness  # noqa: E402
 import o2i_lexicons  # noqa: E402
+from o2i_lexicons.schema import validate_meta, validate_tsv  # noqa: E402
 
 
-def stale_entries(code: str, entries: dict[str, str], bench) -> list[str]:
-    """The words of *entries* that the rules alone now transcribe right."""
+def stale_entries(code: str, entries: dict[str, str], bench, stress: str) -> list[str]:
+    """The words of *entries* that the rules alone now transcribe right.
+
+    *stress* is the ``stress`` field of the file's sidecar.
+    """
     engine = G2P(code, expose_ambiguous_endings=False, pipeline=Pipeline(lexicon={}))
     extra = bench._prosody_marks(code)
 
-    def norm(ipa: str) -> str:
-        return bench.normalize(ipa, strip_stress=True, broad=True, extra_strip=extra)
+    def norm(ipa: str, strip_stress: bool = True) -> str:
+        return bench.normalize(ipa, strip_stress=strip_stress, broad=True, extra_strip=extra)
 
     stale = []
     for word, ipa in entries.items():
         try:
-            hyp = norm(engine.transcribe_word(word))
+            rules = engine.transcribe_word(word)
         except Exception:
             continue
-        if hyp and hyp == norm(ipa):
+        hyp = norm(rules)
+        if not hyp or hyp != norm(ipa):
+            continue
+        if stress == "rules" or lb.same_stress(norm(rules, False), norm(ipa, False)):
             stale.append(word)
     return sorted(stale)
+
+
+def written_problems(tsv: Path, meta_file: Path, code: str, kind: str) -> list[str]:
+    """The schema problems of a lexicon file and its sidecar as they are on disk."""
+    text = tsv.read_text(encoding="utf-8")
+    problems = [f"{tsv.name} line {n}: {p}" for n, p in validate_tsv(text)]
+    meta = json.loads(meta_file.read_text(encoding="utf-8"))
+    return problems + validate_meta(meta, code, parse_lexicon_text(text), kind)
 
 
 def forget(meta: dict, words: list[str]) -> None:
@@ -86,7 +107,8 @@ def main(argv=None) -> int:
         for code in o2i_lexicons.available_codes(kind):
             tsv = tsv_of(code)
             entries = parse_lexicon_text(tsv.read_text(encoding="utf-8"))
-            stale = stale_entries(code, entries, bench)
+            meta = json.loads(meta_of(code).read_text(encoding="utf-8"))
+            stale = stale_entries(code, entries, bench, meta["stress"])
             report["codes"].setdefault(code, {})[kind] = {"entries": len(entries),
                                                           "stale": stale}
             print(f"{code} {kind} file: {len(entries)} entries, {len(stale)} now right under "
@@ -94,12 +116,15 @@ def main(argv=None) -> int:
             for word in stale:
                 print(f"  {word}\t{entries[word]}")
             if kind == "patch" and args.write and stale:
-                meta = json.loads(meta_of(code).read_text(encoding="utf-8"))
                 for word in stale:
                     del entries[word]
                 forget(meta, stale)
                 meta["o2i_version"] = VERSION_STR
-                lb.write_lexicon(tsv.parent, tsv.stem, entries, meta)
+                written = lb.write_lexicon(tsv.parent, tsv.stem, entries, meta)
+                problems = written_problems(*written, code, kind)
+                if problems:
+                    raise SystemExit(f"the pruned {code} {kind} file fails the schema:\n  "
+                                     + "\n  ".join(problems))
     if args.report:
         args.report.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n",
                                encoding="utf-8")
