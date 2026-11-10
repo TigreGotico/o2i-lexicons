@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.5a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.5a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.4a1...0.7.5a1)
+
+**Merged pull requests:**
+
+- fix\(scripts\): keep an entry whose stress the rules miss [\#48](https://github.com/TigreGotico/o2i-lexicons/pull/48) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.4a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.4a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.3a2...0.7.4a1)
+
 ## [0.7.3a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.3a2) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.3a1...0.7.3a2)
