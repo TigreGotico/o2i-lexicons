@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.8a3](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.8a3) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a2...0.7.8a3)
+
+**Merged pull requests:**
+
+- docs\(en-GB\): describe the Britfone selection and the confirmation field [\#64](https://github.com/TigreGotico/o2i-lexicons/pull/64) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.8a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.8a2) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a1...0.7.8a2)
