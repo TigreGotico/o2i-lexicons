@@ -610,6 +610,44 @@ def test_an_oide_entry_has_no_stressed_vowel_class(word, cls):
     assert lexical_classes("pt-PT")[word]["class"] == cls
 
 
+# AO90 Base I 2.º keeps ⟨k w y⟩ "c) Em siglas, símbolos e mesmo em palavras
+# adotadas como unidades de medida de curso internacional: ... kW-kilowatt".
+# It names no other loan of the lexicon and gives no reading. In Infopédia a
+# doubled consonant letter other than ⟨rr ss cc⟩ is one consonant in each of
+# 174 single words, and an initial ⟨s⟩ before a consonant is [s] in 65 of 67.
+def test_only_kilowatt_cites_ao90_base_i():
+    for code, source in (("pt-PT", "Infopédia"), ("pt-BR", "NILC")):
+        for word, citation in notes(code, "exception").items():
+            assert "Base I 2.º-3.º" not in citation, (code, word)
+    assert notes("pt-PT", "exception")["kilowatt"].startswith("AO90 Base I 2.º c)")
+
+
+# No source states that the reading of a loan is lexical (docs/kinds.md: "A
+# cited source must state that class"), so a loan is a patch. Its gap names the
+# English loan spelling, and ⟨tch⟩, ⟨zz⟩ or a final ⟨-ing⟩ where the word has one.
+@pytest.mark.parametrize("code, word, mark", [
+    ("pt-PT", "antidumping", " (final ⟨-ing⟩)"), ("pt-PT", "freelance", ""),
+    ("pt-PT", "jogging", " (final ⟨-ing⟩)"), ("pt-PT", "ketchup", " (⟨tch⟩)"),
+    ("pt-PT", "puzzle", " (⟨zz⟩)"), ("pt-PT", "rap", ""), ("pt-PT", "shorts", ""),
+    ("pt-PT", "skinhead", ""), ("pt-PT", "timing", " (final ⟨-ing⟩)"),
+    ("pt-PT", "windsurf", ""), ("pt-BR", "sexy", "")])
+def test_a_loan_is_a_patch_with_the_loan_lead(code, word, mark):
+    source = {"pt-PT": "Infopédia", "pt-BR": "NILC"}[code]
+    assert word not in notes(code, "exception")
+    assert notes(code, "patch")[word] == (
+        f"lead: {code} English loan spelling{mark}; {source} gives the reading")
+
+
+@pytest.mark.parametrize("word, lead", [
+    ("lobby", "doubled consonant letter"), ("zapping", "doubled consonant letter"),
+    ("snobismo", "initial ⟨s⟩ before a consonant is [s]"),
+    ("swing", "initial ⟨s⟩ before a consonant is [s]")])
+def test_a_loan_a_rule_could_read_is_a_patch(word, lead):
+    assert word not in notes("pt-PT", "exception")
+    gap = notes("pt-PT", "patch")[word]
+    assert gap.startswith("lead: ") and lead in gap
+
+
 # Infopédia gives [e] in 93% of the 29 words in ⟨-queta⟩ and 93% of the 28 in
 # ⟨-eso⟩, [ɛ] in all 104 longer words in ⟨-eca⟩ and [ɔ] in 96% of the 296 in
 # ⟨-ose⟩, so the spelling shows the vowel and a rule could take it. No source

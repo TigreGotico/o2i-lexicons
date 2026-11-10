@@ -41,8 +41,8 @@ Michaelis prints a broad notation, so it counts only for the stress and the heig
 
 | Kind | Classes |
 | :--- | :--- |
-| Exception | the height of a stressed mid vowel, the value of ⟨x⟩, and a loan spelled outside the native system |
-| Patch | the stem vowel of a verb form that the NILC file tags only as a verb, and the ⟨s⟩ of trans- before a vowel |
+| Exception | the height of a stressed mid vowel, and the value of ⟨x⟩ |
+| Patch | the stem vowel of a verb form that the NILC file tags only as a verb, the ⟨s⟩ of trans- before a vowel, and a loan spelled outside the native system |
 
 The stem vowel of a rhizotonic present form follows the model verbs of Cunha & Cintra (*Nova Gramática do Português Contemporâneo*, pp. 429-433), so a rule can read it. The sidecars give the exact citation or gap of each word.
 
