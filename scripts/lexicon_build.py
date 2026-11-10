@@ -236,9 +236,10 @@ def britfone_readings(text: str) -> dict[str, list[str]]:
     (``COSTA_RICA``) is left out. A reading with no primary stress mark is a
     weak form (you [jə], into [ɪntə]) and is left out: a lexicon entry is the
     reading of the word said on its own, and Britfone marks the primary
-    stress of every other reading. Britfone writes STRUT as [ɐ] "instead of
-    traditional /ʌ/" (its README), so the reading takes [ʌ], the symbol of
-    Roach (2004, p. 243) and of WikiPron.
+    stress of every other reading. A word that has only weak forms maps to an
+    empty list, so the word still counts as one that Britfone holds. Britfone
+    writes STRUT as [ɐ] "instead of traditional /ʌ/" (its README), so the
+    reading takes [ʌ], the symbol of Roach (2004, p. 243) and of WikiPron.
     """
     out: dict[str, list[str]] = {}
     for line in text.splitlines():
@@ -246,9 +247,11 @@ def britfone_readings(text: str) -> dict[str, list[str]]:
             continue
         head, _, reading = line.partition(", ")
         word = re.sub(r"\(\d+\)$", "", head.strip())
-        if "_" in word or "ˈ" not in reading:
+        if "_" in word:
             continue
-        out.setdefault(lexicon_key(word), []).append(reading.strip().replace("ɐ", "ʌ"))
+        readings = out.setdefault(lexicon_key(word), [])
+        if "ˈ" in reading:
+            readings.append(reading.strip().replace("ɐ", "ʌ"))
     return out
 
 

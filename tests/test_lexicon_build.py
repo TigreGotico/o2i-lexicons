@@ -1161,3 +1161,61 @@ def test_the_build_skips_a_word_the_spec_holds(tmp_path, monkeypatch):
     assert "prove\tthe spec's word_exceptions hold the word" in excluded.read_text(encoding="utf-8")
     patches = tmp_path / "out" / "patches" / "en-GB"
     assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "yacht\tjɒt\n"
+
+
+def test_the_en_gb_build_keeps_a_single_reading_only_when_britfone_lacks_the_word(
+        tmp_path, monkeypatch):
+    # Britfone chooses among several WikiPron readings. The one reading of a
+    # word that Britfone has no line for is the entry when it passes the
+    # screens, and the sidecar says that no second source checked it.
+    import json
+    from types import SimpleNamespace
+
+    gold = [("yacht", "j ɒ t"),                               # one reading, no Britfone line
+            ("Rhyl", "ɹ ɪ l"),                                # a name, one reading, no line
+            ("colonel", "k ɜː n ə l"), ("colonel", "k ɜː n l̩"),  # two readings, no line
+            ("thesis", "θ ɛ s ɪ s"),                          # one reading, Britfone disagrees
+            ("dye", "d aɪ"),                                  # Britfone has a weak form only
+            ("rere", "ɾ iː ɾ"),                               # one reading, rhotic
+            ("goes", "ɡ æ n z"), ("goes", "ɡ ə ʊ z")]         # Britfone chooses
+    rules = {"yacht": "ˈjætʃt", "rhyl": "ˈɹaɪl", "colonel": "ˈkɒlənəl", "thesis": "ˈθɛzɪs",
+             "dye": "ˈdiː", "rere": "ˈɹɛɹ", "goes": "ˈɡɒz"}
+    bench = SimpleNamespace(
+        provenance_for=lambda dataset, code: "crowd-scraped",
+        can_gate_promotion=lambda tier: True,
+        load_wikipron=lambda code, limit: gold,
+        normalize=lambda ipa, strip_stress, broad, extra_strip="": ipa.replace("ˈ", ""),
+        _prosody_marks=lambda code: "",
+        levenshtein=lambda a, b: int(a != b),
+        align=naive_align,
+        _WIKIPRON_BASE="https://example.org/",
+        _WIKIPRON_FILES={"en-GB": "en.tsv"},
+    )
+    monkeypatch.setattr(bl.o2i_harness, "load_benchmark", lambda cache: bench)
+    monkeypatch.setattr(bl.o2i_harness, "harness_sha256", lambda cache: "0" * 64)
+    monkeypatch.setattr(bl, "WIKIPRON_SHA256", {})
+    monkeypatch.setattr(bl.orthography2ipa.G2P, "transcribe_word",
+                        lambda self, word: rules[word.lower()])
+    britfone = tmp_path / "britfone.csv"
+    britfone.write_text("DYE, d aɪ\nGOES, g ˈəʊ z\nTHESIS, θ ˈiː s ɪ s\n", encoding="utf-8")
+    monkeypatch.setitem(bl.BRITFONE, "sha256", bl.sha256_of(britfone))
+    report = bl.build("en-GB", "wikipron", tmp_path, 99, tmp_path / "out", "build",
+                      inputs={"britfone": britfone})
+    assert report["excluded"] == {
+        "several readings and britfone has no line for the word": 1,
+        "no reading agrees with britfone": 1,
+        "britfone has only weak forms of the word": 1,
+        "every gold reading is rhotic": 1,
+    }
+    out = tmp_path / "out"
+    assert (out / "en-GB" / "wikipron.tsv").read_text(encoding="utf-8") == "rhyl\tɹɪl\n"
+    assert (out / "patches" / "en-GB" / "wikipron.tsv").read_text(encoding="utf-8") == (
+        "goes\tɡəʊz\nyacht\tjɒt\n")
+    exception_meta = json.loads((out / "en-GB" / "wikipron.meta.json").read_text(encoding="utf-8"))
+    patch_meta = json.loads((out / "patches" / "en-GB" / "wikipron.meta.json")
+                            .read_text(encoding="utf-8"))
+    assert exception_meta["confirmation"] == {"rhyl": "single_reading"}
+    assert exception_meta["citations"] == {
+        "rhyl": "Wiktionary via WikiPron (en-GB); not checked against a dictionary"}
+    assert patch_meta["confirmation"] == {"goes": "second_source", "yacht": "single_reading"}
+    assert set(patch_meta["confirmation_basis"]) == {"second_source", "single_reading"}

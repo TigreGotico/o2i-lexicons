@@ -23,15 +23,19 @@ it has a vowel outside the RP vowels of Roach (2004)
 spelling (``lexicon_build.truncated``). A word whose every reading fails a
 screen leaves the lexicon, and ``--excluded`` lists it with its readings.
 
-A code can take its entry only from a reading that a second, independent
-source gives too (``AGREEMENT_SOURCES``). The en-GB entry is the WikiPron
-reading that agrees with a stressed Britfone reading of the word
-(``lexicon_build.agrees``), and the Britfone order decides between two that
-agree. A word that Britfone does not hold, or whose readings all disagree
-with Britfone, leaves the lexicon: no entry is better than a guess, because
-an entry overrides the rules. Such a word still counts toward a lead. A word
-whose rules output agrees with Britfone needs no entry, and a homograph of
-``lexicon_build.HOMOGRAPHS`` gets none, because an entry cannot choose by
+A code can have a second source that chooses among the readings of the gold
+(``AGREEMENT_SOURCES``). When WikiPron gives an en-GB word more than one
+reading, the entry is the reading that agrees with a stressed Britfone
+reading of the word (``lexicon_build.agrees``), and the Britfone order
+decides between two that agree. When WikiPron gives the word one reading and
+Britfone has no line for it, there is no choice to make, and the reading is
+the entry when it passes the screens. A word whose readings all disagree with
+Britfone leaves the lexicon, and so does a word with several readings that
+Britfone does not hold: no entry is better than a guess, because an entry
+overrides the rules. Such a word still counts toward a lead. The sidecar
+field ``confirmation`` names the basis of each entry (``CONFIRMATIONS``). A
+word whose rules output agrees with Britfone needs no entry, and a homograph
+of ``lexicon_build.HOMOGRAPHS`` gets none, because an entry cannot choose by
 sense.
 
 Words that share a spelling pattern and the same error at it form a lead. A
@@ -691,9 +695,17 @@ BRITFONE = {
                      "primary stress left out",
 }
 
-#: code -> the second source that an entry must agree with, and the input
-#: argument that holds its file.
+#: code -> the second source that chooses among the readings of a word, and
+#: the input argument that holds its file.
 AGREEMENT_SOURCES = {"en-GB": (BRITFONE, "britfone")}
+
+#: The basis of an entry of a code with a second source: the value of the
+#: sidecar field ``confirmation`` -> what it states.
+CONFIRMATIONS = {
+    "second_source": "the reading agrees with a stressed reading of agreement_source",
+    "single_reading": "the source gives the word one reading, agreement_source has no "
+                      "line for the word, and no second source checks the reading",
+}
 
 
 def sha256_of(path: Path) -> str:
@@ -784,9 +796,11 @@ def place_stress_marks(kept: list[lb.Candidate]) -> tuple[dict[str, str], Counte
 
 def entry_kinds(code: str, engine, entries: dict[str, str], reasons: dict[str, str],
                 lexical: dict[str, str], headwords: frozenset[str],
-                inputs: dict[str, Path]) -> dict[str, tuple[str, str]]:
+                inputs: dict[str, Path],
+                confirmation: dict[str, str]) -> dict[str, tuple[str, str]]:
     """word -> ``(kind, note)`` of each entry, by the rules of
-    ``entry_kinds`` for *code*. *headwords* are the lexicon keys of the gold."""
+    ``entry_kinds`` for *code*. *headwords* are the lexicon keys of the gold,
+    and *confirmation* gives the ``CONFIRMATIONS`` basis of each entry."""
     if code == "pt-PT":
         return {w: ek.pt_pt_kind(w, engine.transcribe_word(w), ipa, lexical.get(w))
                 for w, ipa in entries.items()}
@@ -795,7 +809,8 @@ def entry_kinds(code: str, engine, entries: dict[str, str], reasons: dict[str, s
         return {w: ek.pt_br_kind(w, engine.transcribe_word(w), ipa, tenses.get(w, frozenset()))
                 for w, ipa in entries.items()}
     if code == "en-GB":
-        return {w: ek.en_gb_kind(w, reasons[w], headwords, frozenset(entries))
+        return {w: ek.en_gb_kind(w, reasons[w], headwords, frozenset(entries),
+                                 confirmation.get(w) != "single_reading")
                 for w in entries}
     raise SystemExit(f"entry_kinds has no rules for {code}; an entry of it has no kind")
 
@@ -856,6 +871,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     # They ship no entry, but they still count toward a lead: a lead is a
     # pattern of rule errors in the whole gold, not in the confirmed words only.
     unconfirmed: list[lb.Candidate] = []
+    confirmation: dict[str, str] = {}
     right = 0
     for headword, readings in golds.items():
         word = lb.lexicon_key(headword)
@@ -909,9 +925,15 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
                 exclude(headword, f"the rules give the {name} reading",
                         f"{rules} | {', '.join(placed)} | {name}: {', '.join(refs)}")
                 continue
-            if not refs or not any(lb.agrees(g, r) for r in refs for g in placed):
-                if not refs:
-                    exclude(headword, f"{name} has no stressed reading of the word",
+            if word not in references and len(golds[headword]) == 1:
+                ipa = usable(placed[0])
+                confirmation[word] = "single_reading"
+            elif not refs or not any(lb.agrees(g, r) for r in refs for g in placed):
+                if word not in references:
+                    exclude(headword, f"several readings and {name} has no line for the word",
+                            ", ".join(placed))
+                elif not refs:
+                    exclude(headword, f"{name} has only weak forms of the word",
                             ", ".join(placed))
                 else:
                     exclude(headword, f"no reading agrees with {name}",
@@ -919,7 +941,9 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
                 if (fallback := lb.first_usable(placed, usable)) is not None:
                     unconfirmed.append(lb.Candidate(headword, word, hyp, norm(fallback), fallback))
                 continue
-            ipa = lb.agreeing_reading(placed, refs, usable)
+            else:
+                ipa = lb.agreeing_reading(placed, refs, usable)
+                confirmation[word] = "second_source"
         else:
             ipa = lb.first_usable(placed, usable)
         if ipa is None:
@@ -968,6 +992,8 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         meta["agreement_source"] = {k: source[k] for k in
                                     ("name", "version", "url", "sha256", "licence", "accent",
                                      "normalisation")}
+        meta["confirmation"] = {w: confirmation[w] for w in entries}
+        meta["confirmation_basis"] = dict(CONFIRMATIONS)
     if dataset == "wikipron" and code in WIKIPRON_SHA256:
         meta["source_sha256"] = WIKIPRON_SHA256[code]
     wiktionary_words = sorted(c.word for c, _, stage, _ in screened if stage == "mined")
@@ -979,7 +1005,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     if lexical_entries:
         meta["lexical_classes"] = lexical_entries
     kinds = entry_kinds(code, engine, entries, reasons, lexical,
-                        frozenset(lb.lexicon_key(h) for h in golds), inputs)
+                        frozenset(lb.lexicon_key(h) for h in golds), inputs, confirmation)
     files = {}
     for kind, (part, part_meta) in ek.split(entries, meta, kinds).items():
         out_dir = out_root / code if kind == "exception" else out_root / PATCH_DIR / code

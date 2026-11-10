@@ -447,9 +447,11 @@ def test_an_en_gb_entry_is_the_britfone_reading_or_none(word, britfone):
 
 
 @pytest.mark.parametrize("word", ["aussie", "jambol", "rere", "guomindang", "zzxjoanw"])
-def test_an_en_gb_word_with_no_britfone_reading_has_no_entry(word):
-    # Britfone 3.0.1 has no line for these words. The dev data had aussie [s],
-    # jambol [j], rere [ɾiːɾ], guomindang [ɡwɑ] and zzxjoanw [ʃɑ].
+def test_an_en_gb_word_that_britfone_cannot_confirm_has_no_bad_entry(word):
+    # Britfone 3.0.1 has no line for these words. The dev data had aussie [s]
+    # and jambol [j] (too few phones), rere [ɾiːɾ] (rhotic), guomindang [ɡwɑ]
+    # (short [ɑ]), and zzxjoanw [ʃɑ], one of two WikiPron readings with no
+    # second source to choose between them.
     assert word not in all_entries("en-GB")
 
 
@@ -471,20 +473,45 @@ def test_every_en_gb_entry_has_rp_vowels_only():
     assert {w: ipa for w, ipa in entries.items() if lb.truncated(w, ipa)} == {}
 
 
+@pytest.mark.parametrize("kind", FILES)
+def test_each_en_gb_entry_names_its_confirmation(kind):
+    meta = FILES[kind][1]("en-GB")
+    assert set(meta["confirmation"]) == set(file_entries("en-GB", kind))
+    assert set(meta["confirmation"].values()) == {"second_source", "single_reading"}
+    assert set(meta["confirmation_basis"]) == {"second_source", "single_reading"}
+
+
+# The one WikiPron reading of a word that Britfone 3.0.1 has no line for, from
+# eng_latn_uk_broad.tsv at commit d282e848: "Fareham\tf ɛ ə ɹ ə m",
+# "Keays\tk iː z", "apophthegm\tæ p ə θ ɛ m".
+@pytest.mark.parametrize("word, kind, entry", [
+    ("fareham", "exception", "fɛəɹəm"),
+    ("keays", "exception", "kiːz"),
+    ("apophthegm", "patch", "æpəθɛm"),
+])
+def test_a_single_en_gb_reading_ships_unconfirmed(word, kind, entry):
+    assert file_entries("en-GB", kind)[word] == entry
+    assert FILES[kind][1]("en-GB")["confirmation"][word] == "single_reading"
+
+
 def test_the_pronoun_i_is_no_en_gb_exception():
     exceptions = file_entries("en-GB", "exception")
     assert {"i", "i'll", "i'm", "i'd", "i've"}.isdisjoint(exceptions)
 
 
 EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); the reading agrees with Britfone 3.0.1"
+EN_GB_UNCHECKED_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
 
 
 def test_an_en_gb_exception_is_a_name_or_an_acronym():
     # No spelling rule gives the reading of a name or of an acronym. The
-    # citation names where the reading comes from.
+    # citation names where the reading comes from, and whether Britfone
+    # confirmed it.
     meta = FILES["exception"][1]("en-GB")
     assert set(meta["reasons"].values()) == {"proper_noun", "acronym"}
-    assert set(meta["citations"].values()) == {EN_GB_CITATION}
+    expected = {"second_source": EN_GB_CITATION, "single_reading": EN_GB_UNCHECKED_CITATION}
+    assert meta["citations"] == {w: expected[c] for w, c in meta["confirmation"].items()}
+    assert set(meta["citations"].values()) == {EN_GB_CITATION, EN_GB_UNCHECKED_CITATION}
     assert meta["reasons"]["aldeburgh"] == "proper_noun"
     assert meta["reasons"]["ascii"] == "acronym"
 
