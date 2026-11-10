@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.16a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.16a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.15a1...0.7.16a1)
+
+**Merged pull requests:**
+
+- fix\(pt-PT\): add the rule leads page and point the patch gaps to it [\#78](https://github.com/TigreGotico/o2i-lexicons/pull/78) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.15a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.15a1) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.14a1...0.7.15a1)
