@@ -5,8 +5,11 @@
 
 Each entry is transcribed by an engine with an empty lexicon, so the check sees
 the rules alone, and compared with the entry's IPA under the board's broad,
-stress-free normalisation. An entry that now matches is stale: the rules reach
-it, so the lexicon must not hold it.
+stress-free normalisation. In a file whose sidecar gives ``"stress": "source"``,
+the entry's stress is part of its reading, so the rules must also stress the
+same vowel. In a ``rules`` file the entry has no stress mark and the rules place
+the stress anyway. An entry that now matches is stale: the rules reach it, so
+the lexicon must not hold it.
 
 The two kinds of entry are stale for different reasons. A stale patch is the
 expected result: the rule of its gap landed. ``--write`` removes it and its
@@ -36,21 +39,27 @@ sys.path.insert(0, str(ROOT))
 import o2i_lexicons  # noqa: E402
 
 
-def stale_entries(code: str, entries: dict[str, str], bench) -> list[str]:
-    """The words of *entries* that the rules alone now transcribe right."""
+def stale_entries(code: str, entries: dict[str, str], bench, stress: str) -> list[str]:
+    """The words of *entries* that the rules alone now transcribe right.
+
+    *stress* is the ``stress`` field of the file's sidecar.
+    """
     engine = G2P(code, expose_ambiguous_endings=False, pipeline=Pipeline(lexicon={}))
     extra = bench._prosody_marks(code)
 
-    def norm(ipa: str) -> str:
-        return bench.normalize(ipa, strip_stress=True, broad=True, extra_strip=extra)
+    def norm(ipa: str, strip_stress: bool = True) -> str:
+        return bench.normalize(ipa, strip_stress=strip_stress, broad=True, extra_strip=extra)
 
     stale = []
     for word, ipa in entries.items():
         try:
-            hyp = norm(engine.transcribe_word(word))
+            rules = engine.transcribe_word(word)
         except Exception:
             continue
-        if hyp and hyp == norm(ipa):
+        hyp = norm(rules)
+        if not hyp or hyp != norm(ipa):
+            continue
+        if stress == "rules" or lb.same_stress(norm(rules, False), norm(ipa, False)):
             stale.append(word)
     return sorted(stale)
 
@@ -81,7 +90,8 @@ def main(argv=None) -> int:
         for code in o2i_lexicons.available_codes(kind):
             tsv = tsv_of(code)
             entries = parse_lexicon_text(tsv.read_text(encoding="utf-8"))
-            stale = stale_entries(code, entries, bench)
+            meta = json.loads(meta_of(code).read_text(encoding="utf-8"))
+            stale = stale_entries(code, entries, bench, meta["stress"])
             report["codes"].setdefault(code, {})[kind] = {"entries": len(entries),
                                                           "stale": stale}
             print(f"{code} {kind} file: {len(entries)} entries, {len(stale)} now right under "
@@ -89,7 +99,6 @@ def main(argv=None) -> int:
             for word in stale:
                 print(f"  {word}\t{entries[word]}")
             if kind == "patch" and args.write and stale:
-                meta = json.loads(meta_of(code).read_text(encoding="utf-8"))
                 for word in stale:
                     del entries[word]
                 forget(meta, stale)
