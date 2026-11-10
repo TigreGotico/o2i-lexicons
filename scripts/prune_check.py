@@ -14,6 +14,8 @@ records, and records the installed version as the one where the remaining
 patches last failed. A stale exception means that its class is wrong, because
 the spelling does give its reading. The check lists it and exits 1, also with
 ``--write``, and never removes it: a person decides where the word goes.
+
+The script checks the files of this checkout, never an installed copy.
 """
 from __future__ import annotations
 
@@ -22,17 +24,17 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from orthography2ipa import G2P, Pipeline
-from orthography2ipa.lexicon import parse_lexicon_text
-from orthography2ipa.version import VERSION_STR
-
-import lexicon_build as lb
-import o2i_harness
-
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+# The checkout goes on the path before any import of o2i_lexicons, which
+# lexicon_build makes, so an installed copy cannot take its place.
+sys.path[:0] = [str(Path(__file__).resolve().parent), str(ROOT)]
+
+from orthography2ipa import G2P, Pipeline  # noqa: E402
+from orthography2ipa.lexicon import parse_lexicon_text  # noqa: E402
+from orthography2ipa.version import VERSION_STR  # noqa: E402
+
+import lexicon_build as lb  # noqa: E402
+import o2i_harness  # noqa: E402
 import o2i_lexicons  # noqa: E402
 
 
@@ -72,6 +74,9 @@ def main(argv=None) -> int:
     ap.add_argument("--write", action="store_true", help="remove stale entries in place")
     ap.add_argument("--report", type=Path, help="write the stale words here as JSON")
     args = ap.parse_args(argv)
+    package = Path(o2i_lexicons.__file__).resolve().parent
+    if package != ROOT / "o2i_lexicons":
+        raise SystemExit(f"o2i_lexicons was imported from {package}, not from this checkout")
 
     bench = o2i_harness.load_benchmark(args.cache)
     report = {"o2i_version": VERSION_STR, "codes": {}}

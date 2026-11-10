@@ -137,13 +137,13 @@ python scripts/build_lexicon.py pt-BR nilc --nilc unitex_sample_transcribed.txt 
     --michaelis entries.jsonl --homographs heterophonic_homographs.csv \
     --report build-report.json
 python scripts/measure.py en-GB ipadict:en-GB cmudict:en
-python scripts/measure.py pt-PT ep_dialects:pt-PT wikipron:pt-PT
+python scripts/measure.py pt-PT ep_dialects:pt-PT
 python scripts/prune_check.py
 ```
 
 `build_lexicon.py` keeps a word only when the rules get it wrong under the board's scoring. Words that share a spelling pattern and the same error at it form a lead. A lead is a question for the linguistic literature, not a rule. Its words stay out of the lexicon until a cited source states a rule for the pattern, or states that the pattern is lexical. The build report lists each lead.
 
-`measure.py` scores a lexicon on a gold from a different source, with the rules only and with the lexicon. It refuses the gold that supplied the lexicon, and the board dataset that holds that gold. The pt-PT screen keeps the entries outside the residual classes only when a second source corroborates them, WikiPron pt-PT among them, so a pt-PT measure on WikiPron is not independent of the selection. The residual entries that WikiPron does not corroborate are independent of it. `ep_dialects` is a small expert-human set of European Portuguese sentences that no build reads.
+`measure.py` scores a lexicon on a gold from a different source, with the rules only and with the lexicon. It refuses each gold that the build read: the gold that supplied the lexicon, the board dataset that holds that gold, and each second source of the build. The pt-PT screen reads WikiPron pt-PT, and the pt-BR build reads WikiPron pt-BR and the pt.wiktionary rows of portuguese_unified. `ep_dialects` is a small expert-human set of European Portuguese sentences that no build reads.
 
 `build_lexicon.py` sorts each entry into an exception or a patch with the rules of `entry_kinds.py`, which the next section states.
 

@@ -2,15 +2,19 @@
 
     python scripts/measure.py en-GB ipadict:en-GB cmudict:en
 
-Each ``dataset:tag`` gold is scored twice with the board's own normalisation
-and distance (broad, stress-free PER): with the rules only, and with the rules
-and the packaged lexicon for *code*. The report also gives the PER on the
-overlap, the gold words that the lexicon holds, because only there can the
-lexicon act.
+Each ``dataset:tag`` gold is scored with the board's own normalisation and
+distance (broad, stress-free PER): with the rules only, and with the rules and
+each packaged lexicon of *code*: the exceptions, the patches, and both, as a
+caller that asks for the patches loads them. For each lexicon the report also
+gives the PER on the overlap, the gold words that the lexicon holds, because
+only there can the lexicon act.
 
-A lexicon is never scored on the gold it came from: the ``source`` in the
-lexicon's sidecar, the board dataset that holds it, and that dataset with its
+A lexicon is never scored on a gold that its build read: the ``source`` in the
+lexicon's sidecar, the board dataset that holds it, each second source of the
+build (``build_lexicon.SECOND_SOURCES``), and each of those datasets with its
 corrections overlay are refused.
+
+The script reads the lexicons of this checkout, never an installed copy.
 """
 from __future__ import annotations
 
@@ -19,18 +23,18 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-from orthography2ipa import G2P, Pipeline
-from orthography2ipa.lexicon import parse_lexicon_text
-from orthography2ipa.registry import resolve
-from orthography2ipa.version import VERSION_STR
-
-import o2i_harness
-from build_lexicon import SOURCES
-
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+# The checkout goes on the path before any import of o2i_lexicons, which
+# build_lexicon makes, so an installed copy cannot take its place.
+sys.path[:0] = [str(Path(__file__).resolve().parent), str(ROOT)]
+
+from orthography2ipa import G2P, Pipeline  # noqa: E402
+from orthography2ipa.lexicon import parse_lexicon_text  # noqa: E402
+from orthography2ipa.registry import resolve  # noqa: E402
+from orthography2ipa.version import VERSION_STR  # noqa: E402
+
+import o2i_harness  # noqa: E402
+from build_lexicon import SECOND_SOURCES, SOURCES  # noqa: E402
 import o2i_lexicons  # noqa: E402
 
 
@@ -62,45 +66,61 @@ def score(bench, pairs, tag: str, lexicon: dict[str, str]) -> tuple[int, float]:
 
 
 def supplying_datasets(source: str) -> set[str]:
-    """The board datasets that hold the rows of *source*: the source itself,
-    the board dataset it is read from, and that dataset with its corrections."""
+    """The board datasets that the build of *source* read: the source itself,
+    the board dataset it is read from, its second sources, and each of those
+    with its corrections."""
     board = SOURCES[source][2] if source in SOURCES else source
-    return {source, board, f"{board}_corrected"}
+    read = {board, *SECOND_SOURCES.get(source, ())}
+    return {source, *read, *(f"{d}_corrected" for d in read)}
+
+
+def lexicons(code: str) -> dict[str, dict[str, str]]:
+    """The exceptions, the patches, and both, of *code*. An exception wins
+    over a patch for the same word, as in ``packaged_lexicon``."""
+    exceptions, patches = (parse_lexicon_text(path.read_text(encoding="utf-8")) for path in
+                           (o2i_lexicons.tsv_path(code), o2i_lexicons.patch_tsv_path(code)))
+    return {"exception": exceptions, "patch": patches, "both": {**patches, **exceptions}}
 
 
 def measure(code: str, golds: list[tuple[str, str]], cache: Path) -> dict:
     bench = o2i_harness.load_benchmark(cache)
-    meta = o2i_lexicons.load_meta(code)
-    lexicon = parse_lexicon_text(o2i_lexicons.tsv_path(code).read_text(encoding="utf-8"))
+    # One build writes both kinds, so the patches share the source of the exceptions.
+    source = o2i_lexicons.load_meta(code)["source"]
+    by_kind = lexicons(code)
     rows = []
     for dataset, tag in golds:
-        if dataset in supplying_datasets(meta["source"]):
-            raise SystemExit(f"{dataset} supplied the {code} lexicon; score it on another gold")
+        if dataset in supplying_datasets(source):
+            raise SystemExit(f"the build of the {code} lexicon read {dataset}; "
+                             f"score it on another gold")
         if resolve(tag) != code:
             raise SystemExit(f"{tag} resolves to {resolve(tag)}, not {code}")
         loader = bench.DATASETS[dataset][0]
         pairs = loader(tag, sys.maxsize)
-        overlap = [(w, g) for w, g in pairs if w.lower() in lexicon]
         n_full, per_rules = score(bench, pairs, tag, {})
-        _, per_lex = score(bench, pairs, tag, lexicon)
-        n_overlap, per_rules_ov = score(bench, overlap, tag, {}) if overlap else (0, 0.0)
-        _, per_lex_ov = score(bench, overlap, tag, lexicon) if overlap else (0, 0.0)
-        rows.append({
+        row = {
             "gold": dataset,
             "lang": tag,
             "tier": bench.provenance_for(dataset, tag),
             "gold_rows": len(pairs),
             "words_scored": n_full,
             "per_rules_only": round(per_rules, 4),
-            "per_with_lexicon": round(per_lex, 4),
-            "overlap_words": n_overlap,
-            "overlap_per_rules_only": round(per_rules_ov, 4),
-            "overlap_per_with_lexicon": round(per_lex_ov, 4),
-        })
+        }
+        for kind, lexicon in by_kind.items():
+            overlap = [(w, g) for w, g in pairs if w.lower() in lexicon]
+            _, per_lex = score(bench, pairs, tag, lexicon)
+            n_overlap, per_rules_ov = score(bench, overlap, tag, {}) if overlap else (0, 0.0)
+            _, per_lex_ov = score(bench, overlap, tag, lexicon) if overlap else (0, 0.0)
+            row[kind] = {
+                "per_with_lexicon": round(per_lex, 4),
+                "overlap_words": n_overlap,
+                "overlap_per_rules_only": round(per_rules_ov, 4),
+                "overlap_per_with_lexicon": round(per_lex_ov, 4),
+            }
+        rows.append(row)
     return {
         "lexicon": code,
-        "lexicon_source": meta["source"],
-        "lexicon_entries": len(lexicon),
+        "lexicon_source": source,
+        "lexicon_entries": {kind: len(lexicon) for kind, lexicon in by_kind.items()},
         "o2i_version": VERSION_STR,
         "harness_sha256": o2i_harness.harness_sha256(cache),
         "rows": rows,
@@ -114,6 +134,9 @@ def main(argv=None) -> None:
     ap.add_argument("--cache", type=Path, default=ROOT / ".cache")
     ap.add_argument("--report", type=Path)
     args = ap.parse_args(argv)
+    package = Path(o2i_lexicons.__file__).resolve().parent
+    if package != ROOT / "o2i_lexicons":
+        raise SystemExit(f"o2i_lexicons was imported from {package}, not from this checkout")
     golds = [tuple(g.split(":", 1)) for g in args.golds]
     report = measure(args.code, golds, args.cache)
     text = json.dumps(report, ensure_ascii=False, indent=1)
