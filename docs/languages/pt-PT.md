@@ -66,8 +66,8 @@ A residual word is out when no second source agrees with it and pt.wiktionary or
 
 | Kind | Classes |
 | :--- | :--- |
-| Exception | the height of a stressed mid vowel, ⟨x⟩, ⟨qu gu⟩ with [w], an unstressed initial ⟨e⟩ or ⟨o⟩ in the classes that `entry_kinds.py` names, and kilowatt, a unit that AO90 Base I 2.º c) names |
-| Patch | a stressed vowel in an ending that `entry_kinds.DOMINANT_ENDINGS` lists, a misfire of a `PT_SUFFIX_*` or prepalatal rule, a learned first element under an initial ⟨e⟩, an initial ⟨e⟩ with the value that Mateus & d'Andrade 1998 p. 26 give ([i] with no coda, [ɛ] before a coda /L/, deleted before a coda /S/), a vowel before a coda stop or a coda ⟨l⟩, an unreduced learned vowel, a loan spelled outside the native system, and a word with no class |
+| Exception | the height of a stressed mid vowel, the value of an ⟨x⟩ before a vowel (also beside other differences), ⟨qu gu⟩ with [w], an unstressed initial ⟨e⟩ or ⟨o⟩ in the classes that `entry_kinds.py` names, and kilowatt, a unit that AO90 Base I 2.º c) names |
+| Patch | a stressed vowel in an ending that `entry_kinds.DOMINANT_ENDINGS` lists, a misfire of a `PT_SUFFIX_*` or prepalatal rule, a learned first element under an initial ⟨e⟩, an initial ⟨e⟩ with the value that Mateus & d'Andrade 1998 p. 26 give ([i] with no coda, [ɛ] before a coda /L/, deleted before a coda /S/), a vowel before a coda stop or a coda ⟨l⟩, an unreduced learned vowel, the ⟨m⟩ of ⟨mn⟩ that AO90 Base IV 2.º keeps where it is pronounced, a loan spelled outside the native system, and a word with no class |
 
 An ending is in `DOMINANT_ENDINGS` when its stressed vowel takes one value in at least 90% of at least 25 single-word Infopédia rows. The spelling then shows the value, so a rule could take it. The sidecars give the exact citation or gap of each word.
 

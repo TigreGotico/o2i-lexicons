@@ -81,6 +81,10 @@ ENDING_SECTIONS = {"oide": "Entries in ⟨-oide⟩", "dora": "Entries in ⟨-dor
 
 CC_STRESSED_MID = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
 X_VALUE = "AO90 Base III; Ciberdúvidas 4068"
+#: The gap of a word whose entry pronounces the ⟨m⟩ of ⟨mn⟩.
+MN_KEPT = ("lead: AO90 Base IV 2.º: 'Conservam-se ou eliminam-se, facultativamente, quando se "
+           "proferem numa pronúncia culta [...] o m da sequência mn, em amnistia, amnistiar, "
+           "indemne, indemnidade, indemnizar'. The entry pronounces the [m]")
 QU_GU = "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
 AO90_UNIT = "AO90 Base I 2.º c) for the spelling; Infopédia gives the reading"
 LOAN_DOUBLED = ("lead: a doubled consonant letter is one consonant in every Infopédia "
@@ -171,6 +175,25 @@ def _pt_pt_coda_stop(rules: str, entry: str) -> Optional[str]:
     if changes - CODA_STOP_OPENS - {("ɐ", "a"), ("ɛ", "ɨ"), ("ɔ", "u")}:
         gaps.append(CODA_STOP_CLOSE)
     return "; ".join(gaps)
+
+
+#: An ⟨x⟩ before a vowel letter or at the end of the word, and the values
+#: that pt-PT gives it.
+X_BEFORE_VOWEL = re.compile(r"x(?=[aeiouáéíóúâêôãõày]|$)")
+X_SOUNDS = re.compile(r"ks|ʃ|z|s")
+
+
+def _x_value_differs(word: str, rules: str, entry: str) -> bool:
+    """Whether an ⟨x⟩ before a vowel has another value in *entry* than in
+    *rules*: a changed span holds an ⟨x⟩ value on both sides, and the values differ."""
+    if not X_BEFORE_VOWEL.search(word):
+        return False
+    a, b = _plain(rules), _plain(entry)
+    for op, i1, i2, j1, j2 in SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        have, want = X_SOUNDS.findall(a[i1:i2]), X_SOUNDS.findall(b[j1:j2])
+        if op == "replace" and have and want and have != want:
+            return True
+    return False
 
 
 def _loan_gap(word: str, rules: str, entry: str) -> Optional[str]:
@@ -272,6 +295,11 @@ def pt_pt_kind(word: str, rules: str, entry: str, lexical_class: Optional[str]) 
     if lexical_class is None:
         if LOAN_SPELLING.search(word):
             return _pt_pt_loan(word, rules, entry)
+        # The value of ⟨x⟩ stays lexical when other parts of the word differ.
+        if _x_value_differs(word, rules, entry):
+            return "exception", X_VALUE
+        if "mn" in word and "mn" in _plain(entry) and "mn" not in _plain(rules):
+            return "patch", MN_KEPT
         return "patch", NO_LEAD
     parts = [part for name in lexical_class.split("+")
              if (part := _pt_pt_part(word, rules, entry, name))[1] is not None]
