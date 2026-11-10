@@ -54,8 +54,12 @@ DOUBLED_CONSONANT = re.compile(r"bb|dd|ff|gg|kk|ll|mm|nn|pp|tt|zz")
 INITIAL_S = re.compile(r"^s[^aeiouáéíóúâêôãõh]")
 
 #: AO90 Base I 2.º c) keeps ⟨k w y⟩ in "palavras adotadas como unidades de
-#: medida de curso internacional", and names kW-kilowatt and Watt.
-AO90_UNITS = frozenset({"kilowatt", "watt"})
+#: medida de curso internacional" and names kW-kilowatt.
+AO90_UNITS = frozenset({"kilowatt"})
+
+#: Spellings that mark an English loan, named in the gap of a loan patch.
+LOAN_MARKS = (("⟨tch⟩", re.compile(r"tch")), ("⟨zz⟩", re.compile(r"zz")),
+              ("final ⟨-ing⟩", re.compile(r"ing$")))
 
 PREPALATAL = re.compile(r"e(lh|nh|j|ch)[aeiou]")
 
@@ -78,9 +82,6 @@ CC_STRESSED_MID = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
 X_VALUE = "AO90 Base III; Ciberdúvidas 4068"
 QU_GU = "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
 AO90_UNIT = "AO90 Base I 2.º c) for the spelling; Infopédia gives the reading"
-#: The citation of a loan: the dictionary of the lexicon gives the reading.
-LOAN = ("{} gives the reading. The word keeps a spelling from another language, and "
-        "no page read gives the value of this word")
 LOAN_DOUBLED = ("lead: a doubled consonant letter is one consonant in every Infopédia "
                 "word that has one")
 LOAN_INITIAL_S = ("lead: an initial ⟨s⟩ before a consonant is [s] in at least 90% of the "
@@ -165,11 +166,18 @@ def _loan_gap(word: str, rules: str, entry: str) -> Optional[str]:
     return "; ".join(dict.fromkeys(gaps)) or None
 
 
+def loan_lead(code: str, word: str, source: str) -> str:
+    """The gap of a loan that no narrower lead covers. No source states that
+    the reading of a loan is lexical, so a loan is a patch."""
+    marks = ", ".join(name for name, mark in LOAN_MARKS if mark.search(word))
+    return (f"lead: {code} English loan spelling{f' ({marks})' if marks else ''}; "
+            f"{source} gives the reading")
+
+
 def _pt_pt_loan(word: str, rules: str, entry: str) -> tuple[str, str]:
     if word in AO90_UNITS:
         return "exception", AO90_UNIT
-    gap = _loan_gap(word, rules, entry)
-    return ("patch", gap) if gap else ("exception", LOAN.format("Infopédia"))
+    return "patch", _loan_gap(word, rules, entry) or loan_lead("pt-PT", word, "Infopédia")
 
 
 def _pt_pt_stressed(word: str, rules: str, entry: str) -> tuple[str, str]:
@@ -266,7 +274,7 @@ def pt_br_kind(word: str, rules: str, entry: str,
     if re.match(r"trans[aeiouáéíóúâêôãõ]", word):
         return "patch", "lead: the ⟨s⟩ of the prefix trans- before a vowel is [z]"
     if LOAN_SPELLING.search(word):
-        return "exception", LOAN.format("NILC")
+        return "patch", loan_lead("pt-BR", word, "NILC")
     lexical_class = find_lexical_class(word, rules, entry)
     if lexical_class is None:
         return ("exception", X_VALUE) if "x" in word else ("patch", NO_LEAD)

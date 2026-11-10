@@ -541,13 +541,10 @@ def test_an_en_gb_inflection_names_its_own_gap():
 
 
 def test_each_pt_exception_cites_a_page_or_a_section():
-    # A loan has no page: the dictionary of the lexicon gives its reading, as
-    # WikiPron gives the reading of an en-GB name.
     import re
-    for code, source in (("pt-PT", "Infopédia"), ("pt-BR", "NILC")):
-        loan = f"{source} gives the reading. The word keeps a spelling from another language"
+    for code in ("pt-PT", "pt-BR"):
         uncited = {w: c for w, c in notes(code, "exception").items()
-                   if not re.search(r"pp?\. \d|Base [IVX]+", c) and not c.startswith(loan)}
+                   if not re.search(r"pp?\. \d|Base [IVX]+", c)}
         assert uncited == {}, code
 
 
@@ -625,11 +622,20 @@ def test_only_kilowatt_cites_ao90_base_i():
     assert notes("pt-PT", "exception")["kilowatt"].startswith("AO90 Base I 2.º c)")
 
 
-@pytest.mark.parametrize("code, word, source", [
-    ("pt-PT", "ketchup", "Infopédia"), ("pt-PT", "timing", "Infopédia"),
-    ("pt-PT", "puzzle", "Infopédia"), ("pt-BR", "sexy", "NILC")])
-def test_a_loan_cites_the_dictionary_for_its_reading(code, word, source):
-    assert notes(code, "exception")[word].startswith(f"{source} gives the reading.")
+# No source states that the reading of a loan is lexical (docs/kinds.md: "A
+# cited source must state that class"), so a loan is a patch. Its gap names the
+# English loan spelling, and ⟨tch⟩, ⟨zz⟩ or a final ⟨-ing⟩ where the word has one.
+@pytest.mark.parametrize("code, word, mark", [
+    ("pt-PT", "antidumping", " (final ⟨-ing⟩)"), ("pt-PT", "freelance", ""),
+    ("pt-PT", "jogging", " (final ⟨-ing⟩)"), ("pt-PT", "ketchup", " (⟨tch⟩)"),
+    ("pt-PT", "puzzle", " (⟨zz⟩)"), ("pt-PT", "rap", ""), ("pt-PT", "shorts", ""),
+    ("pt-PT", "skinhead", ""), ("pt-PT", "timing", " (final ⟨-ing⟩)"),
+    ("pt-PT", "windsurf", ""), ("pt-BR", "sexy", "")])
+def test_a_loan_is_a_patch_with_the_loan_lead(code, word, mark):
+    source = {"pt-PT": "Infopédia", "pt-BR": "NILC"}[code]
+    assert word not in notes(code, "exception")
+    assert notes(code, "patch")[word] == (
+        f"lead: {code} English loan spelling{mark}; {source} gives the reading")
 
 
 @pytest.mark.parametrize("word, lead", [
