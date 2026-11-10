@@ -110,19 +110,26 @@ def test_pt_br_kind(word, rules, entry, tenses, expected):
 
 
 @pytest.mark.parametrize("word, reason, expected", [
-    ("cringes", "unclassified", "patch"),        # cringe is a headword and no entry
-    ("dyeing", "unclassified", "patch"),         # dye
-    ("yacht", "unclassified", "exception"),
-    ("leeds", "proper_noun", "exception"),       # a proper noun is never an inflection
-    ("colonels", "unclassified", "exception"),   # colonel is itself an entry
-    ("flurbs", "unclassified", "exception"),     # flurb is no headword
+    # A name or an acronym: no spelling rule gives its reading.
+    ("leeds", "proper_noun", ("exception", ek.EN_GB_CITATION)),
+    ("nato", "acronym", ("exception", ek.EN_GB_CITATION)),
+    # An inflection of a headword that is no entry: the rules read the base.
+    ("cringes", "unclassified", ("patch", ek.EN_GB_INFLECTION)),
+    ("dyeing", "unclassified", ("patch", ek.EN_GB_INFLECTION)),
+    # Any other word: nothing shows that a rule cannot reach it.
+    ("yacht", "unclassified", ("patch", ek.EN_GB_UNAUDITED)),
+    ("colonels", "unclassified", ("patch", ek.EN_GB_UNAUDITED)),   # colonel is an entry
+    ("flurbs", "unclassified", ("patch", ek.EN_GB_UNAUDITED)),     # flurb is no headword
 ])
 def test_en_gb_kind(word, reason, expected):
     headwords = frozenset({"cringe", "dye", "colonel", "leed"})
     entries = frozenset({word, "colonel"})
-    kind, note = ek.en_gb_kind(word, reason, headwords, entries)
-    assert (kind, note) == (expected, ek.EN_GB_INFLECTION if expected == "patch"
-                            else ek.EN_GB_CITATION)
+    assert ek.en_gb_kind(word, reason, headwords, entries) == expected
+
+
+def test_an_en_gb_citation_names_the_provenance_of_the_reading():
+    assert ek.EN_GB_CITATION == "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
+    assert ek.EN_GB_UNAUDITED == "lead: en-GB spelling rules not audited"
 
 
 def test_split_gives_each_kind_its_own_records():
@@ -150,8 +157,8 @@ def test_split_gives_each_kind_its_own_records():
 
 
 def test_split_gives_an_empty_file_to_a_kind_with_no_word():
-    meta = {"code": "en-GB", "reasons": {"yacht": "unclassified"}, "reason_basis": {}}
-    parts = ek.split({"yacht": "jɒt"}, meta, {"yacht": ("exception", "no source read")})
+    meta = {"code": "en-GB", "reasons": {"leeds": "proper_noun"}, "reason_basis": {}}
+    parts = ek.split({"leeds": "liːdz"}, meta, {"leeds": ("exception", ek.EN_GB_CITATION)})
     assert parts["patch"] == ({}, {"code": "en-GB", "kind": "patch", "reasons": {},
                                    "reason_basis": {}, "gaps": {}})
 

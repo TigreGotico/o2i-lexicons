@@ -86,7 +86,7 @@ def packaged(tmp_path, monkeypatch):
         write_file(tmp_path / "en-GB", "en-GB", "".join(f"{w}\t{i}\n" for w, i in exceptions.items()),
                    {"kind": "exception", "o2i_version": "1.0.0",
                     "reasons": dict.fromkeys(exceptions, "unclassified"), "reason_basis": {},
-                    "citations": dict.fromkeys(exceptions, "no source read")})
+                    "citations": dict.fromkeys(exceptions, "a cited source")})
         write_file(tmp_path / "patches" / "en-GB", "en-GB",
                    "".join(f"{w}\t{i}\n" for w, i in patches.items()),
                    {"kind": "patch", "o2i_version": "1.0.0",

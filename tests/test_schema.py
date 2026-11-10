@@ -16,7 +16,7 @@ def good_meta(**overrides):
         "stress": "rules",
         "reasons": {"colonel": "unclassified", "nato": "acronym"},
         "reason_basis": {"acronym": "the source headword is all capitals"},
-        "citations": {"colonel": "no source read", "nato": "no source read"},
+        "citations": {"colonel": "a cited source", "nato": "a cited source"},
     }
     meta.update(overrides)
     return meta

@@ -378,17 +378,40 @@ def test_an_en_gb_entry_is_the_non_rhotic_reading():
     assert entries["drawer"] == "dɹɔː"
 
 
-def test_english_spelling_keeps_yacht_an_exception():
-    # ⟨yacht⟩ /jɒt/: no rule of English spelling reads ⟨ch⟩ as silent here.
-    assert file_entries("en-GB", "exception")["yacht"] == "jɒt"
-    assert notes("en-GB", "exception")["yacht"] == "no source read"
+EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
 
 
-def test_an_en_gb_patch_is_an_inflection_of_a_word_the_rules_read():
+def test_an_en_gb_exception_is_a_name_or_an_acronym():
+    # No spelling rule gives the reading of a name or of an acronym. The
+    # citation names where the reading comes from.
+    meta = FILES["exception"][1]("en-GB")
+    assert set(meta["reasons"].values()) == {"proper_noun", "acronym"}
+    assert set(meta["citations"].values()) == {EN_GB_CITATION}
+    assert meta["reasons"]["aldeburgh"] == "proper_noun"
+    assert meta["reasons"]["ascii"] == "acronym"
+
+
+def test_no_exception_cites_no_source():
+    for code in o2i_lexicons.available_codes():
+        assert "no source read" not in notes(code, "exception").values(), code
+
+
+def test_an_unclassified_en_gb_word_is_a_patch():
+    # Nothing shows that a rule cannot reach ⟨yacht⟩ /jɒt/, so it waits on
+    # an audit of the en-GB spelling rules.
+    assert file_entries("en-GB", "patch")["yacht"] == "jɒt"
+    assert notes("en-GB", "patch")["yacht"] == "lead: en-GB spelling rules not audited"
+    assert set(FILES["patch"][1]("en-GB")["reasons"].values()) == {"unclassified"}
+
+
+def test_an_en_gb_inflection_names_its_own_gap():
     # cringes is an inflection of cringe, which the WikiPron file holds and the
     # lexicon does not.
+    gaps = notes("en-GB", "patch")
     assert file_entries("en-GB", "patch")["cringes"]
-    assert set(notes("en-GB", "patch").values()) == {"lead: en-GB inflection morphology"}
+    assert gaps["cringes"] == "lead: en-GB inflection morphology"
+    assert set(gaps.values()) == {"lead: en-GB inflection morphology",
+                                  "lead: en-GB spelling rules not audited"}
 
 
 def test_each_pt_exception_cites_a_page_or_a_section():
