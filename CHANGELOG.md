@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.16a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.16a2) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.16a1...0.7.16a2)
+
+**Merged pull requests:**
+
+- docs\(pt-PT\): record the source search for the ⟨-iedade⟩ lead [\#80](https://github.com/TigreGotico/o2i-lexicons/pull/80) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.16a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.16a1) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.15a1...0.7.16a1)
