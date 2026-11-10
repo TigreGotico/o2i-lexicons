@@ -128,7 +128,8 @@ def test_en_gb_kind(word, reason, expected):
 
 
 def test_an_en_gb_citation_names_the_provenance_of_the_reading():
-    assert ek.EN_GB_CITATION == "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
+    assert ek.EN_GB_CITATION == ("Wiktionary via WikiPron (en-GB); the reading agrees with "
+                                 "Britfone 3.0.1")
     assert ek.EN_GB_UNAUDITED == "lead: en-GB spelling rules not audited"
 
 

@@ -238,8 +238,9 @@ def pt_br_kind(word: str, rules: str, entry: str,
 
 #: The citation of an en-GB proper noun or acronym. No rule of English
 #: spelling gives the reading of a name or of an acronym, so the class is the
-#: ground, and the reading is the one WikiPron scraped from Wiktionary.
-EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
+#: ground. The reading is the one WikiPron scraped from Wiktionary, and the
+#: build keeps it only when Britfone gives the same reading.
+EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); the reading agrees with Britfone 3.0.1"
 
 #: The en-GB reason classes whose entries are exceptions.
 EN_GB_EXCEPTION_REASONS = frozenset({"proper_noun", "acronym"})
