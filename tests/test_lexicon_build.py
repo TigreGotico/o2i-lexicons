@@ -1080,3 +1080,48 @@ def test_storage_forms_drop_only_the_marks_named():
     assert lb.storage_forms("a ʊ̯ t") == ["aʊ̯t"]
     assert lb.storage_forms("a ʊ̯ t", lb.TIE_BARS + lb.NON_SYLLABIC) == ["aʊ̯t", "aʊt"]
     assert lb.storage_forms("d͡ʒ æ m") == ["d͡ʒæm", "dʒæm"]
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_a_process_wide_lexicon_does_not_reach_the_build(tmp_path, monkeypatch):
+    # The rules read colonel ˈkɒlənəl. A lexicon in $ORTHOGRAPHY2IPA_LEXICON_DIR
+    # reads it kɜːnəl, the gold reading, so an engine that sees that lexicon
+    # finds colonel right and leaves it out of the build.
+    from types import SimpleNamespace
+
+    import orthography2ipa
+
+    planted = tmp_path / "planted"
+    planted.mkdir()
+    (planted / "en-GB.tsv").write_text("colonel\tkɜːnəl\n", encoding="utf-8")
+    monkeypatch.setenv("ORTHOGRAPHY2IPA_LEXICON_DIR", str(planted))
+    orthography2ipa.clear_lexicons()
+    bench = SimpleNamespace(
+        provenance_for=lambda dataset, code: "crowd-scraped",
+        can_gate_promotion=lambda tier: True,
+        load_wikipron=lambda code, limit: [("colonel", "kɜːnəl")],
+        normalize=lambda ipa, strip_stress, broad, extra_strip="": ipa.replace("ˈ", ""),
+        _prosody_marks=lambda code: "",
+        levenshtein=lambda a, b: int(a != b),
+        align=naive_align,
+        _WIKIPRON_BASE="https://example.org/",
+        _WIKIPRON_FILES={"en-GB": "en.tsv"},
+    )
+    monkeypatch.setattr(bl.o2i_harness, "load_benchmark", lambda cache: bench)
+    monkeypatch.setattr(bl.o2i_harness, "harness_sha256", lambda cache: "0" * 64)
+    # The en-GB build reads a pinned WikiPron file and a pinned Britfone file.
+    # Here the gold is the bench above, and Britfone is one line.
+    monkeypatch.setattr(bl, "WIKIPRON_SHA256", {})
+    britfone = tmp_path / "britfone.csv"
+    britfone.write_text("COLONEL, k ˈɜː n ə l\n", encoding="utf-8")
+    monkeypatch.setitem(bl.BRITFONE, "sha256", bl.sha256_of(britfone))
+    try:
+        assert orthography2ipa.G2P("en-GB").transcribe_word("colonel") == "ˈkɜːnəl"
+        report = bl.build("en-GB", "wikipron", tmp_path, 99, tmp_path / "out", "build",
+                          inputs={"britfone": britfone})
+    finally:
+        orthography2ipa.clear_lexicons()
+    assert (report["rules_right"], report["entries"]) == (0, 1)
+    patches = tmp_path / "out" / "patches" / "en-GB"
+    assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "colonel\tkɜːnəl\n"
+
