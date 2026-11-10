@@ -48,6 +48,8 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
     # "a) [ɛ] when the coda is /L/" and "d) deleted when the coda is an /S/".
     ("essonite", "isuˈnitɨ", "ɛsuˈnitɨ", "unstressed initial ⟨e⟩",
      ("exception", ek.INITIAL_E_OPEN)),
+    # The [i] of ebrié is the value that p. 26 (b) gives with no coda.
+    ("ebrié", "ebɾiˈɛ", "ibɾiˈɛ", "unstressed initial ⟨e⟩", ("patch", ek.INITIAL_E_I)),
     ("elvira", "iɫˈviɾɐ", "ɛɫˈviɾɐ", "unstressed initial ⟨e⟩", ("patch", ek.INITIAL_E_L_S)),
     ("esgotar", "ɨʒɡuˈtaɾ", "ʒɡuˈtaɾ", "unstressed initial ⟨e⟩", ("patch", ek.INITIAL_E_L_S)),
     ("enviar", "ĩviˈaɾ", "ẽviˈaɾ", "unstressed initial ⟨e⟩", ("patch", ek.NO_LEAD)),

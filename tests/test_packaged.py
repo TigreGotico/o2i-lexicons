@@ -512,3 +512,15 @@ def test_essonite_is_an_open_syllable_exception():
     citation = notes("pt-PT", "exception")["essonite"]
     assert citation.startswith("Infopédia gives the reading.")
     assert "p. 26 (b) give [i] with no coda" in citation
+
+
+@pytest.mark.parametrize("word", ["ebrié", "ebriés"])
+def test_an_open_syllable_entry_with_the_page_value_is_a_patch(word):
+    # Mateus & d'Andrade 1998 p. 26 (b) give [i] for a word-initial unstressed
+    # /e ɛ/ with no coda. Infopédia gives ebrié [i], so a rule that follows the
+    # page reaches the word.
+    assert word not in notes("pt-PT", "exception")
+    assert file_entries("pt-PT", "patch")[word].startswith("ibɾiˈɛ")
+    assert notes("pt-PT", "patch")[word] == (
+        "lead: Mateus & d'Andrade 1998 p. 26 (b) give a word-initial unstressed /e ɛ/ "
+        "as [i] with no coda")

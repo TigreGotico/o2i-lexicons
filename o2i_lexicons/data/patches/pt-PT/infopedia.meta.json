@@ -348,6 +348,8 @@
   "dona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "dondona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "dozena": "lead: ⟨-ena⟩ takes [e] in at least 90% of the Infopédia words",
+  "ebrié": "lead: Mateus & d'Andrade 1998 p. 26 (b) give a word-initial unstressed /e ɛ/ as [i] with no coda",
+  "ebriés": "lead: Mateus & d'Andrade 1998 p. 26 (b) give a word-initial unstressed /e ɛ/ as [i] with no coda",
   "ecmófobo": "lead: the source has a close mid vowel before a coda stop, where orthography2ipa#2218 gives an open one",
   "ecográfico": "rule-leads.md § word-initial e",
   "ecologia": "rule-leads.md § word-initial e",
@@ -2319,6 +2321,14 @@
   "dozena": {
    "class": "stressed mid vowel",
    "second_source": "wikipron"
+  },
+  "ebrié": {
+   "class": "unstressed initial ⟨e⟩",
+   "second_source": "no second source"
+  },
+  "ebriés": {
+   "class": "unstressed initial ⟨e⟩",
+   "second_source": "no second source"
   },
   "ecmófobo": {
    "class": "unstressed initial ⟨e⟩",
@@ -5069,6 +5079,8 @@
   "dona": "unclassified",
   "dondona": "unclassified",
   "dozena": "unclassified",
+  "ebrié": "unclassified",
+  "ebriés": "proper_noun",
   "ecmófobo": "unclassified",
   "ecográfico": "unclassified",
   "ecologia": "unclassified",

@@ -87,6 +87,10 @@ INITIAL_O = ("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 27 state 
 #: the page states.
 INITIAL_E_L_S = ("lead: Mateus & d'Andrade 1998 p. 26 give a word-initial unstressed /e ɛ/ "
                  "as (a) [ɛ] before a coda /L/ and (d) deleted before a coda /S/")
+#: The gap of an unstressed initial ⟨e⟩ with no coda whose entry has the [i]
+#: that the page gives.
+INITIAL_E_I = ("lead: Mateus & d'Andrade 1998 p. 26 (b) give a word-initial unstressed /e ɛ/ "
+               "as [i] with no coda")
 CODA_STOP = "orthography2ipa#2218"
 CODA_STOP_A = "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out"
 CODA_STOP_REDUCED = ("lead: the source reduces a vowel before a coda stop that "
@@ -185,6 +189,8 @@ def _pt_pt_part(word: str, rules: str, entry: str, name: str) -> tuple[str, str]
         if coda == "/R/":
             return "exception", INITIAL_E_R
         if coda == "open":
+            if _plain(entry)[0] == "i":
+                return "patch", INITIAL_E_I
             return "exception", INITIAL_E_OPEN
         if coda in ("/L/", "/S/"):
             return "patch", INITIAL_E_L_S

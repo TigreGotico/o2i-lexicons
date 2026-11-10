@@ -718,8 +718,6 @@
   "ebonite": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
   "eborense": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
   "ebrirridente": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
-  "ebrié": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
-  "ebriés": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
   "eburina": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
   "eburnação": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
   "eburnite": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
@@ -4807,14 +4805,6 @@
    "second_source": "portal_lisbon"
   },
   "ebrirridente": {
-   "class": "unstressed initial ⟨e⟩",
-   "second_source": "no second source"
-  },
-  "ebrié": {
-   "class": "unstressed initial ⟨e⟩",
-   "second_source": "no second source"
-  },
-  "ebriés": {
    "class": "unstressed initial ⟨e⟩",
    "second_source": "no second source"
   },
@@ -10374,8 +10364,6 @@
   "ebonite": "unclassified",
   "eborense": "unclassified",
   "ebrirridente": "unclassified",
-  "ebrié": "unclassified",
-  "ebriés": "proper_noun",
   "eburina": "unclassified",
   "eburnação": "unclassified",
   "eburnite": "unclassified",
