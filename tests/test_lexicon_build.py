@@ -50,6 +50,14 @@ def test_storage_ipa_drops_phone_spaces_and_composes(gold, stored):
     ("McDonald", "proper_noun"),
     ("colonel", "unclassified"),
     ("yacht", "unclassified"),
+    # The pronoun I and its contractions are capitalised and are no names.
+    ("I", "unclassified"),
+    ("I'll", "unclassified"),
+    ("I'm", "unclassified"),
+    ("I'd", "unclassified"),
+    ("I've", "unclassified"),
+    ("Ivan", "proper_noun"),
+    ("Ilkley", "proper_noun"),
 ])
 def test_reason_comes_only_from_the_source_spelling(headword, reason):
     assert lb.reason_for(headword) == reason
@@ -899,9 +907,179 @@ def test_the_build_writes_the_mark_before_the_onset():
     ("f ɝ s t", "ɝ"),                      # an r-coloured vowel
     ("s t ɹ ɒ ŋ ɡ ɚ", "ɚ"),
     ("f ɜ˞ s t", "ɜ˞"),
+    ("ɾ iː ɾ", "ɾ"),                       # rere: a final tap is an /r/ too
+    ("v ɛ ɾ i", None),                     # a tap before a vowel
 ])
 def test_rhotic_segment(reading, segment):
     assert lb.rhotic_segment(reading) == segment
+
+
+# The RP vowels of Roach 2004, JIPA 34(2), p. 243, after rp_form folds [ɛ]
+# to [e]. The readings are WikiPron eng_latn_uk_broad rows.
+@pytest.mark.parametrize("reading, vowel", [
+    ("d iː f ɑ l t", "ɑ"),                 # default: the short LOT [ɑ] of General American
+    ("t͡ʃ ɑ k", "ɑ"),                     # chalk
+    ("ɡ ə ʊ z", None),                     # goes: GOAT [əʊ]
+    ("ð ɛ ə", None),                       # their: SQUARE written [ɛə]
+    ("ð ɛː", "eː"),                        # their: a monophthong outside the table
+    ("h æ p i", None),                     # happy: the weak close vowel [i]
+    ("a ɪ̯ l", None),                       # I'll: PRICE with the non-syllabic mark
+    ("v a l i", "a"),                      # vally: [a] is not the TRAP vowel [æ]
+    ("h ə ʊ s", None),
+    ("h o ʊ s", "o"),                      # hausse: General American GOAT
+    ("n ɒ̃", "ɒ̃"),                          # a nasal vowel
+    ("b ɒ t l̩", None),                     # bottle: a syllabic consonant
+])
+def test_rp_vowel_outside(reading, vowel):
+    assert lb.rp_vowel_outside(reading) == vowel
+
+
+def test_rp_vowels_are_the_table_of_roach_2004():
+    assert set(lb.RP_VOWELS) == {
+        "ɪ", "e", "æ", "ʌ", "ɒ", "ʊ", "ə",              # short vowels
+        "iː", "ɑː", "ɔː", "uː", "ɜː",                   # long vowels
+        "eɪ", "aɪ", "ɔɪ", "əʊ", "aʊ", "ɪə", "eə", "ʊə",  # diphthongs
+        "i", "u",                                       # weak close vowels
+    }
+
+
+@pytest.mark.parametrize("reading, form", [
+    ("b ɒ t l̩", "bɒtəl"),                  # Roach p. 241: a syllabic consonant for [ə] + C
+    ("a ɪ̯ l", "aɪl"),
+    ("d͡ʒ æ m", "dʒæm"),
+    ("ð ˈɛə", "ðeə"),
+    ("g ˈəʊ z", "ɡəʊz"),                    # Britfone writes ASCII g
+])
+def test_rp_form(reading, form):
+    assert lb.rp_form(reading) == form
+
+
+# Britfone 3.0.1 has no single word with more than 4 letters per phone: HEIR
+# [ˈɛə] has 4 letters and 1 phone.
+@pytest.mark.parametrize("headword, reading, cut", [
+    ("aussie", "s", True),                 # WikiPron eng_latn_uk_broad: Aussie [s]
+    ("Jambol", "j", True),                 # WikiPron: Jambol [j]
+    ("heir", "ɛ ə", False),                # 4 letters, 1 phone: the limit
+    ("heir", "ɛ ə̯", False),
+    ("though", "ð ə ʊ", False),            # 6 letters, 2 phones
+    ("eye", "a ɪ", False),
+    ("heirs", "ɛ ə", True),                # 5 letters, 1 phone
+])
+def test_truncated(headword, reading, cut):
+    assert lb.truncated(headword, reading) is cut
+
+
+def test_max_letters_per_phone():
+    assert lb.MAX_LETTERS_PER_PHONE == 4
+
+
+# Lines of Britfone 3.0.1, britfone.main.3.0.1.csv at commit 1062be14.
+BRITFONE_LINES = """\
+COSTA_RICA, k ˌɒ s t ə ɹ ˈiː k ə
+CATHEDRAL, k ə θ ˈiː d ɹ ə l
+GOES, g ˈəʊ z
+HEIR, ˈɛə
+INTO(1), ɪ n t ə
+INTO(2), ɪ n t ˈuː
+INTO(3), ˈɪ n t uː
+NOTHING, n ˈɐ θ ɪ ŋ
+THEIR, ð ˈɛə
+THESIS, θ ˈiː s ɪ s
+YOU(1), j ə
+YOU(2), j ʊ
+YOU(3), j ˈuː
+"""
+
+# The rows of WikiPron eng_latn_uk_broad.tsv at commit d282e848 for the same
+# words, in file order: the code-point order that the dev build took the
+# first reading of.
+WIKIPRON = {
+    "cathedral": ["k ə t iː d ɹ ə l", "k ə θ iː d ɹ ə l"],
+    "goes": ["ɡ æ n z", "ɡ ə ʊ z", "ɡ ʊ z"],
+    "heir": ["eː", "e̝ ə̯", "i ə̯", "ɛ ə̯", "ɛː", "ɜː"],
+    "into": ["ɪ n t iː", "ɪ n t u", "ɪ n t uː", "ɪ n t ə", "ɪ n t ʊ", "ɪ n t ʊ v"],
+    "nothing": ["n ɔ θ ɪ ŋ", "n ʌ t ɪ ŋ", "n ʌ ʔ n̩", "n ʌ θ ɪ ŋ"],
+    "their": ["z ɛ ə", "z ɛ ɚ", "ð e ɹ", "ð ɛ ə", "ð ɛː", "ð ɜː", "ð ɜː ɹ"],
+    "thesis": ["θ i s i z", "θ i s ɪ s", "θ iː s iː z", "θ iː s ɪ s", "θ ɛ s ɪ s"],
+    "you": ["iː", "j iː", "j u", "j uː", "j ə", "j ɪ", "j ʉ", "j ʉː"],
+}
+
+
+def test_britfone_readings_keep_the_stressed_single_words():
+    readings = lb.britfone_readings(BRITFONE_LINES)
+    assert "costa_rica" not in readings and "costa rica" not in readings
+    assert readings["you"] == ["j ˈuː"]                     # the weak forms jə and jʊ are out
+    assert readings["into"] == ["ɪ n t ˈuː", "ˈɪ n t uː"]
+    assert readings["nothing"] == ["n ˈʌ θ ɪ ŋ"]             # Britfone ɐ is STRUT [ʌ]
+
+
+# The expected entry is the Britfone reading of the word, written by hand in
+# WikiPron's storage form.
+@pytest.mark.parametrize("word, entry", [
+    ("you", "juː"),             # dev: iː
+    ("their", "ðɛə"),           # dev: zɛə
+    ("goes", "ɡəʊz"),           # dev: ɡænz
+    ("into", "ɪntuː"),          # dev: ɪntiː
+    ("nothing", "nʌθɪŋ"),       # dev: nʌtɪŋ
+    ("thesis", "θiːsɪs"),       # dev: θisiz
+    ("cathedral", "kəθiːdɹəl"),  # dev: kətiːdɹəl
+    ("heir", "ɛə"),             # dev: ɜː; WikiPron [ɛ ə̯] stored without the mark
+])
+def test_the_entry_is_the_reading_that_agrees_with_britfone(word, entry):
+    references = lb.britfone_readings(BRITFONE_LINES)[word]
+    usable = lambda g: lb.storage_forms(g, lb.TIE_BARS + lb.NON_SYLLABIC)[-1]
+    assert lb.agreeing_reading(WIKIPRON[word], references, usable) == entry
+
+
+def test_no_reading_agrees_when_the_vowels_differ():
+    assert lb.agreeing_reading(["d iː f ɑ l t"], ["d ˈiː f ɔː l t"], lb.storage_ipa) is None
+    assert lb.agreeing_reading(["ɪ n t iː"], ["ɪ n t ˈuː"], lb.storage_ipa) is None
+
+
+@pytest.mark.parametrize("reading, reference, agree", [
+    # Britfone README: weak vowels are written [ɪ] or [ə] inconsistently.
+    ("d a ʊ̯ t l ə s", "d ˈaʊ t l ɪ s", True),
+    ("h æ p ɪ", "h ˈæ p i", True),                    # happy: weak [i] or [ɪ]
+    ("ɹ ə ʊ m e ɪ n i ə", "ɹ əʊ m ˈeɪ n ɪə", True),   # Roach: India [ˈɪndiə]
+    ("p ɒ p j u l ə", "p ˈɒ p j ʊ l ə", True),       # Roach: weak [u]
+    # A stressed or a full vowel must match.
+    ("ɪ d ɪ θ", "ˈiː d ɪ θ", False),
+    ("i d ɪ θ", "ˈiː d ɪ θ", False),
+    ("d ɪ f ɑː l t", "d ɪ f ˈɔː l t", False),
+    ("p ɒ p j ə l ə", "p ˈɒ p j ʊ l ə", False),       # [ʊ] and [ə]: no cited source
+])
+def test_agrees(reading, reference, agree):
+    assert lb.agrees(reading, reference) is agree
+
+
+def test_britfone_order_decides_between_two_agreeing_readings():
+    # Two readings agree; the order of the references decides, never the
+    # code-point order of the readings.
+    readings = ["a ɪ ð ə", "iː ð ə"]
+    assert lb.agreeing_reading(readings, ["ˈiː ð ə", "ˈaɪ ð ə"], lb.storage_ipa) == "iːðə"
+    assert lb.agreeing_reading(readings, ["ˈaɪ ð ə", "ˈiː ð ə"], lb.storage_ipa) == "aɪðə"
+
+
+def test_an_en_gb_homograph_is_listed_with_its_senses():
+    assert set(lb.HOMOGRAPHS["en-GB"]) == {"axes", "bases", "closer", "corps", "drawer",
+                                          "duplicate"}
+
+
+def test_the_en_gb_screens_run_rhotic_first():
+    reasons = [reason for _, reason in bl.ACCENT_SCREENS["en-GB"]]
+    assert reasons == ["every gold reading is rhotic",
+                       "every non-rhotic reading has a vowel outside the RP vowels",
+                       "every RP reading has too few phones for its spelling"]
+    rhotic, rp, cut = (test for test, _ in bl.ACCENT_SCREENS["en-GB"])
+    assert rhotic("rere", "ɾ iː ɾ") and not rp("rere", "ɾ iː ɾ")
+    assert rp("default", "d iː f ɑ l t") and not rhotic("default", "d iː f ɑ l t")
+    assert cut("Aussie", "s") and not cut("Aussie", "ɒ z i")
+
+
+def test_storage_forms_drop_only_the_marks_named():
+    assert lb.storage_forms("a ʊ̯ t") == ["aʊ̯t"]
+    assert lb.storage_forms("a ʊ̯ t", lb.TIE_BARS + lb.NON_SYLLABIC) == ["aʊ̯t", "aʊt"]
+    assert lb.storage_forms("d͡ʒ æ m") == ["d͡ʒæm", "dʒæm"]
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -931,11 +1109,113 @@ def test_a_process_wide_lexicon_does_not_reach_the_build(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(bl.o2i_harness, "load_benchmark", lambda cache: bench)
     monkeypatch.setattr(bl.o2i_harness, "harness_sha256", lambda cache: "0" * 64)
+    # The en-GB build reads a pinned WikiPron file and a pinned Britfone file.
+    # Here the gold is the bench above, and Britfone is one line.
+    monkeypatch.setattr(bl, "WIKIPRON_SHA256", {})
+    britfone = tmp_path / "britfone.csv"
+    britfone.write_text("COLONEL, k ˈɜː n ə l\n", encoding="utf-8")
+    monkeypatch.setitem(bl.BRITFONE, "sha256", bl.sha256_of(britfone))
     try:
         assert orthography2ipa.G2P("en-GB").transcribe_word("colonel") == "ˈkɜːnəl"
-        report = bl.build("en-GB", "wikipron", tmp_path, 99, tmp_path / "out", "build")
+        report = bl.build("en-GB", "wikipron", tmp_path, 99, tmp_path / "out", "build",
+                          inputs={"britfone": britfone})
     finally:
         orthography2ipa.clear_lexicons()
     assert (report["rules_right"], report["entries"]) == (0, 1)
     patches = tmp_path / "out" / "patches" / "en-GB"
     assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "colonel\tkɜːnəl\n"
+
+
+def test_the_build_skips_a_word_the_spec_holds(tmp_path, monkeypatch):
+    # The en-GB spec lists prove in word_exceptions, and the spec wins over a
+    # lexicon, so the build gives prove no entry. WikiPron and Britfone both
+    # read it [pɹuːv]; the rules read [ˈpɹuːv] from the spec.
+    from types import SimpleNamespace
+
+    import orthography2ipa
+
+    assert "prove" in orthography2ipa.get("en-GB").word_exceptions
+    bench = SimpleNamespace(
+        provenance_for=lambda dataset, code: "crowd-scraped",
+        can_gate_promotion=lambda tier: True,
+        load_wikipron=lambda code, limit: [("prove", "p ɹ uː v"), ("yacht", "j ɒ t")],
+        normalize=lambda ipa, strip_stress, broad, extra_strip="": ipa.replace("ˈ", ""),
+        _prosody_marks=lambda code: "",
+        levenshtein=lambda a, b: int(a != b),
+        align=naive_align,
+        _WIKIPRON_BASE="https://example.org/",
+        _WIKIPRON_FILES={"en-GB": "en.tsv"},
+    )
+    monkeypatch.setattr(bl.o2i_harness, "load_benchmark", lambda cache: bench)
+    monkeypatch.setattr(bl.o2i_harness, "harness_sha256", lambda cache: "0" * 64)
+    monkeypatch.setattr(bl, "WIKIPRON_SHA256", {})
+    monkeypatch.setattr(bl.orthography2ipa.G2P, "transcribe_word",
+                        lambda self, word: {"prove": "ˈpɹɒv", "yacht": "ˈjætʃt"}[word])
+    britfone = tmp_path / "britfone.csv"
+    britfone.write_text("PROVE, p ɹ ˈuː v\nYACHT, j ˈɒ t\n", encoding="utf-8")
+    monkeypatch.setitem(bl.BRITFONE, "sha256", bl.sha256_of(britfone))
+    excluded = tmp_path / "excluded.tsv"
+    report = bl.build("en-GB", "wikipron", tmp_path, 99, tmp_path / "out", "build",
+                      excluded_file=excluded, inputs={"britfone": britfone})
+    assert report["excluded"]["the spec's word_exceptions hold the word"] == 1
+    assert "prove\tthe spec's word_exceptions hold the word" in excluded.read_text(encoding="utf-8")
+    patches = tmp_path / "out" / "patches" / "en-GB"
+    assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "yacht\tjɒt\n"
+
+
+def test_the_en_gb_build_keeps_a_single_reading_only_when_britfone_lacks_the_word(
+        tmp_path, monkeypatch):
+    # Britfone chooses among several WikiPron readings. The one reading of a
+    # word that Britfone has no line for is the entry when it passes the
+    # screens, and the sidecar says that no second source checked it.
+    import json
+    from types import SimpleNamespace
+
+    gold = [("yacht", "j ɒ t"),                               # one reading, no Britfone line
+            ("Rhyl", "ɹ ɪ l"),                                # a name, one reading, no line
+            ("colonel", "k ɜː n ə l"), ("colonel", "k ɜː n l̩"),  # two readings, no line
+            ("thesis", "θ ɛ s ɪ s"),                          # one reading, Britfone disagrees
+            ("dye", "d aɪ"),                                  # Britfone has a weak form only
+            ("rere", "ɾ iː ɾ"),                               # one reading, rhotic
+            ("goes", "ɡ æ n z"), ("goes", "ɡ ə ʊ z")]         # Britfone chooses
+    rules = {"yacht": "ˈjætʃt", "rhyl": "ˈɹaɪl", "colonel": "ˈkɒlənəl", "thesis": "ˈθɛzɪs",
+             "dye": "ˈdiː", "rere": "ˈɹɛɹ", "goes": "ˈɡɒz"}
+    bench = SimpleNamespace(
+        provenance_for=lambda dataset, code: "crowd-scraped",
+        can_gate_promotion=lambda tier: True,
+        load_wikipron=lambda code, limit: gold,
+        normalize=lambda ipa, strip_stress, broad, extra_strip="": ipa.replace("ˈ", ""),
+        _prosody_marks=lambda code: "",
+        levenshtein=lambda a, b: int(a != b),
+        align=naive_align,
+        _WIKIPRON_BASE="https://example.org/",
+        _WIKIPRON_FILES={"en-GB": "en.tsv"},
+    )
+    monkeypatch.setattr(bl.o2i_harness, "load_benchmark", lambda cache: bench)
+    monkeypatch.setattr(bl.o2i_harness, "harness_sha256", lambda cache: "0" * 64)
+    monkeypatch.setattr(bl, "WIKIPRON_SHA256", {})
+    monkeypatch.setattr(bl.orthography2ipa.G2P, "transcribe_word",
+                        lambda self, word: rules[word.lower()])
+    britfone = tmp_path / "britfone.csv"
+    britfone.write_text("DYE, d aɪ\nGOES, g ˈəʊ z\nTHESIS, θ ˈiː s ɪ s\n", encoding="utf-8")
+    monkeypatch.setitem(bl.BRITFONE, "sha256", bl.sha256_of(britfone))
+    report = bl.build("en-GB", "wikipron", tmp_path, 99, tmp_path / "out", "build",
+                      inputs={"britfone": britfone})
+    assert report["excluded"] == {
+        "several readings and britfone has no line for the word": 1,
+        "no reading agrees with britfone": 1,
+        "britfone has only weak forms of the word": 1,
+        "every gold reading is rhotic": 1,
+    }
+    out = tmp_path / "out"
+    assert (out / "en-GB" / "wikipron.tsv").read_text(encoding="utf-8") == "rhyl\tɹɪl\n"
+    assert (out / "patches" / "en-GB" / "wikipron.tsv").read_text(encoding="utf-8") == (
+        "goes\tɡəʊz\nyacht\tjɒt\n")
+    exception_meta = json.loads((out / "en-GB" / "wikipron.meta.json").read_text(encoding="utf-8"))
+    patch_meta = json.loads((out / "patches" / "en-GB" / "wikipron.meta.json")
+                            .read_text(encoding="utf-8"))
+    assert exception_meta["confirmation"] == {"rhyl": "single_reading"}
+    assert exception_meta["citations"] == {
+        "rhyl": "Wiktionary via WikiPron (en-GB); not checked against a dictionary"}
+    assert patch_meta["confirmation"] == {"goes": "second_source", "yacht": "single_reading"}
+    assert set(patch_meta["confirmation_basis"]) == {"second_source", "single_reading"}
