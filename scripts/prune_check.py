@@ -21,6 +21,11 @@ wrong, because the spelling does give its reading. The check lists it and
 exits 1, also with ``--write``, and never removes it: a person decides where
 the word goes.
 
+An entry whose word the spec's ``word_exceptions`` hold never applies, because
+the spec wins over a lexicon. The check lists such a shadowed entry as it lists
+a stale one: ``--write`` removes a shadowed patch, and a shadowed exception
+fails the check.
+
 The script checks the files of this checkout, never an installed copy.
 """
 from __future__ import annotations
@@ -35,7 +40,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # lexicon_build makes, so an installed copy cannot take its place.
 sys.path[:0] = [str(Path(__file__).resolve().parent), str(ROOT)]
 
-from orthography2ipa import G2P, Pipeline  # noqa: E402
+from orthography2ipa import G2P, Pipeline, get as get_spec  # noqa: E402
 from orthography2ipa.lexicon import parse_lexicon_text  # noqa: E402
 from orthography2ipa.version import VERSION_STR  # noqa: E402
 
@@ -73,9 +78,15 @@ def stale_entries(code: str, entries: dict[str, str], bench, stress: str) -> lis
 def written_problems(tsv: Path, meta_file: Path, code: str, kind: str) -> list[str]:
     """The schema problems of a lexicon file and its sidecar as they are on disk."""
     text = tsv.read_text(encoding="utf-8")
-    problems = [f"{tsv.name} line {n}: {p}" for n, p in validate_tsv(text)]
+    problems = [f"{tsv.name} line {n}: {p}" for n, p in validate_tsv(text, code)]
     meta = json.loads(meta_file.read_text(encoding="utf-8"))
     return problems + validate_meta(meta, code, parse_lexicon_text(text), kind)
+
+
+def shadowed_entries(code: str, entries: dict[str, str]) -> list[str]:
+    """The words of *entries* that the spec's ``word_exceptions`` hold."""
+    exceptions = get_spec(code).word_exceptions
+    return sorted(w for w in entries if w in exceptions)
 
 
 def forget(meta: dict, words: list[str]) -> None:
@@ -109,16 +120,19 @@ def main(argv=None) -> int:
             entries = parse_lexicon_text(tsv.read_text(encoding="utf-8"))
             meta = json.loads(meta_of(code).read_text(encoding="utf-8"))
             stale = stale_entries(code, entries, bench, meta["stress"])
+            shadowed = shadowed_entries(code, entries)
             report["codes"].setdefault(code, {})[kind] = {"entries": len(entries),
-                                                          "stale": stale}
+                                                          "stale": stale, "shadowed": shadowed}
             print(f"{code} {kind} file: {len(entries)} entries, {len(stale)} now right under "
-                  f"orthography2ipa {VERSION_STR}")
-            for word in stale:
+                  f"orthography2ipa {VERSION_STR}, {len(shadowed)} shadowed by the spec's "
+                  f"word_exceptions")
+            for word in stale + shadowed:
                 print(f"  {word}\t{entries[word]}")
-            if kind == "patch" and args.write and stale:
-                for word in stale:
+            removed = sorted({*stale, *shadowed})
+            if kind == "patch" and args.write and removed:
+                for word in removed:
                     del entries[word]
-                forget(meta, stale)
+                forget(meta, removed)
                 meta["o2i_version"] = VERSION_STR
                 written = lb.write_lexicon(tsv.parent, tsv.stem, entries, meta)
                 problems = written_problems(*written, code, kind)
@@ -128,11 +142,12 @@ def main(argv=None) -> int:
     if args.report:
         args.report.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n",
                                encoding="utf-8")
-    stale = {kind: sum(len(c[kind]["stale"]) for c in report["codes"].values() if kind in c)
+    stale = {kind: sum(len(c[kind]["stale"]) + len(c[kind]["shadowed"])
+                       for c in report["codes"].values() if kind in c)
              for kind in files}
     if stale["exception"]:
-        print(f"{stale['exception']} exceptions are right under the rules, so their class "
-              f"is wrong; move each one by hand")
+        print(f"{stale['exception']} exceptions are right under the rules or shadowed by the "
+              f"spec, so their class is wrong; move each one by hand")
     return 1 if stale["exception"] or (stale["patch"] and not args.write) else 0
 
 
