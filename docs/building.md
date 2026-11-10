@@ -67,13 +67,13 @@ python scripts/prune_check.py            # exits 1 when an entry is stale
 python scripts/prune_check.py --write    # removes the stale patches in place
 ```
 
-[Exceptions and patches](kinds.md) states what a stale entry means for each kind. `--write` checks each file that it writes against the schema, and exits with status 1 when one fails. `--report` writes the stale words as JSON.
+[Exceptions and patches](kinds.md) states what a stale entry means for each kind. The check also lists each entry that the spec's `word_exceptions` shadow. `--write` removes a shadowed patch, and a shadowed exception fails the check. `--write` checks each file that it writes against the schema, and exits with status 1 when one fails. `--report` writes the stale words as JSON.
 
 `measure.py` and `prune_check.py` read the files of the checkout, never an installed copy of the package.
 
 ## Tests and CI
 
-Run the test suite with `python -m pytest -q tests`. It validates every packaged file against the schema and checks the build helpers.
+Run the test suite with `python -m pytest -q tests`. It validates every packaged file against the schema and the spec inventory, and checks the build helpers. The sdist ships `scripts/` and `tests/` beside the package.
 
 | Workflow | When | What it does |
 | :--- | :--- | :--- |

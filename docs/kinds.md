@@ -34,6 +34,8 @@ Use the exceptions alone when the rules must decide every word that a rule could
 
 `scripts/prune_check.py` transcribes every entry with the rules alone and compares the output with the entry. An entry that the rules now read right is stale. In a file with `"stress": "source"`, the rules must also stress the same vowel as the entry. The module docstring of the script states the exact comparison.
 
+The check also reports an entry whose word the spec's `word_exceptions` hold. Such an entry never applies, because the spec wins over the lexicon. The check treats it as it treats a stale entry.
+
 A stale patch is the expected result: the rule of its gap landed. `prune_check.py --write` removes the patch and its records from the sidecar. A stale exception means that its class is wrong, because the spelling does give its reading. The script lists the word and exits with status 1, also with `--write`, and never removes it. A person decides where the word goes.
 
 The `Prune Check` workflow runs the check on each pull request against the latest o2i alpha. The `Prune Stale Entries` workflow runs once a week. It removes the stale patches, checks the result, and opens a draft pull request. [Building and pruning](building.md) gives the commands.

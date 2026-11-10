@@ -24,7 +24,7 @@ Every other en-GB entry is a patch. An inflection in -s, -es, -ies, -ed or -ing 
 
 WikiPron gives no part of speech. So a capitalised word that is not a name, such as a proper adjective, can become an exception.
 
-The spec's `word_exceptions` win over the lexicon. An entry for a word that the spec lists never applies.
+The spec's `word_exceptions` win over the lexicon, so an entry for a word that the spec lists would never apply. `prune_check.py` reports such an entry.
 
 Every en-GB patch names a lead, not an o2i pull request. A patch leaves the package only when an o2i rule change reads its word right.
 

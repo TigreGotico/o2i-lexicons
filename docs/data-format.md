@@ -6,13 +6,14 @@ Each language code has two directories under `o2i_lexicons/data/`. The exception
 
 ## The TSV file
 
-Each line is one `word<TAB>ipa` pair. The file must pass `schema.validate_tsv`, which applies these checks:
+Each line is one `word<TAB>ipa` pair. The file must pass `schema.validate_tsv(text, code)`, which applies these checks:
 
 | Check | Rule |
 | :--- | :--- |
 | Encoding | UTF-8, with the word and the IPA in Unicode NFC |
 | Word | lowercase, one TAB on the line, no duplicate word |
 | IPA | IPA characters only, as `orthography2ipa.lexicon.is_ipa_string` accepts them |
+| Inventory | each reading cuts into tokens of the phoneme inventory of the o2i spec for the code (`schema.outside_inventory`). A nasal glide counts only after a nasal vowel, as in mãe `ˈmɐ̃j̃`. |
 | Order | the words are in sorted order, so that "first entry wins" is deterministic |
 | End | the file ends with one newline |
 
@@ -74,7 +75,7 @@ o2i_lexicons.load_meta("en-GB")           # that sidecar, parsed
 o2i_lexicons.load_patch_meta("en-GB")     # the patch sidecar, parsed
 ```
 
-`tsv_path` and `patch_tsv_path` raise `LookupError` when no file, or more than one file, is packaged for the code.
+`tsv_path` and `patch_tsv_path` raise `LookupError` when no file, or more than one file, is packaged for the code. They also raise it for a code that is not a single directory name, such as `patches/en-GB` or `../en-GB`, so that one function cannot reach the file of the other kind.
 
 ---
 [← Exceptions and patches](kinds.md) · [Home](index.md) · [en-GB →](languages/en-GB.md)
