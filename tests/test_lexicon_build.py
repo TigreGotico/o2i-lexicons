@@ -1125,3 +1125,39 @@ def test_a_process_wide_lexicon_does_not_reach_the_build(tmp_path, monkeypatch):
     patches = tmp_path / "out" / "patches" / "en-GB"
     assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "colonel\tkɜːnəl\n"
 
+
+def test_the_build_skips_a_word_the_spec_holds(tmp_path, monkeypatch):
+    # The en-GB spec lists prove in word_exceptions, and the spec wins over a
+    # lexicon, so the build gives prove no entry. WikiPron and Britfone both
+    # read it [pɹuːv]; the rules read [ˈpɹuːv] from the spec.
+    from types import SimpleNamespace
+
+    import orthography2ipa
+
+    assert "prove" in orthography2ipa.get("en-GB").word_exceptions
+    bench = SimpleNamespace(
+        provenance_for=lambda dataset, code: "crowd-scraped",
+        can_gate_promotion=lambda tier: True,
+        load_wikipron=lambda code, limit: [("prove", "p ɹ uː v"), ("yacht", "j ɒ t")],
+        normalize=lambda ipa, strip_stress, broad, extra_strip="": ipa.replace("ˈ", ""),
+        _prosody_marks=lambda code: "",
+        levenshtein=lambda a, b: int(a != b),
+        align=naive_align,
+        _WIKIPRON_BASE="https://example.org/",
+        _WIKIPRON_FILES={"en-GB": "en.tsv"},
+    )
+    monkeypatch.setattr(bl.o2i_harness, "load_benchmark", lambda cache: bench)
+    monkeypatch.setattr(bl.o2i_harness, "harness_sha256", lambda cache: "0" * 64)
+    monkeypatch.setattr(bl, "WIKIPRON_SHA256", {})
+    monkeypatch.setattr(bl.orthography2ipa.G2P, "transcribe_word",
+                        lambda self, word: {"prove": "ˈpɹɒv", "yacht": "ˈjætʃt"}[word])
+    britfone = tmp_path / "britfone.csv"
+    britfone.write_text("PROVE, p ɹ ˈuː v\nYACHT, j ˈɒ t\n", encoding="utf-8")
+    monkeypatch.setitem(bl.BRITFONE, "sha256", bl.sha256_of(britfone))
+    excluded = tmp_path / "excluded.tsv"
+    report = bl.build("en-GB", "wikipron", tmp_path, 99, tmp_path / "out", "build",
+                      excluded_file=excluded, inputs={"britfone": britfone})
+    assert report["excluded"]["the spec's word_exceptions hold the word"] == 1
+    assert "prove\tthe spec's word_exceptions hold the word" in excluded.read_text(encoding="utf-8")
+    patches = tmp_path / "out" / "patches" / "en-GB"
+    assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "yacht\tjɒt\n"

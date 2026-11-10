@@ -865,6 +865,10 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         if len(casings[word]) > 1:
             exclude(headword, "two source headwords differ only in case")
             continue
+        if word in spec.word_exceptions:
+            # The spec wins over a lexicon, so an entry for the word never applies.
+            exclude(headword, "the spec's word_exceptions hold the word")
+            continue
         try:
             rules = engine.transcribe_word(headword)
         except Exception:
