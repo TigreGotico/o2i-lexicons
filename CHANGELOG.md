@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.8a4](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.8a4) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a3...0.7.8a4)
+
+**Merged pull requests:**
+
+- docs\(scripts\): state why the build compares readings without stress [\#65](https://github.com/TigreGotico/o2i-lexicons/pull/65) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.8a3](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.8a3) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a2...0.7.8a3)
