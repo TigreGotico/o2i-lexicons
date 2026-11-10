@@ -223,6 +223,23 @@ def loan_lead(code: str, word: str, source: str) -> str:
             f"{source} gives the reading")
 
 
+def pt_reason(code: str, word: str, reason: str, kind: str, name: bool = False) -> str:
+    """The reason class of a pt-PT or pt-BR entry of *kind*. A class that the
+    source spelling supports stays. A word that the source tags as a name
+    (*name*) is a ``proper_noun``, and a word with a loan spelling is a
+    ``loanword``. Any other exception cites a source that states its class,
+    so it is ``irregular``."""
+    if reason != "unclassified":
+        return reason
+    if name:
+        return "proper_noun"
+    if LOAN_SPELLING.search(word):
+        return "loanword"
+    if kind == "exception":
+        return "irregular"
+    return reason
+
+
 def _pt_pt_loan(word: str, rules: str, entry: str) -> tuple[str, str]:
     if word in AO90_UNITS:
         return "exception", AO90_UNIT

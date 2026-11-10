@@ -170,6 +170,7 @@ NILC_SPELLED_TAGS = ("SIGL", "ABREV", "PFX")
 #: The tag of a verb form, and of the noun or adjective a verb form may share a
 #: spelling with.
 NILC_VERB_TAG = "V"
+NILC_PROPER_NOUN_TAG = "N+Pr"
 NILC_NOMINAL_TAGS = ("N", "A")
 
 NILC_URL = ("https://github.com/dash219/aeiouado_g2p/blob/"
@@ -422,6 +423,29 @@ def nilc_verb_tenses(path: Path) -> dict[str, frozenset[str]]:
             continue
         tenses.setdefault(word, set()).update(f[0] for f in flexions.split(":") if f)
     return {w: frozenset(t) for w, t in tenses.items() if w not in nominal and t}
+
+
+def nilc_proper_nouns(path: Path) -> frozenset[str]:
+    """The words that every line of the NILC file tags as a proper noun
+    (``teodoro.N+Pr``)."""
+    proper: set[str] = set()
+    other: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        head, _, transcription = line.rpartition(";")
+        surface, _, entry = head.partition(",")
+        if not transcription:
+            continue
+        tag = entry.rpartition(".")[2].partition(":")[0]
+        (proper if tag == NILC_PROPER_NOUN_TAG else other).add(lb.lexicon_key(surface))
+    return frozenset(proper - other)
+
+
+def pt_reasons(code: str, reasons: dict[str, str], kinds: dict[str, tuple[str, str]],
+               inputs: dict[str, Path]) -> dict[str, str]:
+    """The reason class of each pt-PT or pt-BR word (``entry_kinds.pt_reason``),
+    from its kind and, for pt-BR, the proper nouns of the NILC file."""
+    names = nilc_proper_nouns(inputs["nilc"]) if code == "pt-BR" else frozenset()
+    return {w: ek.pt_reason(code, w, r, kinds[w][0], w in names) for w, r in reasons.items()}
 
 
 def load_nilc(bench, code: str, inputs: dict[str, Path]):
@@ -1010,6 +1034,10 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         meta["lexical_classes"] = lexical_entries
     kinds = entry_kinds(code, engine, entries, reasons, lexical,
                         frozenset(lb.lexicon_key(h) for h in golds), inputs, confirmation)
+    if code in ("pt-PT", "pt-BR"):
+        meta["reasons"] = reasons = pt_reasons(code, reasons, kinds, inputs)
+        meta["reason_basis"] = {r: lb.reason_basis(code, r)
+                                for r in sorted(set(reasons.values()) - {"unclassified"})}
     files = {}
     for kind, (part, part_meta) in ek.split(entries, meta, kinds).items():
         out_dir = out_root / code if kind == "exception" else out_root / PATCH_DIR / code

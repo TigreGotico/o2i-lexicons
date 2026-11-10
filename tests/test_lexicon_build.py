@@ -1219,3 +1219,15 @@ def test_the_en_gb_build_keeps_a_single_reading_only_when_britfone_lacks_the_wor
         "rhyl": "Wiktionary via WikiPron (en-GB); not checked against a dictionary"}
     assert patch_meta["confirmation"] == {"goes": "second_source", "yacht": "single_reading"}
     assert set(patch_meta["confirmation_basis"]) == {"second_source", "single_reading"}
+
+
+@pytest.mark.parametrize("code", ["pt-PT", "pt-BR"])
+def test_the_packaged_reason_basis_is_the_build_text(code):
+    import o2i_lexicons
+    for meta in (o2i_lexicons.load_meta(code), o2i_lexicons.load_patch_meta(code)):
+        used = set(meta["reasons"].values()) - {"unclassified"}
+        assert meta["reason_basis"] == {r: lb.reason_basis(code, r) for r in used}
+
+
+def test_the_en_gb_reason_basis_is_the_shared_text():
+    assert lb.reason_basis("en-GB", "proper_noun") == lb.REASON_BASIS["proper_noun"]

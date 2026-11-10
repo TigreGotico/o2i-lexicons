@@ -760,3 +760,68 @@ def test_extase_keeps_the_no_lead_gap():
     # The ⟨x⟩ of êxtase is [ʃ] in the rules and in the entry. The entry
     # differs in [ej], and no source read states that value.
     assert notes("pt-PT", "patch")["êxtase"].startswith("no lead")
+
+
+def reasons(code, kind):
+    return FILES[kind][1](code)["reasons"]
+
+
+def words_of_class(code, kind, reason):
+    return {w for w, r in reasons(code, kind).items() if r == reason}
+
+
+# Loans by their spelling: ⟨k w y⟩ (AO90 Base I 2.º), a doubled consonant
+# letter that Portuguese does not write, an initial ⟨s⟩ before a consonant, or
+# a final consonant letter that ends no Portuguese word.
+PT_PT_LOANS = {
+    "exception": {"bold", "erg", "kilowatt", "oc", "quid", "show", "woke"},
+    "patch": {"antidumping", "freelance", "jogging", "ketchup", "lobby", "puzzle", "rap",
+              "shorts", "skinhead", "snobismo", "swing", "timing", "windsurf", "zapping"},
+}
+
+
+@pytest.mark.parametrize("kind", FILES)
+def test_the_pt_pt_loans_are_loanwords(kind):
+    assert words_of_class("pt-PT", kind, "loanword") == PT_PT_LOANS[kind]
+
+
+def test_every_other_pt_pt_exception_is_irregular():
+    other = {w for w, r in reasons("pt-PT", "exception").items()
+             if w not in PT_PT_LOANS["exception"] and r != "proper_noun"}
+    assert len(other) == 1880
+    assert words_of_class("pt-PT", "exception", "irregular") == other
+
+
+def test_a_pt_pt_patch_keeps_its_gap_as_the_reason():
+    assert set(reasons("pt-PT", "patch").values()) == {"unclassified", "loanword", "proper_noun"}
+    assert len(words_of_class("pt-PT", "patch", "unclassified")) == 997
+
+
+def test_the_pt_br_names_and_loan():
+    # The NILC file tags each line of these words N+Pr: "teodoro,teodoro.N+Pr:",
+    # "humberto,humberto.N+Pr:", "félix,félix.N+Pr:ms".
+    assert words_of_class("pt-BR", "exception", "proper_noun") == {"félix", "humberto", "teodoro"}
+    # Every other pt-BR exception cites Cunha & Cintra p. 40 or AO90 Base III.
+    assert set(reasons("pt-BR", "exception").values()) == {"irregular", "proper_noun"}
+    assert len(words_of_class("pt-BR", "exception", "irregular")) == 69
+    for word in words_of_class("pt-BR", "exception", "irregular"):
+        citation = notes("pt-BR", "exception")[word]
+        assert "Cunha & Cintra p. 40" in citation or "AO90 Base III" in citation, word
+    assert words_of_class("pt-BR", "patch", "loanword") == {"sexy"}
+    assert set(reasons("pt-BR", "patch").values()) == {"unclassified", "loanword"}
+
+
+@pytest.mark.parametrize("code, kind, reason, needle", [
+    ("pt-PT", "exception", "irregular", "its citation names the page or section of a source"),
+    ("pt-PT", "exception", "loanword", "outside the native system"),
+    ("pt-PT", "exception", "proper_noun", "The Infopédia headword starts with a capital"),
+    ("pt-PT", "patch", "proper_noun", "The Infopédia headword starts with a capital"),
+    ("pt-BR", "exception", "proper_noun", "the DELAF tag N+Pr"),
+    ("pt-BR", "exception", "irregular", "Cunha & Cintra p. 40 covers the height of a stressed"),
+    ("pt-BR", "exception", "irregular", "AO90 Base III with Ciberdúvidas 4068 covers the value"),
+    ("pt-BR", "patch", "loanword", "outside the native system"),
+])
+def test_a_pt_reason_basis_names_its_own_evidence(code, kind, reason, needle):
+    basis = FILES[kind][1](code)["reason_basis"][reason]
+    assert needle in basis
+    assert "WikiPron" not in basis and "Britfone" not in basis
