@@ -53,12 +53,12 @@ The build writes the exception file and the patch file of the code under `--out`
 
 ```bash
 python scripts/measure.py en-GB ipadict:en-GB cmudict:en
-python scripts/measure.py pt-PT ep_dialects:pt-PT wikipron:pt-PT
+python scripts/measure.py pt-PT ep_dialects:pt-PT
 ```
 
-`measure.py` scores a lexicon on a gold from another source, with the rules only and with the lexicon. It reads the exception file of the code. It also gives the score on the overlap, the gold words that the lexicon holds. It refuses the gold that supplied the lexicon, the board dataset that holds that gold, and its corrections overlay.
+`measure.py` scores the lexicons of a code on a gold from another source. It scores the rules only, then the rules with the exceptions, with the patches, and with both. For each lexicon it also gives the score on the overlap, the gold words that the lexicon holds.
 
-Some golds that `measure.py` accepts are not fully independent of the build. The pt-PT build uses WikiPron pt-PT as a second source. The pt-BR build uses WikiPron pt-BR and the pt.wiktionary rows of portuguese-unified as second sources. `ep_dialects` is a small expert-human set of European Portuguese sentences that no build reads.
+It refuses every gold that the build read. That is the source of the lexicon, the board dataset that holds it, each second source in `build_lexicon.SECOND_SOURCES`, and each of those with its corrections overlay. So `wikipron:pt-PT` and `wikipron:pt-BR` are refused. `ep_dialects` is a small expert-human set of European Portuguese sentences that no build reads.
 
 ## Prune
 
@@ -67,7 +67,9 @@ python scripts/prune_check.py            # exits 1 when an entry is stale
 python scripts/prune_check.py --write    # removes the stale patches in place
 ```
 
-[Exceptions and patches](kinds.md) states what a stale entry means for each kind. `--report` writes the stale words as JSON.
+[Exceptions and patches](kinds.md) states what a stale entry means for each kind. `--write` checks each file that it writes against the schema, and exits with status 1 when one fails. `--report` writes the stale words as JSON.
+
+`measure.py` and `prune_check.py` read the files of the checkout, never an installed copy of the package.
 
 ## Tests and CI
 
@@ -75,9 +77,9 @@ Run the test suite with `python -m pytest -q tests`. It validates every packaged
 
 | Workflow | When | What it does |
 | :--- | :--- | :--- |
-| Build Tests | each pull request to `dev` or `master` | runs the test suite on Python 3.11 to 3.14 |
+| Build Tests | each pull request to `dev` or `master` | runs the test suite on Python 3.11 to 3.14, then installs the built wheel in a clean venv and checks that it ships every data file |
 | Prune Check | each pull request to `dev` | runs `prune_check.py` against the latest o2i alpha |
-| Prune Stale Entries | once a week, and on request | runs `prune_check.py --write` and opens a draft pull request |
+| Prune Stale Entries | once a week, and on request | runs `prune_check.py --write` and the test suite on the pruned files, opens a draft pull request, and starts Build Tests on its branch |
 | License Check | each pull request to `dev` | checks the licenses of the installed dependencies |
 | Release Alpha and Propose Stable | each merge to `dev` | publishes an alpha release to PyPI |
 
