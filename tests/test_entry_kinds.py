@@ -121,6 +121,21 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
     # AO90 Base I 2.º c): "kg-quilograma, km-quilómetro, kW-kilowatt".
     ("kilowatt", "kiˈlɔwɐtt", "kilɔˈwɔt", None, ("exception", ek.AO90_UNIT)),
     ("breja", "ˈbɾeʒɐ", "ˈbɾɛʒɐ", None, ("patch", ek.NO_LEAD)),
+    # No class, but the value of an ⟨x⟩ before a vowel differs: AO90 Base III
+    # and Ciberdúvidas 4068 make that part lexical, so the entry is an
+    # exception. In êxtase the ⟨x⟩ stands before a consonant and is [ʃ] on
+    # both sides, so its [ej] stays a patch.
+    ("axioma", "ɐʃiˈɔmɐ", "ɐkˈsjomɐ", None, ("exception", "AO90 Base III; Ciberdúvidas 4068")),
+    ("exatamente", "eʃɐtɐˈmẽtɨ", "izatɐˈmẽtɨ", None,
+     ("exception", "AO90 Base III; Ciberdúvidas 4068")),
+    ("êxtase", "ˈeʃtɐzɨ", "ˈejʃtɐzɨ", None, ("patch", ek.NO_LEAD)),
+    # Made-up rows: a coda ⟨x⟩ read [s], and an added [ʃ] beside an ⟨x⟩ that
+    # keeps its value, are not a lexical ⟨x⟩ value.
+    ("expor", "ɐjʃˈpoɾ", "ɐjsˈpoɾ", None, ("patch", ek.NO_LEAD)),
+    ("exame", "iˈzɐmɨ", "iˈzɐmɨʃ", None, ("patch", ek.NO_LEAD)),
+    # AO90 Base IV 2.º keeps the ⟨m⟩ of ⟨mn⟩ where it is pronounced
+    # (indemnizar), and the entry pronounces it.
+    ("indemnizar", "ĩdẽniˈzaɾ", "ĩdɨmniˈzaɾ", None, ("patch", ek.MN_KEPT)),
 ])
 def test_pt_pt_kind(word, rules, entry, cls, expected):
     assert ek.pt_pt_kind(word, rules, entry, cls) == expected

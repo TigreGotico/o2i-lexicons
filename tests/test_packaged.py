@@ -734,3 +734,29 @@ def test_an_open_syllable_entry_with_the_page_value_is_a_patch(word):
     assert notes("pt-PT", "patch")[word] == (
         "lead: Mateus & d'Andrade 1998 p. 26 (b) give a word-initial unstressed /e ɛ/ "
         "as [i] with no coda")
+
+
+# AO90 Base III and Ciberdúvidas 4068: the spelling does not show the value of
+# ⟨x⟩. In these words it differs from the rules, with other differences beside it.
+@pytest.mark.parametrize("word", ["ambisséxuo", "assexuadamente", "axioma", "exatamente",
+                                  "toxoide"])
+def test_an_x_word_with_other_differences_is_an_exception(word):
+    assert word not in file_entries("pt-PT", "patch")
+    assert notes("pt-PT", "exception")[word] == "AO90 Base III; Ciberdúvidas 4068"
+
+
+# AO90 Base IV 2.º: "Conservam-se ou eliminam-se, facultativamente, quando se
+# proferem numa pronúncia culta [...] o m da sequência mn, em [...] indemnidade,
+# indemnizar".
+@pytest.mark.parametrize("word", ["indemnidade", "indemnizar", "indemnização"])
+def test_an_mn_word_names_the_ao90_base_iv_lead(word):
+    assert "dɨmn" in file_entries("pt-PT", "patch")[word]
+    gap = notes("pt-PT", "patch")[word]
+    assert gap.startswith("lead: AO90 Base IV 2.º: 'Conservam-se ou eliminam-se")
+    assert gap.endswith("The entry pronounces the [m]")
+
+
+def test_extase_keeps_the_no_lead_gap():
+    # The ⟨x⟩ of êxtase is [ʃ] in the rules and in the entry. The entry
+    # differs in [ej], and no source read states that value.
+    assert notes("pt-PT", "patch")["êxtase"].startswith("no lead")
