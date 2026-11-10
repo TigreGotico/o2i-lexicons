@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.10a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.10a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.9a1...0.7.10a1)
+
+**Merged pull requests:**
+
+- fix\(pt\): cite the dictionary for a loan, and AO90 Base I only for kilowatt [\#56](https://github.com/TigreGotico/o2i-lexicons/pull/56) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.9a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.9a1) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a4...0.7.9a1)
