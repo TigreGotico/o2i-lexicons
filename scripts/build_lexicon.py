@@ -1,25 +1,46 @@
 """Build the residual lexicon of one language from one gold.
 
     python scripts/build_lexicon.py en-GB wikipron --cache .cache \\
-        --report build-report.json
+        --britfone britfone.main.3.0.1.csv --report build-report.json
     python scripts/build_lexicon.py pt-PT infopedia --homographs heterophonic_homographs.csv \\
         --preao preao_words.txt --report build-report.json
     python scripts/build_lexicon.py pt-BR nilc --nilc unitex_sample_transcribed.txt \\
-        --michaelis entries.jsonl --homographs heterophonic_homographs.csv \\
+        --michaelis michaelis-snapshot.jsonl --homographs heterophonic_homographs.csv \\
         --report build-report.json
 
 The script runs the installed orthography2ipa over every word of the gold. It
 keeps a word only when the rules get it wrong under the board's own scoring:
 the PER against every gold reading of the word is above zero, after the
-board's broad, stress-free normalisation. The entry is the first gold reading,
-in the order the loader of the source gives, that is IPA-only and inside the
-spec's phoneme inventory.
+board's broad, stress-free normalisation. The comparison ignores stress on
+purpose: some source stress marks contradict the spelling (Infopédia câmera
+[kɐˈmɨɾɐ], NILC caiu [ˈkaiw]), and WikiPron, the second source of most such
+words, writes no stress, so a source stress mark alone never overrides the
+rules (``prune_check.py`` still compares the stress of an entry). The entry is
+the first gold reading, in the order the loader of the source gives, that is
+IPA-only and inside the spec's phoneme inventory.
 
 A spec that models one accent takes its entry only from a reading in that
-accent (``ACCENT_SCREENS``). The en-GB spec models Received Pronunciation,
-which is non-rhotic, so an en-GB entry is never a rhotic reading
-(``lexicon_build.rhotic_segment``). A word whose every reading is rhotic
-leaves the lexicon, and ``--excluded`` lists it with its readings.
+accent (``ACCENT_SCREENS``). The en-GB spec models Received Pronunciation. An
+en-GB reading is out when it is rhotic (``lexicon_build.rhotic_segment``), when
+it has a vowel outside the RP vowels of Roach (2004)
+(``lexicon_build.rp_vowel_outside``), or when it has too few phones for its
+spelling (``lexicon_build.truncated``). A word whose every reading fails a
+screen leaves the lexicon, and ``--excluded`` lists it with its readings.
+
+A code can have a second source that chooses among the readings of the gold
+(``AGREEMENT_SOURCES``). When WikiPron gives an en-GB word more than one
+reading, the entry is the reading that agrees with a stressed Britfone
+reading of the word (``lexicon_build.agrees``), and the Britfone order
+decides between two that agree. When WikiPron gives the word one reading and
+Britfone has no line for it, there is no choice to make, and the reading is
+the entry when it passes the screens. A word whose readings all disagree with
+Britfone leaves the lexicon, and so does a word with several readings that
+Britfone does not hold: no entry is better than a guess, because an entry
+overrides the rules. Such a word still counts toward a lead. The sidecar
+field ``confirmation`` names the basis of each entry (``CONFIRMATIONS``). A
+word whose rules output agrees with Britfone needs no entry, and a homograph
+of ``lexicon_build.HOMOGRAPHS`` gets none, because an entry cannot choose by
+sense.
 
 Words that share a spelling pattern and the same error at it form a lead. A
 lead is a question for the linguistic literature, not a rule. Its words stay
@@ -94,6 +115,7 @@ from __future__ import annotations
 import argparse
 import csv
 import functools
+import hashlib
 import itertools
 import json
 import shlex
@@ -617,12 +639,95 @@ SOURCES = {
     "nilc": (load_nilc, "CC-BY-SA-4.0", "nilc", screen_nilc, nilc_norm, nilc_residual),
 }
 
-#: code -> (the test that names the segment of a gold reading that the
-#: accent of the code's spec does not have, or ``None``, and the reason a
-#: word leaves when no reading passes). The en-GB spec models Received
-#: Pronunciation, which is non-rhotic (``lexicon_build.rhotic_segment``).
-#: The test chooses among the readings of the source and never edits one.
-ACCENT_SCREENS = {"en-GB": (lb.rhotic_segment, "every gold reading is rhotic")}
+#: dataset -> the board datasets that its build reads besides the one that
+#: holds it: WikiPron corroborates a pt-PT or pt-BR entry
+#: (``infopedia_references``, ``nilc_references``), and portuguese_unified
+#: gives the pt.wiktionary readings of pt-BR. No measure is independent of them.
+SECOND_SOURCES = {
+    "wikipron": frozenset(),
+    "infopedia": frozenset({"wikipron"}),
+    "nilc": frozenset({"portuguese_unified", "wikipron"}),
+}
+
+#: code -> the screens of its gold readings, in order. Each screen is a test
+#: of ``(headword, reading)`` that is true when the accent of the code's spec
+#: does not have the reading, and the reason a word leaves when no reading
+#: passes it. The en-GB spec models Received Pronunciation: it is non-rhotic
+#: (``lexicon_build.rhotic_segment``), it has the vowels of Roach 2004, p. 243
+#: (``lexicon_build.rp_vowel_outside``), and a reading with too few phones for
+#: its spelling is cut short (``lexicon_build.truncated``). A screen chooses
+#: among the readings of the source and never edits one.
+ACCENT_SCREENS = {"en-GB": (
+    (lambda headword, reading: lb.rhotic_segment(reading) is not None,
+     "every gold reading is rhotic"),
+    (lambda headword, reading: lb.rp_vowel_outside(reading) is not None,
+     "every non-rhotic reading has a vowel outside the RP vowels"),
+    (lb.truncated, "every RP reading has too few phones for its spelling"),
+)}
+
+#: code -> the marks that its source writes as notation only, which the
+#: entry drops when the spec has no token with them. WikiPron en-GB writes
+#: the second part of a diphthong with or without the non-syllabic mark
+#: ([a ɪ̯ l] and [a ɪ l] for I'll); Roach (2004, p. 243) writes the diphthongs
+#: with no mark.
+NOTATION_MARKS = {"en-GB": lb.TIE_BARS + lb.NON_SYLLABIC}
+
+#: The WikiPron commit that the en-GB file is read at, and the sha256 of
+#: ``eng_latn_uk_broad.tsv`` there. The build refuses another file, so the
+#: sidecar's ``source_url`` names the data that was read.
+WIKIPRON_COMMIT = "d282e848a211ea31cfd730f0ced8bc8cdab9e83d"
+WIKIPRON_SHA256 = {"en-GB": "f8ca476aa2e96cb22cafbf9099d689b5902a9d321579055081909b2eeafa1b8d"}
+
+#: Britfone 3.0.1 (Jose Llarena, MIT): a British English pronouncing list of
+#: about 16,000 words that its README says is "RP/Standard Southern British".
+#: Its transcriptions start from cmudict and take the British readings from
+#: Wiktionary, Wikipedia and the Collins, Oxford, Cambridge and Macmillan
+#: dictionaries (README, Sources), so it shares part of its provenance with
+#: WikiPron, but its readings are chosen by hand for one accent.
+BRITFONE_COMMIT = "1062be14adc96c358f2087ac5449d72130c7a6f4"
+BRITFONE = {
+    "name": "britfone",
+    "version": "3.0.1",
+    "url": ("https://github.com/JoseLlarena/Britfone/blob/"
+            f"{BRITFONE_COMMIT}/britfone.main.3.0.1.csv"),
+    "sha256": "59f197e98520856d1cc88e380beb54e4314d8712efc4d588b6778819c502d920",
+    "licence": "MIT",
+    "accent": "RP/Standard Southern British (Britfone README)",
+    "normalisation": "lexicon_build.agrees: both readings in lexicon_build.rp_form; "
+                     "Britfone [ɐ] read as [ʌ]; an unstressed Britfone weak vowel "
+                     "takes lexicon_build.WEAK_VOWELS; Britfone weak forms with no "
+                     "primary stress left out",
+}
+
+#: code -> the second source that chooses among the readings of a word, and
+#: the input argument that holds its file.
+AGREEMENT_SOURCES = {"en-GB": (BRITFONE, "britfone")}
+
+#: The basis of an entry of a code with a second source: the value of the
+#: sidecar field ``confirmation`` -> what it states.
+CONFIRMATIONS = {
+    "second_source": "the reading agrees with a stressed reading of agreement_source",
+    "single_reading": "the source gives the word one reading, agreement_source has no "
+                      "line for the word, and no second source checks the reading",
+}
+
+
+def sha256_of(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def read_agreement(code: str, inputs: dict[str, Path]) -> dict[str, list[str]] | None:
+    """word -> the readings of the second source of *code*, or ``None`` when
+    the code has none. The file must be the pinned one."""
+    if code not in AGREEMENT_SOURCES:
+        return None
+    source, arg = AGREEMENT_SOURCES[code]
+    path = inputs.get(arg)
+    if path is None:
+        raise SystemExit(f"{code} needs --{arg}, the {source['name']} file at {source['url']}")
+    if sha256_of(path) != source["sha256"]:
+        raise SystemExit(f"{path} is not {source['url']} (sha256 differs)")
+    return lb.britfone_readings(path.read_text(encoding="utf-8"))
 
 #: The tier of a gold that no board dataset holds: dataset -> tier.
 OFF_BOARD_TIERS = {"nilc": "expert-human"}
@@ -631,6 +736,9 @@ OFF_BOARD_TIERS = {"nilc": "expert-human"}
 def gold_url(bench, dataset: str, code: str) -> str:
     if dataset == "nilc":
         return NILC_URL
+    if dataset == "wikipron" and code in WIKIPRON_SHA256:
+        return ("https://raw.githubusercontent.com/CUNY-CL/wikipron/"
+                f"{WIKIPRON_COMMIT}/data/scrape/tsv/{bench._WIKIPRON_FILES[code]}")
     if dataset == "wikipron":
         return bench._WIKIPRON_BASE + bench._WIKIPRON_FILES[code]
     return bench._PT_UNIFIED_URL
@@ -692,9 +800,11 @@ def place_stress_marks(kept: list[lb.Candidate]) -> tuple[dict[str, str], Counte
 
 def entry_kinds(code: str, engine, entries: dict[str, str], reasons: dict[str, str],
                 lexical: dict[str, str], headwords: frozenset[str],
-                inputs: dict[str, Path]) -> dict[str, tuple[str, str]]:
+                inputs: dict[str, Path],
+                confirmation: dict[str, str]) -> dict[str, tuple[str, str]]:
     """word -> ``(kind, note)`` of each entry, by the rules of
-    ``entry_kinds`` for *code*. *headwords* are the lexicon keys of the gold."""
+    ``entry_kinds`` for *code*. *headwords* are the lexicon keys of the gold,
+    and *confirmation* gives the ``CONFIRMATIONS`` basis of each entry."""
     if code == "pt-PT":
         return {w: ek.pt_pt_kind(w, engine.transcribe_word(w), ipa, lexical.get(w))
                 for w, ipa in entries.items()}
@@ -703,7 +813,8 @@ def entry_kinds(code: str, engine, entries: dict[str, str], reasons: dict[str, s
         return {w: ek.pt_br_kind(w, engine.transcribe_word(w), ipa, tenses.get(w, frozenset()))
                 for w, ipa in entries.items()}
     if code == "en-GB":
-        return {w: ek.en_gb_kind(w, reasons[w], headwords, frozenset(entries))
+        return {w: ek.en_gb_kind(w, reasons[w], headwords, frozenset(entries),
+                                 confirmation.get(w) != "single_reading")
                 for w in entries}
     raise SystemExit(f"entry_kinds has no rules for {code}; an entry of it has no kind")
 
@@ -720,6 +831,12 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         raise SystemExit(f"{dataset}/{code} is on tier {tier!r}, which cannot supply entries")
     pairs, dropped = loader(bench, code, inputs)
     readings_excluded = Counter(reason for _, reason, _ in dropped)
+    if dataset == "wikipron" and code in WIKIPRON_SHA256:
+        gold_file = Path(bench.CACHE_DIR) / bench._WIKIPRON_FILES[code]
+        if sha256_of(gold_file) != WIKIPRON_SHA256[code]:
+            raise SystemExit(f"{gold_file} is not the file at {gold_url(bench, dataset, code)}; "
+                             "fetch that file into the cache")
+    references = read_agreement(code, inputs)
 
     golds: dict[str, list[str]] = {}
     for headword, gold in pairs:
@@ -728,7 +845,10 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     for headword in golds:
         casings.setdefault(lb.lexicon_key(headword), set()).add(headword)
 
-    engine = orthography2ipa.G2P(code, expose_ambiguous_endings=False)
+    # An empty lexicon, not None: None reads the process-wide lexicon, and
+    # the build must compare each gold reading with the rules alone.
+    engine = orthography2ipa.G2P(code, expose_ambiguous_endings=False,
+                                 pipeline=orthography2ipa.Pipeline(lexicon={}))
     spec = engine.spec
     inventory = phoneme_inventory(spec)
     extra = bench._prosody_marks(code)
@@ -740,7 +860,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         return lb.outside_inventory(inventory_tokenize(ipa, spec), inventory)
 
     def usable(gold: str):
-        for ipa in lb.storage_forms(gold):
+        for ipa in lb.storage_forms(gold, NOTATION_MARKS.get(code, lb.TIE_BARS)):
             if is_ipa_string(ipa) and not outside(ipa):
                 return ipa
         return None
@@ -751,6 +871,11 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
 
     excluded = Counter()
     candidates: list[lb.Candidate] = []
+    # The rules-wrong words whose reading the second source does not confirm.
+    # They ship no entry, but they still count toward a lead: a lead is a
+    # pattern of rule errors in the whole gold, not in the confirmed words only.
+    unconfirmed: list[lb.Candidate] = []
+    confirmation: dict[str, str] = {}
     right = 0
     for headword, readings in golds.items():
         word = lb.lexicon_key(headword)
@@ -759,6 +884,10 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
             continue
         if len(casings[word]) > 1:
             exclude(headword, "two source headwords differ only in case")
+            continue
+        if word in spec.word_exceptions:
+            # The spec wins over a lexicon, so an entry for the word never applies.
+            exclude(headword, "the spec's word_exceptions hold the word")
             continue
         try:
             rules = engine.transcribe_word(headword)
@@ -774,19 +903,53 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         if any(bench.levenshtein(hyp, g) == 0 for g in normed):
             right += 1
             continue
-        if code in ACCENT_SCREENS:
-            accent_segment, accent_reason = ACCENT_SCREENS[code]
-            inside = [g for g in readings if accent_segment(g) is None]
+        screened_out = False
+        for outside_accent, accent_reason in ACCENT_SCREENS.get(code, ()):
+            inside = [g for g in readings if not outside_accent(headword, g)]
             if not inside:
                 exclude(headword, accent_reason, ", ".join(readings))
-                continue
+                screened_out = True
+                break
             readings = inside
+        if screened_out:
+            continue
         placed = [g for g in readings if not lb.misplaced_stress(g)]
         if not placed:
             exclude(headword, "every reading has a stress mark inside an onset",
                     ", ".join(readings))
             continue
-        ipa = lb.first_usable(placed, usable)
+        if references is not None:
+            name = AGREEMENT_SOURCES[code][0]["name"]
+            if word in lb.HOMOGRAPHS.get(code, {}):
+                exclude(headword, "a homograph with two readings by sense",
+                        lb.HOMOGRAPHS[code][word])
+                continue
+            refs = references.get(word)
+            if refs and any(lb.agrees(rules, r) for r in refs):
+                exclude(headword, f"the rules give the {name} reading",
+                        f"{rules} | {', '.join(placed)} | {name}: {', '.join(refs)}")
+                continue
+            if word not in references and len(golds[headword]) == 1:
+                ipa = usable(placed[0])
+                confirmation[word] = "single_reading"
+            elif not refs or not any(lb.agrees(g, r) for r in refs for g in placed):
+                if word not in references:
+                    exclude(headword, f"several readings and {name} has no line for the word",
+                            ", ".join(placed))
+                elif not refs:
+                    exclude(headword, f"{name} has only weak forms of the word",
+                            ", ".join(placed))
+                else:
+                    exclude(headword, f"no reading agrees with {name}",
+                            f"{', '.join(placed)} | {name}: {', '.join(refs)}")
+                if (fallback := lb.first_usable(placed, usable)) is not None:
+                    unconfirmed.append(lb.Candidate(headword, word, hyp, norm(fallback), fallback))
+                continue
+            else:
+                ipa = lb.agreeing_reading(placed, refs, usable)
+                confirmation[word] = "second_source"
+        else:
+            ipa = lb.first_usable(placed, usable)
         if ipa is None:
             exclude(headword, "no gold reading is IPA-only and inside the inventory",
                     ", ".join(f"{g} ({' '.join(outside(lb.storage_ipa(g))) or 'not IPA'})"
@@ -805,7 +968,8 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
             elif found is not None:
                 lexical[c.word] = found
 
-    leads = lb.find_leads([c for c in candidates if c.word not in lexical], bench.align, min_lead)
+    leads = lb.find_leads([c for c in candidates + unconfirmed if c.word not in lexical],
+                          bench.align, min_lead)
     held = lb.held_out_words(leads)
     kept = [c for c in candidates if c.word not in held]
     screened: list[tuple[lb.Candidate, str, str, str]] = []
@@ -827,6 +991,15 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         "reasons": reasons,
         "reason_basis": {r: lb.REASON_BASIS[r] for r in sorted(used)},
     }
+    if references is not None:
+        source = AGREEMENT_SOURCES[code][0]
+        meta["agreement_source"] = {k: source[k] for k in
+                                    ("name", "version", "url", "sha256", "licence", "accent",
+                                     "normalisation")}
+        meta["confirmation"] = {w: confirmation[w] for w in entries}
+        meta["confirmation_basis"] = dict(CONFIRMATIONS)
+    if dataset == "wikipron" and code in WIKIPRON_SHA256:
+        meta["source_sha256"] = WIKIPRON_SHA256[code]
     wiktionary_words = sorted(c.word for c, _, stage, _ in screened if stage == "mined")
     if wiktionary_words:
         meta["wiktionary_readings"] = wiktionary_words
@@ -836,7 +1009,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     if lexical_entries:
         meta["lexical_classes"] = lexical_entries
     kinds = entry_kinds(code, engine, entries, reasons, lexical,
-                        frozenset(lb.lexicon_key(h) for h in golds), inputs)
+                        frozenset(lb.lexicon_key(h) for h in golds), inputs, confirmation)
     files = {}
     for kind, (part, part_meta) in ek.split(entries, meta, kinds).items():
         out_dir = out_root / code if kind == "exception" else out_root / PATCH_DIR / code
@@ -868,6 +1041,7 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         "rules_right": right,
         "excluded": dict(excluded),
         "rules_wrong_candidates": len(candidates),
+        "lead_pool_unconfirmed": len(unconfirmed),
         "min_lead_size": min_lead,
         "leads": [{"pattern": l.pattern, "position": l.position, "engine": l.engine,
                    "gold": l.gold, "size": len(l.words), "examples": l.words[:LEAD_EXAMPLES]}
@@ -902,12 +1076,14 @@ def main(argv=None) -> None:
     ap.add_argument("--screened", type=Path,
                     help="write each word that the source's screen tests, and its result, here")
     ap.add_argument("--nilc", type=Path, help="the NILC unitex_sample_transcribed.txt")
-    ap.add_argument("--michaelis", type=Path, help="the entries.jsonl of the Michaelis crawl")
+    ap.add_argument("--michaelis", type=Path, help="the michaelis-snapshot.jsonl of the Michaelis crawl")
     ap.add_argument("--homographs", type=Path, help="the heterophonic_homographs.csv of bifonia")
     ap.add_argument("--preao", type=Path,
                     help="a pt-PT word list in the spelling before AO90, one word per line")
+    ap.add_argument("--britfone", type=Path,
+                    help="the britfone.main.3.0.1.csv of Britfone, the en-GB second source")
     args = ap.parse_args(argv)
-    names = ("nilc", "michaelis", "homographs", "preao")
+    names = ("nilc", "michaelis", "homographs", "preao", "britfone")
     files = [arg for name in names if getattr(args, name)
              for arg in (f"--{name}", getattr(args, name).name)]
     command = "python scripts/build_lexicon.py " + shlex.join(

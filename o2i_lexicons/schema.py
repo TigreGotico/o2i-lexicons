@@ -21,7 +21,9 @@ A ``<source>.meta.json`` sidecar is a JSON object with these keys:
 ``build_command``
     The command that rebuilds the file.
 ``o2i_version``
-    The orthography2ipa version whose rules got each entry wrong.
+    The orthography2ipa version whose rules got each entry wrong: the version
+    of the build, or of the last ``prune_check.py --write`` that removed an
+    entry from the file.
 ``stress``
     Where the stress of the entries comes from: ``source`` when the entries
     carry the stress marks of the source, ``rules`` when the source has no
@@ -51,7 +53,10 @@ A patch sidecar also has:
 from __future__ import annotations
 
 import re
+import unicodedata
 
+import orthography2ipa
+from orthography2ipa.inventory import phoneme_inventory, tokenize
 from orthography2ipa.lexicon import validate_lexicon_text
 
 __all__ = [
@@ -60,6 +65,8 @@ __all__ = [
     "REQUIRED_META_KEYS",
     "KIND_KEYS",
     "STRESS_ORIGINS",
+    "STRESS_MARKS",
+    "outside_inventory",
     "validate_tsv",
     "validate_meta",
 ]
@@ -101,27 +108,57 @@ STRESS_MARKS = "ˈˌ"
 _VERSION_RE = re.compile(r"^\d+\.\d+\.\d+(a\d+)?$")
 _SPDX_RE = re.compile(r"^[A-Za-z0-9.+-]+$")
 
+_GLIDES = frozenset("jwɥ")
+_NASAL = "\u0303"
 
-def validate_tsv(text: str) -> list[tuple[int, str]]:
+
+def outside_inventory(tokens: list[str], inventory: frozenset[str]) -> list[str]:
+    """The tokens of a reading that are not in the spec's token *inventory*.
+
+    A spec emits a nasal glide only as the second half of a nasal diphthong
+    (pt-PT mãe ˈmɐ̃j̃, pão ˈpɐ̃w̃, põe ˈpõj̃), so the glide is not a token of its
+    own. A nasal glide is inside the inventory only after a nasal vowel, and
+    only when an inventory token ends in that glide: muito ˈmũj̃tu tokenises as
+    ũ j̃. A spec that lists the bare glide changes neither condition.
+    """
+    nasal_glides = {t[-2:] for t in inventory
+                    if len(t) > 2 and t.endswith(_NASAL) and t[-2] in _GLIDES}
+    def after_nasal_vowel(i: int) -> bool:
+        return i > 0 and unicodedata.normalize("NFD", tokens[i - 1]).endswith(_NASAL)
+
+    return [t for i, t in enumerate(tokens)
+            if not (after_nasal_vowel(i) if t in nasal_glides else t in inventory)]
+
+
+def validate_tsv(text: str, code: str | None = None) -> list[tuple[int, str]]:
     """Return the problems in the body of a lexicon TSV file.
 
     The checks of :func:`orthography2ipa.lexicon.validate_lexicon_text` apply:
     one TAB per line, NFC lowercase word, IPA-only NFC transcription, no
     duplicate word. In addition, the words must be in sorted order, so that
     "first entry wins" picks a deterministic entry, and the file ends with
-    one newline.
+    one newline. With *code*, each transcription must also cut into tokens of
+    the phoneme inventory of the orthography2ipa spec for *code*, because the
+    IPA-only check accepts any letter.
     """
     problems = list(validate_lexicon_text(text))
     if text and not text.endswith("\n"):
         problems.append((text.count("\n") + 1, "no newline at end of file"))
+    if code is not None:
+        spec = orthography2ipa.get(code)
+        inventory = phoneme_inventory(spec)
     previous = None
     for line_no, line in enumerate(text.split("\n"), start=1):
         if not line:
             continue
-        word = line.split("\t", 1)[0]
+        word, _, ipa = line.partition("\t")
         if previous is not None and word < previous:
             problems.append((line_no, f"not sorted: {word!r} after {previous!r}"))
         previous = word
+        if code is not None and ipa:
+            outside = outside_inventory(tokenize(ipa, spec), inventory)
+            if outside:
+                problems.append((line_no, f"outside the {code} inventory: {' '.join(outside)}"))
     return problems
 
 
