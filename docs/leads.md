@@ -98,9 +98,11 @@ The 18 Infopédia words in a stressed ⟨-oio⟩ split: [oj] in 10 (apoio, arroi
 
 comboio is [ɔj] in Infopédia [kõˈbɔju], WikiPron pt-PT and the Portal da Língua Portuguesa Lisbon reading. The files hold it as an exception with the stressed-mid-vowel class. A word list in o2i can take it.
 
-### ⟨-mente⟩ and ⟨-idade⟩ after an open ⟨oi⟩
+### Derivatives of an open ⟨oi⟩
 
-Infopédia gives [ɔj] in all 5 of its words in ⟨-oicamente⟩ and ⟨-oicidade⟩: estoicamente, estoicidade, heroicamente, heroicidade and monozoicidade. The Portal Lisbon reading agrees. The 1945 Acordo, Base XXIII, writes the open vowel of such derivatives with a grave accent: heròicamente, bòiazinha, jòiazinha, heròizinho. The rules give [oj] in all 5, because orthography2ipa#2265 opens a stressed ⟨oi⟩ only, and the engine marks no secondary stress in these words. Other derivatives keep [oj] in Infopédia: estoicismo, boicote, moicano. A rule must key on ⟨-mente⟩ and ⟨-idade⟩, not on every derivative.
+The rules give [ɔj] in the 5 Infopédia words in ⟨-oicamente⟩ and ⟨-oicidade⟩: estoicamente, estoicidade, heroicamente, heroicidade and monozoicidade. orthography2ipa 7.122.25a2 has two rules for them. `PT_DERIV_OICAMENTE_OPEN` follows the 1945 Acordo, Base XXIII, which writes the grave accent of an open vowel in heròicamente. `PT_DERIV_OICIDADE_OPEN` follows Cunha & Cintra (p. 53): the stressed vowel of a simple word is not reduced, "em geral", in its derivatives. Infopédia gives [oj] in estoicismo, boicote and moicano, and the rules keep [oj] there. No entry holds these words.
+
+The derivatives with an infix ⟨z⟩ stay a lead. Base XXIII writes bòiazinha, jòiazinha and heròizinho with the grave accent, but no reference dataset has such a word, so no rule can be tested for them.
 
 ### ⟨-iedade⟩
 
