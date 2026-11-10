@@ -366,6 +366,8 @@
   "dona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "dondona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "dozena": "lead: ⟨-ena⟩ takes [e] in at least 90% of the Infopédia words",
+  "ebrié": "lead: Mateus & d'Andrade 1998 p. 26 (b) give a word-initial unstressed /e ɛ/ as [i] with no coda",
+  "ebriés": "lead: Mateus & d'Andrade 1998 p. 26 (b) give a word-initial unstressed /e ɛ/ as [i] with no coda",
   "eca": "lead: ⟨-eca⟩ takes [ɛ] in at least 90% of the Infopédia words",
   "ecmófobo": "lead: the source has a close mid vowel before a coda stop, where orthography2ipa#2218 gives an open one",
   "ecográfico": "rule-leads.md § word-initial e",
@@ -507,7 +509,6 @@
   "eritróptero": "rule-leads.md § word-initial e",
   "eritróptico": "rule-leads.md § word-initial e",
   "ervedo": "lead: ⟨-edo⟩ takes [e] in at least 90% of the Infopédia words",
-  "essonite": "Mateus & d'Andrade 1998 p. 26 (a, b, d)",
   "estro": "no lead: the rules miss the word outside every class and lead",
   "etilamina": "rule-leads.md § word-initial e",
   "etilato": "rule-leads.md § word-initial e",
@@ -2440,6 +2441,14 @@
    "class": "stressed mid vowel",
    "second_source": "wikipron"
   },
+  "ebrié": {
+   "class": "unstressed initial ⟨e⟩",
+   "second_source": "no second source"
+  },
+  "ebriés": {
+   "class": "unstressed initial ⟨e⟩",
+   "second_source": "no second source"
+  },
   "eca": {
    "class": "stressed mid vowel",
    "second_source": "wikipron"
@@ -2998,10 +3007,6 @@
   },
   "ervedo": {
    "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
-  "essonite": {
-   "class": "unstressed initial ⟨e⟩",
    "second_source": "no second source"
   },
   "etilamina": {
@@ -5291,6 +5296,8 @@
   "dona": "unclassified",
   "dondona": "unclassified",
   "dozena": "unclassified",
+  "ebrié": "unclassified",
+  "ebriés": "proper_noun",
   "eca": "unclassified",
   "ecmófobo": "unclassified",
   "ecográfico": "unclassified",
@@ -5432,7 +5439,6 @@
   "eritróptero": "unclassified",
   "eritróptico": "unclassified",
   "ervedo": "unclassified",
-  "essonite": "unclassified",
   "estro": "unclassified",
   "etilamina": "unclassified",
   "etilato": "unclassified",

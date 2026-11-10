@@ -550,8 +550,10 @@ def test_each_pt_exception_cites_a_page_or_a_section():
 
 def test_each_pt_patch_names_its_gap():
     import re
+    # A page alone is a citation, not a gap: a gap names a lead, a rule or a
+    # pull request. The pt-BR verb gap names the model verbs a rule follows.
     gap = re.compile(r"orthography2ipa#\d+|rule-leads\.md § |^PT_\w+ misfires|^lead: |^no lead"
-                     r"|Cunha & Cintra pp?\. \d|Mateus & d'Andrade 1998 p\. \d")
+                     r"|^Cunha & Cintra pp\. 429-433: ")
     for code in ("pt-PT", "pt-BR"):
         assert {w: g for w, g in notes(code, "patch").items() if not gap.search(g)} == {}, code
 
@@ -564,7 +566,7 @@ def test_the_pt_pt_kinds_follow_their_class():
     exceptions, patches = notes("pt-PT", "exception"), notes("pt-PT", "patch")
     assert exceptions["táxi"] == "AO90 Base III; Ciberdúvidas 4068"
     assert exceptions["cinquenta"] == "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
-    assert exceptions["orelhado"] == "Mateus & d'Andrade 1998 p. 27"
+    assert exceptions["orelhado"].startswith("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 27")
     assert patches["eritroide"] == "rule-leads.md § word-initial e"
     assert patches["golpada"] == "rule-leads.md § coda l"
     assert patches["ativo"] == "rule-leads.md § learned words"
@@ -676,3 +678,59 @@ def test_an_eso_word_with_an_initial_e_cites_only_that_part():
     # equeso is in ⟨-eso⟩, so its stressed vowel is a patch part, and only the
     # unstressed initial ⟨e⟩ remains an exception part.
     assert "Cunha & Cintra p. 40" not in notes("pt-PT", "exception")["equeso"]
+
+
+# The pages cited for an unstressed initial vowel. Cunha & Cintra p. 53: "o [e]
+# inicial absoluto de enorme, erguer, que se pronuncia geralmente [i]".
+# Mateus & d'Andrade 1998 p. 26: a word-initial unstressed /e ɛ/ is "(b) [i]
+# when the rhyme has no coda", with "(c) some variation between [i], [e] and
+# [E] when the coda is an /R/"; p. 27: "a variation between [o] and [ɔ]".
+# None of them gives the [e], [ɛ] or [o] of an entry, so each citation names
+# Infopédia for the reading and gives the pages only what they state.
+INITIAL_PAGES = ("Mateus & d'Andrade 1998 p. 26", "Mateus & d'Andrade 1998 p. 27")
+
+
+@pytest.mark.parametrize("word", ["edema", "elite", "emir", "ebanite"])
+def test_an_initial_e_citation_names_infopedia_and_the_value_the_pages_give(word):
+    citation = notes("pt-PT", "exception")[word]
+    assert citation.startswith("Infopédia gives the reading.")
+    assert "'geralmente [i]'" in citation
+    assert "Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda" in citation
+
+
+@pytest.mark.parametrize("word", ["erguer", "erguido", "ervilha"])
+def test_an_initial_e_before_r_citation_states_the_variation(word):
+    citation = notes("pt-PT", "exception")[word]
+    assert citation.startswith("Infopédia gives the reading.")
+    assert "variation between [i], [e] and [ɛ] before a coda /R/" in citation
+    assert "erguer as 'geralmente [i]'" in citation
+
+
+def test_no_initial_vowel_citation_offers_a_page_as_the_reading():
+    for word, citation in notes("pt-PT", "exception").items():
+        if any(page in citation for page in INITIAL_PAGES):
+            assert "Infopédia gives the reading." in citation, word
+            assert "No page read gives the value of this word" in citation, word
+
+
+def test_essonite_is_an_open_syllable_exception():
+    # ⟨ss⟩ writes one voiceless sibilant between vowels (AO90 Base III 3.º:
+    # "s, ss, c, ç e x, que representam sibilantes surdas"), so the initial
+    # ⟨e⟩ of essonite stands in an open syllable, where Mateus & d'Andrade
+    # 1998 p. 26 (b) give [i] and Infopédia gives [ɛ].
+    assert "essonite" not in notes("pt-PT", "patch")
+    citation = notes("pt-PT", "exception")["essonite"]
+    assert citation.startswith("Infopédia gives the reading.")
+    assert "p. 26 (b) give [i] with no coda" in citation
+
+
+@pytest.mark.parametrize("word", ["ebrié", "ebriés"])
+def test_an_open_syllable_entry_with_the_page_value_is_a_patch(word):
+    # Mateus & d'Andrade 1998 p. 26 (b) give [i] for a word-initial unstressed
+    # /e ɛ/ with no coda. Infopédia gives ebrié [i], so a rule that follows the
+    # page reaches the word.
+    assert word not in notes("pt-PT", "exception")
+    assert file_entries("pt-PT", "patch")[word].startswith("ibɾiˈɛ")
+    assert notes("pt-PT", "patch")[word] == (
+        "lead: Mateus & d'Andrade 1998 p. 26 (b) give a word-initial unstressed /e ɛ/ "
+        "as [i] with no coda")
