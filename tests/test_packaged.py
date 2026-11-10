@@ -415,10 +415,13 @@ def test_an_en_gb_inflection_names_its_own_gap():
 
 
 def test_each_pt_exception_cites_a_page_or_a_section():
+    # A loan has no page: the dictionary of the lexicon gives its reading, as
+    # WikiPron gives the reading of an en-GB name.
     import re
-    for code in ("pt-PT", "pt-BR"):
+    for code, source in (("pt-PT", "Infopédia"), ("pt-BR", "NILC")):
+        loan = f"{source} gives the reading. The word keeps a spelling from another language"
         uncited = {w: c for w, c in notes(code, "exception").items()
-                   if not re.search(r"pp?\. \d|Base [IVX]+", c)}
+                   if not re.search(r"pp?\. \d|Base [IVX]+", c) and not c.startswith(loan)}
         assert uncited == {}, code
 
 
@@ -466,3 +469,32 @@ def test_a_pt_br_verb_form_is_a_patch():
     assert patches["melo"].startswith("Cunha & Cintra pp. 429-433")
     assert patches["deram"] == "lead: the stem vowel of a pt-BR preterite or imperfect form"
     assert "foto" in notes("pt-BR", "exception")
+
+
+# AO90 Base I 2.º keeps ⟨k w y⟩ "c) Em siglas, símbolos e mesmo em palavras
+# adotadas como unidades de medida de curso internacional: ... kW-kilowatt".
+# It names no other loan of the lexicon and gives no reading. In Infopédia a
+# doubled consonant letter other than ⟨rr ss cc⟩ is one consonant in each of
+# 174 single words, and an initial ⟨s⟩ before a consonant is [s] in 65 of 67.
+def test_only_kilowatt_cites_ao90_base_i():
+    for code, source in (("pt-PT", "Infopédia"), ("pt-BR", "NILC")):
+        for word, citation in notes(code, "exception").items():
+            assert "Base I 2.º-3.º" not in citation, (code, word)
+    assert notes("pt-PT", "exception")["kilowatt"].startswith("AO90 Base I 2.º c)")
+
+
+@pytest.mark.parametrize("code, word, source", [
+    ("pt-PT", "ketchup", "Infopédia"), ("pt-PT", "timing", "Infopédia"),
+    ("pt-PT", "puzzle", "Infopédia"), ("pt-BR", "sexy", "NILC")])
+def test_a_loan_cites_the_dictionary_for_its_reading(code, word, source):
+    assert notes(code, "exception")[word].startswith(f"{source} gives the reading.")
+
+
+@pytest.mark.parametrize("word, lead", [
+    ("lobby", "doubled consonant letter"), ("zapping", "doubled consonant letter"),
+    ("snobismo", "initial ⟨s⟩ before a consonant is [s]"),
+    ("swing", "initial ⟨s⟩ before a consonant is [s]")])
+def test_a_loan_a_rule_could_read_is_a_patch(word, lead):
+    assert word not in notes("pt-PT", "exception")
+    gap = notes("pt-PT", "patch")[word]
+    assert gap.startswith("lead: ") and lead in gap

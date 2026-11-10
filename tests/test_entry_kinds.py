@@ -77,8 +77,16 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
      ("exception", f"{CC_40}; AO90 Base III; Ciberdúvidas 4068")),
     ("aceleradora", "ɐsɨlɨɾɐˈdɔɾɐ", "ɐsɨlɨɾɐˈdoɾɐ", "stressed mid vowel+⟨qu gu⟩ with [w]",
      ("exception", "AO90 Base XIV 1.º; Cunha & Cintra p. 79")),
-    # No class: a spelling outside the native system is a loan.
-    ("antidumping", "ɐ̃tiˈdũpĩɡ", "ɐ̃tiˈdɐ̃pĩɡ", None, ("exception", "AO90 Base I 2.º-3.º")),
+    # No class: a spelling outside the native system is a loan. Infopédia
+    # gives its reading; a loan that differs from the rules only in a doubled
+    # consonant letter or an initial ⟨s⟩ before a consonant is a patch.
+    ("antidumping", "ɐ̃tiˈdũpĩɡ", "ɐ̃tiˈdɐ̃pĩɡ", None, ("exception", ek.LOAN.format("Infopédia"))),
+    ("lobby", "ˈlɔbbi", "ˈlɔbi", None, ("patch", ek.LOAN_DOUBLED)),
+    ("swing", "ˈʃwĩɡ", "ˈswĩɡ", None, ("patch", ek.LOAN_INITIAL_S)),
+    ("puzzle", "ˈpuzzlɨ", "ˈpɐzlɨ", None, ("exception", ek.LOAN.format("Infopédia"))),
+    ("jogging", "ˈʒɔɡʒĩɡ", "ˈʒɔɡĩɡ", None, ("exception", ek.LOAN.format("Infopédia"))),
+    # AO90 Base I 2.º c): "kg-quilograma, km-quilómetro, kW-kilowatt".
+    ("kilowatt", "kiˈlɔwɐtt", "kilɔˈwɔt", None, ("exception", ek.AO90_UNIT)),
     ("breja", "ˈbɾeʒɐ", "ˈbɾɛʒɐ", None, ("patch", ek.NO_LEAD)),
 ])
 def test_pt_pt_kind(word, rules, entry, cls, expected):
@@ -94,7 +102,7 @@ def test_an_unknown_pt_pt_class_is_refused():
     ("foto", "ˈfotu", "ˈfɔtu", frozenset(), ("exception", "Cunha & Cintra p. 40; orthography2ipa#1824")),
     ("táxi", "ˈtaʃi", "ˈtaksi", frozenset(), ("exception", "AO90 Base III; Ciberdúvidas 4068")),
     ("exu", "eˈzu", "eˈʃu", frozenset(), ("exception", "AO90 Base III; Ciberdúvidas 4068")),
-    ("sexy", "ˈsesi", "ˈsɛksi", frozenset(), ("exception", "AO90 Base I 2.º-3.º")),
+    ("sexy", "ˈsesi", "ˈsɛksi", frozenset(), ("exception", ek.LOAN.format("NILC"))),
     ("melo", "ˈmelu", "ˈmɛlu", frozenset("P"),
      ("patch", "Cunha & Cintra pp. 429-433: the stem vowel of a rhizotonic verb form")),
     ("joga", "ˈʒoɡa", "ˈʒɔɡa", frozenset("PY"),
@@ -174,3 +182,13 @@ def test_nilc_verb_tenses_keeps_only_words_tagged_as_verbs(tmp_path):
 def test_a_code_with_no_kind_rules_is_refused():
     with pytest.raises(SystemExit, match="no rules for fr-FR"):
         bl.entry_kinds("fr-FR", None, {"chat": "ʃa"}, {}, {}, frozenset(), {})
+
+
+def test_a_loan_citation_names_the_dictionary_for_the_reading():
+    # AO90 Base I 2.º keeps ⟨k w y⟩ in foreign names, their derivatives and
+    # units such as kW-kilowatt. It gives no reading, so the citation of a
+    # loan names the dictionary, and only a unit the Base names cites it.
+    assert ek.LOAN.format("Infopédia").startswith("Infopédia gives the reading.")
+    assert "AO90" not in ek.LOAN
+    assert ek.AO90_UNIT.startswith("AO90 Base I 2.º c) for the spelling")
+    assert "kilowatt" in ek.AO90_UNITS
