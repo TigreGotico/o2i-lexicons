@@ -59,8 +59,12 @@ def available_codes(kind: str = "exception") -> list[str]:
 
 
 def _tsv(code: str, kind: str) -> Path:
-    files = sorted((_root(kind) / code).glob("*.tsv"))
     noun = "lexicon" if kind == "exception" else "patch"
+    # A code names one directory: "patches/en-GB" or "../en-GB" would reach
+    # the file of the other kind.
+    if Path(code).name != code or code == "..":
+        raise LookupError(f"no packaged {noun} for {code!r}")
+    files = sorted((_root(kind) / code).glob("*.tsv"))
     if not files:
         raise LookupError(f"no packaged {noun} for {code!r}")
     if len(files) > 1:

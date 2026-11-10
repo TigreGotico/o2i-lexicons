@@ -166,3 +166,27 @@ def test_every_patch_needs_a_gap():
 def test_an_empty_patch_file_is_valid():
     meta = good_patch_meta(reasons={}, reason_basis={}, gaps={})
     assert validate_meta(meta, "en-GB", {}, kind="patch") == []
+
+
+def test_the_schema_exports_the_names_that_the_scripts_import():
+    names = {}
+    exec("from o2i_lexicons.schema import *", names)
+    assert names["STRESS_MARKS"] == "ˈˌ"
+    assert names["outside_inventory"](["k", "æ", "t"], frozenset("kæ")) == ["t"]
+
+
+def test_a_letter_outside_the_spec_inventory_is_reported():
+    # Cyrillic к, Latin q and x, and ASCII g are letters, so the IPA-only check
+    # passes them; none is a token of the en-GB spec.
+    assert validate_tsv("cat\tкæt\ndog\tdqgx\n") == []
+    assert validate_tsv("cat\tкæt\ndog\tdqgx\n", "en-GB") == [
+        (1, "outside the en-GB inventory: к"), (2, "outside the en-GB inventory: q g x")]
+
+
+@pytest.mark.parametrize("code, text", [
+    ("en-GB", "cat\tkæt\ncolonel\tˈkɜːnəl\n"),
+    # a nasal glide after a nasal vowel is the second half of a diphthong
+    ("pt-PT", "muito\tˈmũj̃tu\nmãe\tˈmɐ̃j̃\n"),
+])
+def test_a_reading_inside_the_spec_inventory_passes(code, text):
+    assert validate_tsv(text, code) == []

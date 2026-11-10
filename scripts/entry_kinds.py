@@ -44,9 +44,22 @@ PT_SUFFIX_RULES = (
 
 #: A spelling outside the native system: ⟨k w y⟩, a doubled consonant or vowel
 #: that Portuguese does not write, ⟨s⟩ + consonant at the start, or a final
-#: consonant letter that Portuguese does not end a word with (AO90 Base I 2.º-3.º).
+#: consonant letter that Portuguese does not end a word with.
 LOAN_SPELLING = re.compile(
     r"[kwy]|pp|bb|zz|tt|gg|ee(?!m)|ng$|^s[^aeiouáéíóúâêôãõh]|sh|[bcdfgkpt]$")
+
+#: A doubled consonant letter other than ⟨cc rr ss⟩, and an initial ⟨s⟩ before
+#: a consonant: two loan spellings that Infopédia reads one way.
+DOUBLED_CONSONANT = re.compile(r"bb|dd|ff|gg|kk|ll|mm|nn|pp|tt|zz")
+INITIAL_S = re.compile(r"^s[^aeiouáéíóúâêôãõh]")
+
+#: AO90 Base I 2.º c) keeps ⟨k w y⟩ in "palavras adotadas como unidades de
+#: medida de curso internacional" and names kW-kilowatt.
+AO90_UNITS = frozenset({"kilowatt"})
+
+#: Spellings that mark an English loan, named in the gap of a loan patch.
+LOAN_MARKS = (("⟨tch⟩", re.compile(r"tch")), ("⟨zz⟩", re.compile(r"zz")),
+              ("final ⟨-ing⟩", re.compile(r"ing$")))
 
 PREPALATAL = re.compile(r"e(lh|nh|j|ch)[aeiou]")
 
@@ -60,7 +73,8 @@ LEARNED_E = ("eco", "epi", "equi", "eritr", "etil", "etol", "ego", "endo", "ecto
 #: single-word Infopédia pt-PT rows, with at least 25 words. The spelling
 #: shows the value, so a rule could take it.
 DOMINANT_ENDINGS = {"oide": "ɔ", "orro": "o", "osto": "o", "ostro": "o", "olho": "o",
-                    "oma": "o", "ona": "o", "ena": "e", "eno": "e", "edo": "e", "dora": "o"}
+                    "oma": "o", "ona": "o", "ena": "e", "eno": "e", "edo": "e", "dora": "o",
+                    "queta": "e", "eso": "e", "eca": "ɛ", "ose": "ɔ"}
 
 #: A gap named by a section of rule-leads.md, by ending.
 ENDING_SECTIONS = {"oide": "Entries in ⟨-oide⟩", "dora": "Entries in ⟨-dora⟩"}
@@ -68,7 +82,11 @@ ENDING_SECTIONS = {"oide": "Entries in ⟨-oide⟩", "dora": "Entries in ⟨-dor
 CC_STRESSED_MID = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
 X_VALUE = "AO90 Base III; Ciberdúvidas 4068"
 QU_GU = "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
-LOAN = "AO90 Base I 2.º-3.º"
+AO90_UNIT = "AO90 Base I 2.º c) for the spelling; Infopédia gives the reading"
+LOAN_DOUBLED = ("lead: a doubled consonant letter is one consonant in every Infopédia "
+                "word that has one")
+LOAN_INITIAL_S = ("lead: an initial ⟨s⟩ before a consonant is [s] in at least 90% of the "
+                  "Infopédia words")
 #: The citations of an unstressed initial vowel whose value the dictionary
 #: gives. The pages state the class or the variation; a rule that follows them
 #: gives [i] for ⟨e⟩, so the value of the word is a fact of the dictionary.
@@ -155,6 +173,39 @@ def _pt_pt_coda_stop(rules: str, entry: str) -> Optional[str]:
     return "; ".join(gaps)
 
 
+def _loan_gap(word: str, rules: str, entry: str) -> Optional[str]:
+    """The gap of a pt-PT loan that differs from the rules only in a doubled
+    consonant letter or an initial ⟨s⟩ before a consonant, or ``None``."""
+    a, b = _plain(rules), _plain(entry)
+    gaps = []
+    for op, i1, i2, j1, j2 in SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op == "equal":
+            continue
+        if (op == "delete" and i2 - i1 == 1 and i1 and a[i1] == a[i1 - 1]
+                and DOUBLED_CONSONANT.search(word)):
+            gaps.append(LOAN_DOUBLED)
+        elif (op == "replace" and i1 == 0 and (a[i1:i2], b[j1:j2]) == ("ʃ", "s")
+                and INITIAL_S.match(word)):
+            gaps.append(LOAN_INITIAL_S)
+        else:
+            return None
+    return "; ".join(dict.fromkeys(gaps)) or None
+
+
+def loan_lead(code: str, word: str, source: str) -> str:
+    """The gap of a loan that no narrower lead covers. No source states that
+    the reading of a loan is lexical, so a loan is a patch."""
+    marks = ", ".join(name for name, mark in LOAN_MARKS if mark.search(word))
+    return (f"lead: {code} English loan spelling{f' ({marks})' if marks else ''}; "
+            f"{source} gives the reading")
+
+
+def _pt_pt_loan(word: str, rules: str, entry: str) -> tuple[str, str]:
+    if word in AO90_UNITS:
+        return "exception", AO90_UNIT
+    return "patch", _loan_gap(word, rules, entry) or loan_lead("pt-PT", word, "Infopédia")
+
+
 def _pt_pt_stressed(word: str, rules: str, entry: str) -> tuple[str, str]:
     have, want = stressed_vowel(rules), stressed_vowel(entry)
     for end, value in DOMINANT_ENDINGS.items():
@@ -219,7 +270,9 @@ def pt_pt_kind(word: str, rules: str, entry: str, lexical_class: Optional[str]) 
     The note of an exception joins the citations of its exception parts.
     """
     if lexical_class is None:
-        return ("exception", LOAN) if LOAN_SPELLING.search(word) else ("patch", NO_LEAD)
+        if LOAN_SPELLING.search(word):
+            return _pt_pt_loan(word, rules, entry)
+        return "patch", NO_LEAD
     parts = [part for name in lexical_class.split("+")
              if (part := _pt_pt_part(word, rules, entry, name))[1] is not None]
     if not parts:
@@ -251,7 +304,7 @@ def pt_br_kind(word: str, rules: str, entry: str,
     if re.match(r"trans[aeiouáéíóúâêôãõ]", word):
         return "patch", "lead: the ⟨s⟩ of the prefix trans- before a vowel is [z]"
     if LOAN_SPELLING.search(word):
-        return "exception", LOAN
+        return "patch", loan_lead("pt-BR", word, "NILC")
     lexical_class = find_lexical_class(word, rules, entry)
     if lexical_class is None:
         return ("exception", X_VALUE) if "x" in word else ("patch", NO_LEAD)
@@ -267,8 +320,12 @@ def pt_br_kind(word: str, rules: str, entry: str,
 
 #: The citation of an en-GB proper noun or acronym. No rule of English
 #: spelling gives the reading of a name or of an acronym, so the class is the
-#: ground, and the reading is the one WikiPron scraped from Wiktionary.
-EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
+#: ground. The reading is the one WikiPron scraped from Wiktionary.
+#: EN_GB_CITATION is for a reading that agrees with Britfone;
+#: EN_GB_UNCHECKED_CITATION is for the one reading of a word that Britfone
+#: does not hold.
+EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); the reading agrees with Britfone 3.0.1"
+EN_GB_UNCHECKED_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
 
 #: The en-GB reason classes whose entries are exceptions.
 EN_GB_EXCEPTION_REASONS = frozenset({"proper_noun", "acronym"})
@@ -301,16 +358,17 @@ def en_gb_bases(word: str):
 
 
 def en_gb_kind(word: str, reason: str, headwords: frozenset[str],
-               entries: frozenset[str]) -> tuple[str, str]:
+               entries: frozenset[str], confirmed: bool) -> tuple[str, str]:
     """The kind of an en-GB entry. A proper noun or an acronym is an
     exception, because no spelling rule gives the reading of a name or of an
     acronym. Every other entry is a patch, because nothing shows that a rule
     cannot reach it. An inflection of a source headword that is not an entry
     names its own gap: the rules read that base right, and a morphology rule
-    could read the inflection.
+    could read the inflection. The citation of an exception says whether
+    Britfone *confirmed* the reading.
     """
     if reason in EN_GB_EXCEPTION_REASONS:
-        return "exception", EN_GB_CITATION
+        return "exception", EN_GB_CITATION if confirmed else EN_GB_UNCHECKED_CITATION
     if any(len(base) >= 2 and base in headwords and base not in entries
            for base in en_gb_bases(word)):
         return "patch", EN_GB_INFLECTION
@@ -318,7 +376,7 @@ def en_gb_kind(word: str, reason: str, headwords: frozenset[str],
 
 
 #: The sidecar fields that hold one record per word.
-PER_WORD_FIELDS = ("reasons", "lexical_classes")
+PER_WORD_FIELDS = ("reasons", "lexical_classes", "confirmation")
 
 
 def split(entries: dict[str, str], meta: dict,
@@ -339,9 +397,9 @@ def split(entries: dict[str, str], meta: dict,
         part["reasons"] = {w: meta["reasons"][w] for w in words}
         used = set(part["reasons"].values())
         part["reason_basis"] = {r: b for r, b in meta["reason_basis"].items() if r in used}
-        if "lexical_classes" in meta:
-            part["lexical_classes"] = {w: meta["lexical_classes"][w] for w in words
-                                       if w in meta["lexical_classes"]}
+        for field in ("lexical_classes", "confirmation"):
+            if field in meta:
+                part[field] = {w: meta[field][w] for w in words if w in meta[field]}
         if "wiktionary_readings" in meta:
             part["wiktionary_readings"] = [w for w in meta["wiktionary_readings"]
                                            if kinds[w][0] == kind]

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "o2i-lexicons"
 dynamic = ["version"]
-description = "Default residual lexicons for orthography2ipa: only the words its rules cannot reach"
+description = "Pronunciation lexicons for orthography2ipa: exceptions that no spelling rule reaches, and opt-in patches for words that the rules still miss"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [{ name = "JarbasAi", email = "jarbasai@mailfence.com" }]
@@ -21,8 +21,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-# The build scripts read the prefix seams of silabificador.morphology.
-test = ["pytest", "silabificador>=2.1.2a1"]
+# The build scripts read the prefix seams of silabificador.morphology, and a
+# test builds the sdist with the build backend.
+test = ["pytest", "silabificador>=2.1.2a1", "setuptools>=68"]
 
 [project.urls]
 Homepage = "https://github.com/TigreGotico/o2i-lexicons"

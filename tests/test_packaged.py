@@ -41,11 +41,41 @@ def test_packaged_files_are_valid(kind):
     for code in o2i_lexicons.available_codes(kind):
         text = tsv_of(code).read_text(encoding="utf-8")
         entries = {w: ipa for w, _, ipa in (line.partition("\t") for line in text.splitlines() if line)}
-        found = [f"tsv line {n}: {r}" for n, r in validate_tsv(text)]
+        found = [f"tsv line {n}: {r}" for n, r in validate_tsv(text, code)]
         found += validate_meta(meta_of(code), code, entries, kind)
         if found:
             problems[code] = found
     assert problems == {}
+
+
+@pytest.mark.parametrize("kind", FILES)
+def test_no_packaged_entry_is_shadowed_by_the_spec(kind):
+    # The spec's word_exceptions win over a lexicon, so such an entry never applies.
+    import orthography2ipa
+    shadowed = {code: sorted(file_entries(code, kind).keys()
+                             & orthography2ipa.get(code).word_exceptions.keys())
+                for code in o2i_lexicons.available_codes(kind)}
+    assert {code: words for code, words in shadowed.items() if words} == {}
+
+
+def test_the_sdist_holds_the_scripts_that_its_tests_import(tmp_path):
+    import shutil
+    import subprocess
+    import sys
+    import tarfile
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    tree = tmp_path / "tree"
+    shutil.copytree(root, tree, ignore=shutil.ignore_patterns(
+        ".git", ".venv", ".cache", "build", "dist", "*.egg-info", "__pycache__", ".pytest_cache"))
+    name = subprocess.run(
+        [sys.executable, "-c", "from setuptools import build_meta; print(build_meta.build_sdist('dist'))"],
+        cwd=tree, capture_output=True, text=True, check=True).stdout.split()[-1]
+    with tarfile.open(tree / "dist" / name) as sdist:
+        members = {Path(m).relative_to(Path(m).parts[0]).as_posix() for m in sdist.getnames()}
+    for folder in ("scripts", "tests"):
+        expected = {f"{folder}/{p.name}" for p in (root / folder).glob("*.py")}
+        assert {m for m in members if m.startswith(f"{folder}/")} == expected, folder
 
 
 def test_each_meta_sits_next_to_its_tsv():
@@ -96,7 +126,22 @@ def test_the_en_gb_pilot_ships_with_its_provenance():
     # WikiPron scrapes with stress removed ("stress": False in
     # data/scrape/lib/scrape.py), so the stress comes from the o2i rules.
     assert meta["stress"] == "rules"
-    assert meta["source_url"].endswith("/eng_latn_uk_broad.tsv")
+    assert meta["source_url"] == (
+        "https://raw.githubusercontent.com/CUNY-CL/wikipron/"
+        "d282e848a211ea31cfd730f0ced8bc8cdab9e83d/data/scrape/tsv/eng_latn_uk_broad.tsv")
+    assert meta["source_sha256"] == (
+        "f8ca476aa2e96cb22cafbf9099d689b5902a9d321579055081909b2eeafa1b8d")
+
+
+@pytest.mark.parametrize("kind", FILES)
+def test_the_en_gb_second_source_is_pinned(kind):
+    # Britfone 3.0.1 (MIT): its README calls it "British English
+    # (RP/Standard Southern British) pronunciation dictionary".
+    source = FILES[kind][1]("en-GB")["agreement_source"]
+    assert (source["name"], source["version"], source["licence"]) == ("britfone", "3.0.1", "MIT")
+    assert source["url"] == ("https://github.com/JoseLlarena/Britfone/blob/"
+                             "1062be14adc96c358f2087ac5449d72130c7a6f4/britfone.main.3.0.1.csv")
+    assert source["sha256"] == "59f197e98520856d1cc88e380beb54e4314d8712efc4d588b6778819c502d920"
 
 
 def test_the_pt_pt_lexicon_ships_with_its_provenance():
@@ -365,28 +410,108 @@ def test_no_en_gb_entry_is_rhotic():
     # (p. 244).
     import re
     vowels = "iyɨʉɯuɪʏʊeøɘɵɤoəɛœɜɞʌɔæɐaɶɑɒ"
-    rhotic = re.compile(f"[ɚɝ˞ʴ]|[ɹɻr][\u0300-\u036fː]*(?![{vowels}])")
+    rhotic = re.compile(f"[ɚɝ˞ʴ]|[ɹɻrɾ][\u0300-\u036fː]*(?![{vowels}])")
     entries = {**file_entries("en-GB", "exception"), **file_entries("en-GB", "patch")}
     assert {w: ipa for w, ipa in entries.items() if rhotic.search(ipa)} == {}
 
 
 def test_an_en_gb_entry_is_the_non_rhotic_reading():
-    # WikiPron gives cupboard [kʊbəɹd] and [kʌbəd], and drawer [dɹɑɚ] ...
-    # [dɹɔː]; the build takes the non-rhotic reading.
-    entries = {**file_entries("en-GB", "exception"), **file_entries("en-GB", "patch")}
+    # WikiPron gives cupboard [kʊbəɹd] and [kʌbəd]; the build takes the
+    # non-rhotic reading, which Britfone gives (CUPBOARD, k ˈɐ b ə d).
+    entries = all_entries("en-GB")
     assert entries["cupboard"] == "kʌbəd"
-    assert entries["drawer"] == "dɹɔː"
+    # drawer is the box [dɹɔː] and one who draws [ˈdɹɔːə] (en.wiktionary):
+    # an entry cannot choose by sense, so the rules keep the word.
+    assert "drawer" not in entries
 
 
-EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
+# The expected entry is the Britfone 3.0.1 reading of the word, in WikiPron's
+# storage form, or no entry. The dev data had the reading in the comment.
+@pytest.mark.parametrize("word, britfone", [
+    ("you", "juː"),             # YOU(3), j ˈuː; dev: iː
+    ("their", "ðɛə"),           # THEIR, ð ˈɛə; dev: zɛə
+    ("goes", "ɡəʊz"),           # GOES, g ˈəʊ z; dev: ɡænz
+    ("only", "əʊnli"),          # ONLY, ˈəʊ n l i; dev: ɑːnli
+    ("into", "ɪntuː"),          # INTO(2), ɪ n t ˈuː; dev: ɪntiː
+    ("ask", "ɑːsk"),            # ASK, ˈɑː s k; dev: ɑːks
+    ("this", "ðɪs"),            # THIS(2), ð ˈɪ s; dev: ðəs
+    ("nothing", "nʌθɪŋ"),       # NOTHING, n ˈɐ θ ɪ ŋ; dev: nʌtɪŋ
+    ("thesis", "θiːsɪs"),       # THESIS, θ ˈiː s ɪ s; dev: θisiz
+    ("cathedral", "kəθiːdɹəl"),  # CATHEDRAL, k ə θ ˈiː d ɹ ə l; dev: kətiːdɹəl
+    ("heir", "ɛə"),             # HEIR, ˈɛə; dev: ɜː
+    ("i'll", "aɪl"),            # I, ˈaɪ; dev: ɑːl
+    ("default", "diːfɔːlt"),    # DEFAULT(1), d ˈiː f ɔː l t; dev: diːfɑlt
+])
+def test_an_en_gb_entry_is_the_britfone_reading_or_none(word, britfone):
+    assert all_entries("en-GB").get(word, britfone) == britfone
+
+
+@pytest.mark.parametrize("word", ["aussie", "jambol", "rere", "guomindang", "zzxjoanw"])
+def test_an_en_gb_word_that_britfone_cannot_confirm_has_no_bad_entry(word):
+    # Britfone 3.0.1 has no line for these words. The dev data had aussie [s]
+    # and jambol [j] (too few phones), rere [ɾiːɾ] (rhotic), guomindang [ɡwɑ]
+    # (short [ɑ]), and zzxjoanw [ʃɑ], one of two WikiPron readings with no
+    # second source to choose between them.
+    assert word not in all_entries("en-GB")
+
+
+def test_the_en_gb_entries_ship():
+    # Not every check above is met by an empty file: these readings ship.
+    entries = all_entries("en-GB")
+    assert (entries["cathedral"], entries["nothing"], entries["their"], entries["heir"]) == (
+        "kəθiːdɹəl", "nʌθɪŋ", "ðɛə", "ɛə")
+
+
+def test_every_en_gb_entry_has_rp_vowels_only():
+    # Roach 2004, JIPA 34(2), p. 243 lists the RP vowels; a short [ɑ] is not one.
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    import lexicon_build as lb
+    entries = all_entries("en-GB")
+    assert {w: ipa for w, ipa in entries.items() if lb.rp_vowel_outside(ipa)} == {}
+    assert {w: ipa for w, ipa in entries.items() if lb.truncated(w, ipa)} == {}
+
+
+@pytest.mark.parametrize("kind", FILES)
+def test_each_en_gb_entry_names_its_confirmation(kind):
+    meta = FILES[kind][1]("en-GB")
+    assert set(meta["confirmation"]) == set(file_entries("en-GB", kind))
+    assert set(meta["confirmation"].values()) == {"second_source", "single_reading"}
+    assert set(meta["confirmation_basis"]) == {"second_source", "single_reading"}
+
+
+# The one WikiPron reading of a word that Britfone 3.0.1 has no line for, from
+# eng_latn_uk_broad.tsv at commit d282e848: "Fareham\tf ɛ ə ɹ ə m",
+# "Keays\tk iː z", "apophthegm\tæ p ə θ ɛ m".
+@pytest.mark.parametrize("word, kind, entry", [
+    ("fareham", "exception", "fɛəɹəm"),
+    ("keays", "exception", "kiːz"),
+    ("apophthegm", "patch", "æpəθɛm"),
+])
+def test_a_single_en_gb_reading_ships_unconfirmed(word, kind, entry):
+    assert file_entries("en-GB", kind)[word] == entry
+    assert FILES[kind][1]("en-GB")["confirmation"][word] == "single_reading"
+
+
+def test_the_pronoun_i_is_no_en_gb_exception():
+    exceptions = file_entries("en-GB", "exception")
+    assert {"i", "i'll", "i'm", "i'd", "i've"}.isdisjoint(exceptions)
+
+
+EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); the reading agrees with Britfone 3.0.1"
+EN_GB_UNCHECKED_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
 
 
 def test_an_en_gb_exception_is_a_name_or_an_acronym():
     # No spelling rule gives the reading of a name or of an acronym. The
-    # citation names where the reading comes from.
+    # citation names where the reading comes from, and whether Britfone
+    # confirmed it.
     meta = FILES["exception"][1]("en-GB")
     assert set(meta["reasons"].values()) == {"proper_noun", "acronym"}
-    assert set(meta["citations"].values()) == {EN_GB_CITATION}
+    expected = {"second_source": EN_GB_CITATION, "single_reading": EN_GB_UNCHECKED_CITATION}
+    assert meta["citations"] == {w: expected[c] for w, c in meta["confirmation"].items()}
+    assert set(meta["citations"].values()) == {EN_GB_CITATION, EN_GB_UNCHECKED_CITATION}
     assert meta["reasons"]["aldeburgh"] == "proper_noun"
     assert meta["reasons"]["ascii"] == "acronym"
 
@@ -405,11 +530,12 @@ def test_an_unclassified_en_gb_word_is_a_patch():
 
 
 def test_an_en_gb_inflection_names_its_own_gap():
-    # cringes is an inflection of cringe, which the WikiPron file holds and the
+    # moves is an inflection of move, which the WikiPron file holds and the
     # lexicon does not.
     gaps = notes("en-GB", "patch")
-    assert file_entries("en-GB", "patch")["cringes"]
-    assert gaps["cringes"] == "lead: en-GB inflection morphology"
+    assert file_entries("en-GB", "patch")["moves"] == "muːvz"
+    assert "move" not in all_entries("en-GB")
+    assert gaps["moves"] == "lead: en-GB inflection morphology"
     assert set(gaps.values()) == {"lead: en-GB inflection morphology",
                                   "lead: en-GB spelling rules not audited"}
 
@@ -468,6 +594,90 @@ def test_a_pt_br_verb_form_is_a_patch():
     assert patches["melo"].startswith("Cunha & Cintra pp. 429-433")
     assert patches["deram"] == "lead: the stem vowel of a pt-BR preterite or imperfect form"
     assert "foto" in notes("pt-BR", "exception")
+
+
+# Infopédia gives the open diphthong [ɔj] in each of these ⟨-oide⟩ words, and
+# orthography2ipa reads that ending as [ɔj] (PT_SUFFIX_OIDE_OPEN). The stressed
+# vowel is no longer what separates the entry from the rules, so the class
+# names only the part that still differs: the [ks] of ⟨x⟩, the [w] of ⟨gu⟩,
+# or the full initial ⟨e⟩ of a learned word.
+@pytest.mark.parametrize("word, cls", [
+    ("anguiloide", "⟨qu gu⟩ with [w]"),
+    ("axoide", "⟨x⟩ as [ks]"), ("prefixoide", "⟨x⟩ as [ks]"), ("sufixoide", "⟨x⟩ as [ks]"),
+    ("epicicloide", "unstressed initial ⟨e⟩"), ("epileptoide", "unstressed initial ⟨e⟩"),
+    ("eritroide", "unstressed initial ⟨e⟩"),
+])
+def test_an_oide_entry_has_no_stressed_vowel_class(word, cls):
+    assert "ɔj" in pt_pt_entries()[word]
+    assert lexical_classes("pt-PT")[word]["class"] == cls
+
+
+# AO90 Base I 2.º keeps ⟨k w y⟩ "c) Em siglas, símbolos e mesmo em palavras
+# adotadas como unidades de medida de curso internacional: ... kW-kilowatt".
+# It names no other loan of the lexicon and gives no reading. In Infopédia a
+# doubled consonant letter other than ⟨rr ss cc⟩ is one consonant in each of
+# 174 single words, and an initial ⟨s⟩ before a consonant is [s] in 65 of 67.
+def test_only_kilowatt_cites_ao90_base_i():
+    for code, source in (("pt-PT", "Infopédia"), ("pt-BR", "NILC")):
+        for word, citation in notes(code, "exception").items():
+            assert "Base I 2.º-3.º" not in citation, (code, word)
+    assert notes("pt-PT", "exception")["kilowatt"].startswith("AO90 Base I 2.º c)")
+
+
+# No source states that the reading of a loan is lexical (docs/kinds.md: "A
+# cited source must state that class"), so a loan is a patch. Its gap names the
+# English loan spelling, and ⟨tch⟩, ⟨zz⟩ or a final ⟨-ing⟩ where the word has one.
+@pytest.mark.parametrize("code, word, mark", [
+    ("pt-PT", "antidumping", " (final ⟨-ing⟩)"), ("pt-PT", "freelance", ""),
+    ("pt-PT", "jogging", " (final ⟨-ing⟩)"), ("pt-PT", "ketchup", " (⟨tch⟩)"),
+    ("pt-PT", "puzzle", " (⟨zz⟩)"), ("pt-PT", "rap", ""), ("pt-PT", "shorts", ""),
+    ("pt-PT", "skinhead", ""), ("pt-PT", "timing", " (final ⟨-ing⟩)"),
+    ("pt-PT", "windsurf", ""), ("pt-BR", "sexy", "")])
+def test_a_loan_is_a_patch_with_the_loan_lead(code, word, mark):
+    source = {"pt-PT": "Infopédia", "pt-BR": "NILC"}[code]
+    assert word not in notes(code, "exception")
+    assert notes(code, "patch")[word] == (
+        f"lead: {code} English loan spelling{mark}; {source} gives the reading")
+
+
+@pytest.mark.parametrize("word, lead", [
+    ("lobby", "doubled consonant letter"), ("zapping", "doubled consonant letter"),
+    ("snobismo", "initial ⟨s⟩ before a consonant is [s]"),
+    ("swing", "initial ⟨s⟩ before a consonant is [s]")])
+def test_a_loan_a_rule_could_read_is_a_patch(word, lead):
+    assert word not in notes("pt-PT", "exception")
+    gap = notes("pt-PT", "patch")[word]
+    assert gap.startswith("lead: ") and lead in gap
+
+
+# Infopédia gives [e] in 93% of the 29 words in ⟨-queta⟩ and 93% of the 28 in
+# ⟨-eso⟩, [ɛ] in all 104 longer words in ⟨-eca⟩ and [ɔ] in 96% of the 296 in
+# ⟨-ose⟩, so the spelling shows the vowel and a rule could take it. No source
+# read states the height of these endings, so each entry is a patch with the
+# family as its lead.
+@pytest.mark.parametrize("word, ending, value", [
+    ("etiqueta", "queta", "e"), ("obeso", "eso", "e"), ("aceso", "eso", "e"),
+    ("eca", "eca", "ɛ"), ("ose", "ose", "ɔ"),
+])
+def test_an_ending_family_entry_is_a_patch_with_its_lead(word, ending, value):
+    assert word in file_entries("pt-PT", "patch")
+    assert word not in file_entries("pt-PT", "exception")
+    assert notes("pt-PT", "patch")[word] == (
+        f"lead: ⟨-{ending}⟩ takes [{value}] in at least 90% of the Infopédia words")
+
+
+# With the feminines of the 18 ⟨-reto⟩ adjectives that have [ɛ], ⟨-reta⟩ has
+# [e] in 47 of 64 Infopédia words, under 90%. ⟨gu⟩ + ⟨-eta⟩ has 9 words.
+@pytest.mark.parametrize("word", ["preta", "careta", "creta", "malagueta", "fugueta"])
+def test_a_reta_or_gueta_entry_stays_an_exception(word):
+    assert word not in file_entries("pt-PT", "patch")
+    assert notes("pt-PT", "exception")[word] == "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
+
+
+def test_an_eso_word_with_an_initial_e_cites_only_that_part():
+    # equeso is in ⟨-eso⟩, so its stressed vowel is a patch part, and only the
+    # unstressed initial ⟨e⟩ remains an exception part.
+    assert "Cunha & Cintra p. 40" not in notes("pt-PT", "exception")["equeso"]
 
 
 # The pages cited for an unstressed initial vowel. Cunha & Cintra p. 53: "o [e]

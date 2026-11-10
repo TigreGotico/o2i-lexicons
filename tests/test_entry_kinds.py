@@ -28,6 +28,22 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
      ("patch", "rule-leads.md § Entries in ⟨-dora⟩")),
     ("abertona", "ɐbɨɾˈtɔnɐ", "ɐbɨɾˈtonɐ", "stressed mid vowel",
      ("patch", "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words")),
+    # ⟨-queta -eso⟩ are [e], ⟨-eca⟩ is [ɛ] and ⟨-ose⟩ is [ɔ] in at least 90%
+    # of at least 25 Infopédia words.
+    ("etiqueta", "itiˈkɛtɐ", "itiˈketɐ", "stressed mid vowel",
+     ("patch", "lead: ⟨-queta⟩ takes [e] in at least 90% of the Infopédia words")),
+    ("obeso", "ɔˈbɛzu", "ɔˈbezu", "stressed mid vowel",
+     ("patch", "lead: ⟨-eso⟩ takes [e] in at least 90% of the Infopédia words")),
+    ("eca", "ˈekɐ", "ˈɛkɐ", "stressed mid vowel",
+     ("patch", "lead: ⟨-eca⟩ takes [ɛ] in at least 90% of the Infopédia words")),
+    ("ose", "ˈozɨ", "ˈɔzɨ", "stressed mid vowel",
+     ("patch", "lead: ⟨-ose⟩ takes [ɔ] in at least 90% of the Infopédia words")),
+    # Infopédia lists an adjective under its masculine. 18 adjectives in
+    # ⟨-reto⟩ have [ɛ] (concreto, secreto), so with their feminines ⟨-reta⟩
+    # has [e] in 47 of 64 words. ⟨gu⟩ + ⟨-eta⟩ has 9 words, under the floor of
+    # 25. The spelling does not show the vowel of either.
+    ("preta", "ˈpɾɛtɐ", "ˈpɾetɐ", "stressed mid vowel", ("exception", CC_40)),
+    ("malagueta", "mɐlɐˈɡɛtɐ", "mɐlɐˈɡetɐ", "stressed mid vowel", ("exception", CC_40)),
     # Cunha & Cintra p. 431 name frechar among the verbs with [ɛ] before a
     # palatal; any other such [ɛ] is a misfire of the prepalatal rule.
     ("frecha", "ˈfɾeʃɐ", "ˈfɾɛʃɐ", "stressed mid vowel", ("exception", "Cunha & Cintra p. 431")),
@@ -85,8 +101,25 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
      ("exception", f"{CC_40}; AO90 Base III; Ciberdúvidas 4068")),
     ("aceleradora", "ɐsɨlɨɾɐˈdɔɾɐ", "ɐsɨlɨɾɐˈdoɾɐ", "stressed mid vowel+⟨qu gu⟩ with [w]",
      ("exception", "AO90 Base XIV 1.º; Cunha & Cintra p. 79")),
-    # No class: a spelling outside the native system is a loan.
-    ("antidumping", "ɐ̃tiˈdũpĩɡ", "ɐ̃tiˈdɐ̃pĩɡ", None, ("exception", "AO90 Base I 2.º-3.º")),
+    # No class: a spelling outside the native system is a loan. No source
+    # states that the reading of a loan is lexical, so a loan is a patch.
+    # A loan that differs from the rules only in a doubled consonant letter
+    # or an initial ⟨s⟩ before a consonant names that lead. Every other loan
+    # names the English loan spelling, with ⟨tch⟩, ⟨zz⟩ or a final ⟨-ing⟩.
+    ("lobby", "ˈlɔbbi", "ˈlɔbi", None, ("patch", ek.LOAN_DOUBLED)),
+    ("swing", "ˈʃwĩɡ", "ˈswĩɡ", None, ("patch", ek.LOAN_INITIAL_S)),
+    ("antidumping", "ɐ̃tiˈdũpĩɡ", "ɐ̃tiˈdɐ̃pĩɡ", None,
+     ("patch", "lead: pt-PT English loan spelling (final ⟨-ing⟩); Infopédia gives the reading")),
+    ("puzzle", "ˈpuzzlɨ", "ˈpɐzlɨ", None,
+     ("patch", "lead: pt-PT English loan spelling (⟨zz⟩); Infopédia gives the reading")),
+    ("jogging", "ˈʒɔɡʒĩɡ", "ˈʒɔɡĩɡ", None,
+     ("patch", "lead: pt-PT English loan spelling (final ⟨-ing⟩); Infopédia gives the reading")),
+    ("ketchup", "ˈkɛtʃup", "kɛˈtʃɐp", None,
+     ("patch", "lead: pt-PT English loan spelling (⟨tch⟩); Infopédia gives the reading")),
+    ("rap", "ˈʁap", "ˈʁɛp", None,
+     ("patch", "lead: pt-PT English loan spelling; Infopédia gives the reading")),
+    # AO90 Base I 2.º c): "kg-quilograma, km-quilómetro, kW-kilowatt".
+    ("kilowatt", "kiˈlɔwɐtt", "kilɔˈwɔt", None, ("exception", ek.AO90_UNIT)),
     ("breja", "ˈbɾeʒɐ", "ˈbɾɛʒɐ", None, ("patch", ek.NO_LEAD)),
 ])
 def test_pt_pt_kind(word, rules, entry, cls, expected):
@@ -102,7 +135,8 @@ def test_an_unknown_pt_pt_class_is_refused():
     ("foto", "ˈfotu", "ˈfɔtu", frozenset(), ("exception", "Cunha & Cintra p. 40; orthography2ipa#1824")),
     ("táxi", "ˈtaʃi", "ˈtaksi", frozenset(), ("exception", "AO90 Base III; Ciberdúvidas 4068")),
     ("exu", "eˈzu", "eˈʃu", frozenset(), ("exception", "AO90 Base III; Ciberdúvidas 4068")),
-    ("sexy", "ˈsesi", "ˈsɛksi", frozenset(), ("exception", "AO90 Base I 2.º-3.º")),
+    ("sexy", "ˈsesi", "ˈsɛksi", frozenset(),
+     ("patch", "lead: pt-BR English loan spelling; NILC gives the reading")),
     ("melo", "ˈmelu", "ˈmɛlu", frozenset("P"),
      ("patch", "Cunha & Cintra pp. 429-433: the stem vowel of a rhizotonic verb form")),
     ("joga", "ˈʒoɡa", "ˈʒɔɡa", frozenset("PY"),
@@ -117,26 +151,32 @@ def test_pt_br_kind(word, rules, entry, tenses, expected):
     assert ek.pt_br_kind(word, rules, entry, tenses) == expected
 
 
-@pytest.mark.parametrize("word, reason, expected", [
-    # A name or an acronym: no spelling rule gives its reading.
-    ("leeds", "proper_noun", ("exception", ek.EN_GB_CITATION)),
-    ("nato", "acronym", ("exception", ek.EN_GB_CITATION)),
+@pytest.mark.parametrize("word, reason, confirmed, expected", [
+    # A name or an acronym: no spelling rule gives its reading. The citation
+    # says whether Britfone confirmed the reading.
+    ("leeds", "proper_noun", True, ("exception", ek.EN_GB_CITATION)),
+    ("nato", "acronym", True, ("exception", ek.EN_GB_CITATION)),
+    ("rhyl", "proper_noun", False, ("exception", ek.EN_GB_UNCHECKED_CITATION)),
     # An inflection of a headword that is no entry: the rules read the base.
-    ("cringes", "unclassified", ("patch", ek.EN_GB_INFLECTION)),
-    ("dyeing", "unclassified", ("patch", ek.EN_GB_INFLECTION)),
+    ("cringes", "unclassified", True, ("patch", ek.EN_GB_INFLECTION)),
+    ("dyeing", "unclassified", False, ("patch", ek.EN_GB_INFLECTION)),
     # Any other word: nothing shows that a rule cannot reach it.
-    ("yacht", "unclassified", ("patch", ek.EN_GB_UNAUDITED)),
-    ("colonels", "unclassified", ("patch", ek.EN_GB_UNAUDITED)),   # colonel is an entry
-    ("flurbs", "unclassified", ("patch", ek.EN_GB_UNAUDITED)),     # flurb is no headword
+    ("yacht", "unclassified", True, ("patch", ek.EN_GB_UNAUDITED)),
+    ("colonels", "unclassified", True, ("patch", ek.EN_GB_UNAUDITED)),   # colonel is an entry
+    ("flurbs", "unclassified", False, ("patch", ek.EN_GB_UNAUDITED)),    # flurb is no headword
 ])
-def test_en_gb_kind(word, reason, expected):
+def test_en_gb_kind(word, reason, confirmed, expected):
     headwords = frozenset({"cringe", "dye", "colonel", "leed"})
     entries = frozenset({word, "colonel"})
-    assert ek.en_gb_kind(word, reason, headwords, entries) == expected
+    assert ek.en_gb_kind(word, reason, headwords, entries, confirmed) == expected
 
 
 def test_an_en_gb_citation_names_the_provenance_of_the_reading():
-    assert ek.EN_GB_CITATION == "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
+    assert ek.EN_GB_CITATION == ("Wiktionary via WikiPron (en-GB); the reading agrees with "
+                                 "Britfone 3.0.1")
+    # The citation of o2i-lexicons #36, for a reading that no second source checks.
+    assert ek.EN_GB_UNCHECKED_CITATION == ("Wiktionary via WikiPron (en-GB); not checked "
+                                           "against a dictionary")
     assert ek.EN_GB_UNAUDITED == "lead: en-GB spelling rules not audited"
 
 
@@ -164,6 +204,18 @@ def test_split_gives_each_kind_its_own_records():
     assert "citations" not in patch_meta
 
 
+def test_split_gives_each_kind_the_confirmation_of_its_own_words():
+    entries = {"leeds": "liːdz", "yacht": "jɒt"}
+    meta = {"code": "en-GB", "reasons": {"leeds": "proper_noun", "yacht": "unclassified"},
+            "reason_basis": {}, "confirmation": {"leeds": "single_reading",
+                                                 "yacht": "second_source"}}
+    kinds = {"leeds": ("exception", ek.EN_GB_UNCHECKED_CITATION),
+             "yacht": ("patch", ek.EN_GB_UNAUDITED)}
+    parts = ek.split(entries, meta, kinds)
+    assert parts["exception"][1]["confirmation"] == {"leeds": "single_reading"}
+    assert parts["patch"][1]["confirmation"] == {"yacht": "second_source"}
+
+
 def test_split_gives_an_empty_file_to_a_kind_with_no_word():
     meta = {"code": "en-GB", "reasons": {"leeds": "proper_noun"}, "reason_basis": {}}
     parts = ek.split({"leeds": "liːdz"}, meta, {"leeds": ("exception", ek.EN_GB_CITATION)})
@@ -181,7 +233,7 @@ def test_nilc_verb_tenses_keeps_only_words_tagged_as_verbs(tmp_path):
 
 def test_a_code_with_no_kind_rules_is_refused():
     with pytest.raises(SystemExit, match="no rules for fr-FR"):
-        bl.entry_kinds("fr-FR", None, {"chat": "ʃa"}, {}, {}, frozenset(), {})
+        bl.entry_kinds("fr-FR", None, {"chat": "ʃa"}, {}, {}, frozenset(), {}, {})
 
 
 def test_the_initial_vowel_citations_name_infopedia_for_the_reading():
