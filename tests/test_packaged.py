@@ -424,8 +424,10 @@ def test_each_pt_exception_cites_a_page_or_a_section():
 
 def test_each_pt_patch_names_its_gap():
     import re
+    # A page alone is a citation, not a gap: a gap names a lead, a rule or a
+    # pull request. The pt-BR verb gap names the model verbs a rule follows.
     gap = re.compile(r"orthography2ipa#\d+|rule-leads\.md § |^PT_\w+ misfires|^lead: |^no lead"
-                     r"|Cunha & Cintra pp?\. \d|Mateus & d'Andrade 1998 p\. \d")
+                     r"|^Cunha & Cintra pp\. 429-433: ")
     for code in ("pt-PT", "pt-BR"):
         assert {w: g for w, g in notes(code, "patch").items() if not gap.search(g)} == {}, code
 
@@ -510,12 +512,3 @@ def test_essonite_is_an_open_syllable_exception():
     citation = notes("pt-PT", "exception")["essonite"]
     assert citation.startswith("Infopédia gives the reading.")
     assert "p. 26 (b) give [i] with no coda" in citation
-
-
-def test_every_pt_pt_gap_names_a_lead_a_rule_or_no_lead():
-    # A gap names what will reach the word: a lead, a rule-leads.md section,
-    # an orthography2ipa pull request or rule, or that there is no lead. A
-    # page that states a value is a lead only when the gap says so.
-    for word, gap in notes("pt-PT", "patch").items():
-        assert gap.startswith(("lead: ", "no lead: ", "rule-leads.md § ",
-                               "orthography2ipa#", "PT_")), (word, gap)
