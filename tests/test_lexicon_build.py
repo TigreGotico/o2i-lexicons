@@ -902,3 +902,40 @@ def test_the_build_writes_the_mark_before_the_onset():
 ])
 def test_rhotic_segment(reading, segment):
     assert lb.rhotic_segment(reading) == segment
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_a_process_wide_lexicon_does_not_reach_the_build(tmp_path, monkeypatch):
+    # The rules read colonel ˈkɒlənəl. A lexicon in $ORTHOGRAPHY2IPA_LEXICON_DIR
+    # reads it kɜːnəl, the gold reading, so an engine that sees that lexicon
+    # finds colonel right and leaves it out of the build.
+    from types import SimpleNamespace
+
+    import orthography2ipa
+
+    planted = tmp_path / "planted"
+    planted.mkdir()
+    (planted / "en-GB.tsv").write_text("colonel\tkɜːnəl\n", encoding="utf-8")
+    monkeypatch.setenv("ORTHOGRAPHY2IPA_LEXICON_DIR", str(planted))
+    orthography2ipa.clear_lexicons()
+    bench = SimpleNamespace(
+        provenance_for=lambda dataset, code: "crowd-scraped",
+        can_gate_promotion=lambda tier: True,
+        load_wikipron=lambda code, limit: [("colonel", "kɜːnəl")],
+        normalize=lambda ipa, strip_stress, broad, extra_strip="": ipa.replace("ˈ", ""),
+        _prosody_marks=lambda code: "",
+        levenshtein=lambda a, b: int(a != b),
+        align=naive_align,
+        _WIKIPRON_BASE="https://example.org/",
+        _WIKIPRON_FILES={"en-GB": "en.tsv"},
+    )
+    monkeypatch.setattr(bl.o2i_harness, "load_benchmark", lambda cache: bench)
+    monkeypatch.setattr(bl.o2i_harness, "harness_sha256", lambda cache: "0" * 64)
+    try:
+        assert orthography2ipa.G2P("en-GB").transcribe_word("colonel") == "ˈkɜːnəl"
+        report = bl.build("en-GB", "wikipron", tmp_path, 99, tmp_path / "out", "build")
+    finally:
+        orthography2ipa.clear_lexicons()
+    assert (report["rules_right"], report["entries"]) == (0, 1)
+    patches = tmp_path / "out" / "patches" / "en-GB"
+    assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "colonel\tkɜːnəl\n"
