@@ -10,6 +10,7 @@ Read the pages in this order:
 4. [pt-BR](languages/pt-BR.md): the NILC data and the map to the `pt-BR` norm.
 5. [pt-PT](languages/pt-PT.md): the Infopédia data and the map to the `pt-PT` norm.
 6. [Building and pruning](building.md): the build, measure and prune scripts, their inputs, and the CI jobs.
-7. [Contributing](contributing.md): how to add or correct an entry, and when an entry is a patch.
+7. [Rule leads](leads.md): the spelling patterns that the patch gaps name, with their evidence, and the leads that wait for a source.
+8. [Contributing](contributing.md): how to add or correct an entry, and when an entry is a patch.
 
 The o2i side of the contract is in the o2i [lexicon guide](https://github.com/TigreGotico/orthography2ipa/blob/dev/docs/guide/lexicon.md).

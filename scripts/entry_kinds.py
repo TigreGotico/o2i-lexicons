@@ -5,8 +5,8 @@ source that states this, with the page or section. It stays in the lexicon
 for as long as the rules read by spelling.
 
 A patch is a word that a rule could reach. Its note is the gap: the
-orthography2ipa pull request, or the section of ``rule-leads.md`` in the
-o2i-lexicons audit of the wiki, that will reach it. A patch leaves the
+orthography2ipa pull request, or the lead in ``docs/leads.md``, that will
+reach it. A patch leaves the
 lexicon when ``prune_check.py`` finds that the rules read it right.
 
 An entry with an exception part is an exception, because it stays needed
@@ -24,7 +24,7 @@ from typing import Optional
 from o2i_lexicons.schema import KIND_KEYS
 from lexicon_build import lexical_class as find_lexical_class, stressed_vowel
 
-LEADS = "rule-leads.md"
+LEADS = "docs/leads.md"
 NO_LEAD = "no lead: the rules miss the word outside every class and lead"
 
 VOWELS = "aeiouáéíóúâêôãõ"
@@ -76,7 +76,7 @@ DOMINANT_ENDINGS = {"oide": "ɔ", "orro": "o", "osto": "o", "ostro": "o", "olho"
                     "oma": "o", "ona": "o", "ena": "e", "eno": "e", "edo": "e", "dora": "o",
                     "queta": "e", "eso": "e", "eca": "ɛ", "ose": "ɔ"}
 
-#: A gap named by a section of rule-leads.md, by ending.
+#: A gap named by a section of docs/leads.md, by ending.
 ENDING_SECTIONS = {"oide": "Entries in ⟨-oide⟩", "dora": "Entries in ⟨-dora⟩"}
 
 CC_STRESSED_MID = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
