@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.13a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.13a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.12a1...0.7.13a1)
+
+**Merged pull requests:**
+
+- fix\(pt-PT\): make the ⟨x⟩ no-lead patches exceptions, and give ⟨mn⟩ its AO90 lead [\#72](https://github.com/TigreGotico/o2i-lexicons/pull/72) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.12a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.12a1) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.11a1...0.7.12a1)
