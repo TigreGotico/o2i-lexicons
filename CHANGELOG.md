@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.7.3a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.3a2) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.3a1...0.7.3a2)
+
+**Merged pull requests:**
+
+- fix\(scripts\): build each lexicon against the rules alone [\#47](https://github.com/TigreGotico/o2i-lexicons/pull/47) ([JarbasAl](https://github.com/JarbasAl))
+- ci: test the installed wheel, not only the source tree [\#45](https://github.com/TigreGotico/o2i-lexicons/pull/45) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.3a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.3a1) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.2a1...0.7.3a1)
