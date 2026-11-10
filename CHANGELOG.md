@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.14a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.14a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.13a1...0.7.14a1)
+
+**Merged pull requests:**
+
+- fix\(pt\): give the pt-PT and pt-BR entries reason classes from their evidence [\#74](https://github.com/TigreGotico/o2i-lexicons/pull/74) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.13a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.13a1) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.12a1...0.7.13a1)
