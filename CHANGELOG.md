@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.9a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.9a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a4...0.7.9a1)
+
+**Merged pull requests:**
+
+- fix\(pt-PT\): drop the stressed-vowel class of the seven -oide entries [\#43](https://github.com/TigreGotico/o2i-lexicons/pull/43) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.8a4](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.8a4) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a3...0.7.8a4)
