@@ -101,7 +101,7 @@ Cunha & Cintra (p. 64) say that a medial gn, pn, ps, pt or tm can stand in one s
 | agnelo | `ɐˈɡnelu` | `ɐɡˈnelu` |
 | afixar | `ɐfiˈksaɾ` | `ɐfikˈsaɾ` |
 | axioma | `ɐˈksjomɐ` | `ɐkˈsjomɐ` |
-| atloide | `ɐˈtlɔjdɨ` | `ɐˈtlɔjdɨ` |
+| epiblasto | `ɛpiˈblaʃtu` | `ɛpiˈblaʃtu` |
 | anguífero | `ɐ̃ˈɡwifɨɾu` | `ɐ̃ˈɡwifɨɾu` |
 
 A glide after a consonant goes with the vowel after it ([kw ɡw], and [sj] in axioma). An affricate of a loanword is one consonant (ketchup `kɛˈtʃɐp`). A cluster at the start of a word stays whole, because Cunha & Cintra (p. 64) call an initial gn, pn, ps inseparable (gnomo `ˈɡnomu`). A glide alone between two vowels "can associate with the onset of the following syllable ... and it becomes then ambisyllabic" (Mateus & d'Andrade, p. 29), so the entry keeps its mark on either side of it (gaiolo `ɡajˈolu`, kilowatt `kilɔˈwɔt`).
