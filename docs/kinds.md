@@ -12,7 +12,7 @@ Each exception has a note in the `citations` map of its sidecar. The note names 
 
 A patch is a word that a rule could reach, but the rules of the recorded o2i version read it wrong. The patches of a code are in `o2i_lexicons/data/patches/<code>/`.
 
-Each patch has a note in the `gaps` map of its sidecar. The gap names what keeps the rules from the word. It can be an o2i pull request, a spec rule that misfires, or a lead that the note states. A lead is a spelling pattern that a group of words shares, together with one error at that pattern. Some pt-PT gaps name a section of `rule-leads.md`, a file in the o2i-lexicons audit records that this repository does not hold.
+Each patch has a note in the `gaps` map of its sidecar. The gap names what keeps the rules from the word. It can be an o2i pull request, a spec rule that misfires, or a lead that the note states. A lead is a spelling pattern that a group of words shares, together with one error at that pattern. A gap of the form `docs/leads.md § <section>` names a section of the [rule leads](leads.md) page, which lists every lead with its evidence.
 
 ## How the build assigns a kind
 

@@ -552,7 +552,7 @@ def test_each_pt_patch_names_its_gap():
     import re
     # A page alone is a citation, not a gap: a gap names a lead, a rule or a
     # pull request. The pt-BR verb gap names the model verbs a rule follows.
-    gap = re.compile(r"orthography2ipa#\d+|rule-leads\.md § |^PT_\w+ misfires|^lead: |^no lead"
+    gap = re.compile(r"orthography2ipa#\d+|docs/leads\.md § |^PT_\w+ misfires|^lead: |^no lead"
                      r"|^Cunha & Cintra pp\. 429-433: ")
     for code in ("pt-PT", "pt-BR"):
         assert {w: g for w, g in notes(code, "patch").items() if not gap.search(g)} == {}, code
@@ -567,9 +567,9 @@ def test_the_pt_pt_kinds_follow_their_class():
     assert exceptions["táxi"] == "AO90 Base III; Ciberdúvidas 4068"
     assert exceptions["cinquenta"] == "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
     assert exceptions["orelhado"].startswith("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 27")
-    assert patches["eritroide"] == "rule-leads.md § word-initial e"
-    assert patches["golpada"] == "rule-leads.md § coda l"
-    assert patches["ativo"] == "rule-leads.md § learned words"
+    assert patches["eritroide"] == "docs/leads.md § word-initial e"
+    assert patches["golpada"] == "docs/leads.md § coda l"
+    assert patches["ativo"] == "docs/leads.md § learned words"
 
 
 def test_the_coda_stop_rule_took_its_patches():

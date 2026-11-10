@@ -77,7 +77,7 @@ Some exception citations support the class more weakly than the contract asks. C
 
 No source states that the reading of a loan is lexical, so a loan is a patch. A loan that differs from the rules only in a doubled consonant letter or an initial ⟨s⟩ before a consonant has the lead of that spelling. Every other loan has the gap `lead: pt-PT English loan spelling`, with ⟨tch⟩, ⟨zz⟩ or a final ⟨-ing⟩ when the word has one, and Infopédia gives its reading. That gap names the spelling of the loan, not the error of the rules. [AO90](https://www.portaldalinguaportuguesa.org/acordo.php?action=acordo&version=1990) Base I 2.º c) names kW-kilowatt among the units of measure that keep ⟨k w y⟩, so kilowatt is an exception. The Base gives the spelling and Infopédia gives the reading.
 
-A patch with no class has the gap `no lead: the rules miss the word outside every class and lead`, which names no rule. Some gaps name a section of `rule-leads.md`, an audit file that this repository does not hold.
+A patch with no class has the gap `no lead: the rules miss the word outside every class and lead`, which names no rule. The [rule leads](../leads.md) page gives the evidence for each lead that a gap names.
 
 A lexicon on `pt-PT` does not reach a child lect such as `pt-PT-x-lisbon`.
 

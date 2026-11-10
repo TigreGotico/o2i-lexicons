@@ -23,9 +23,9 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
     ("abelota", "ɐbɨˈlɔtɐ", "ɐbɨˈlotɐ", "stressed mid vowel", ("exception", CC_40)),
     # ⟨-oide⟩ is [ɔ] and ⟨-dora⟩ is [o] in nearly every Infopédia word.
     ("acaroide", "ɐkɐˈɾojdɨ", "ɐkɐˈɾɔjdɨ", "stressed mid vowel",
-     ("patch", "rule-leads.md § Entries in ⟨-oide⟩")),
+     ("patch", "docs/leads.md § Entries in ⟨-oide⟩")),
     ("aceleradora", "ɐsɨlɨɾɐˈdɔɾɐ", "ɐsɨlɨɾɐˈdoɾɐ", "stressed mid vowel",
-     ("patch", "rule-leads.md § Entries in ⟨-dora⟩")),
+     ("patch", "docs/leads.md § Entries in ⟨-dora⟩")),
     ("abertona", "ɐbɨɾˈtɔnɐ", "ɐbɨɾˈtonɐ", "stressed mid vowel",
      ("patch", "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words")),
     # ⟨-queta -eso⟩ are [e], ⟨-eca⟩ is [ɛ] and ⟨-ose⟩ is [ɔ] in at least 90%
@@ -58,7 +58,7 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
     ("erguer", "ɛɾˈɡeɾ", "eɾˈɡeɾ", "unstressed initial ⟨e⟩",
      ("exception", ek.INITIAL_E_R)),
     ("ecográfico", "ikuˈɡɾafiku", "ɛkuˈɡɾafiku", "unstressed initial ⟨e⟩",
-     ("patch", "rule-leads.md § word-initial e")),
+     ("patch", "docs/leads.md § word-initial e")),
     # ⟨ss⟩ writes one voiceless sibilant (AO90 Base III 3.º), so the ⟨e⟩ of
     # essonite has no coda. Mateus & d'Andrade 1998 p. 26: an initial /e ɛ/ is
     # "a) [ɛ] when the coda is /L/" and "d) deleted when the coda is an /S/".
@@ -89,13 +89,13 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
      ("patch", ek.CODA_STOP_CLOSE)),
     # Under #2218 the coda stop of etmoide is right, so only ⟨-oide⟩ is left.
     ("etmoide", "ɛtˈmojdɨ", "ɛtˈmɔjdɨ", "stressed mid vowel+unstressed vowel before a coda stop",
-     ("patch", "rule-leads.md § Entries in ⟨-oide⟩")),
+     ("patch", "docs/leads.md § Entries in ⟨-oide⟩")),
     ("abjeção", "ɐbʒɨˈsɐ̃w̃", "ɐbʒɛˈsɐ̃w̃", "unreduced learned vowel",
-     ("patch", "rule-leads.md § learned words")),
+     ("patch", "docs/leads.md § learned words")),
     # Two patch parts give a patch with both gaps.
     ("polpectomia", "poɫpɨktuˈmiɐ", "puɫpɛktuˈmiɐ",
      "unstressed vowel before a coda stop+unstressed vowel before a coda ⟨l⟩",
-     ("patch", "orthography2ipa#2218; rule-leads.md § coda l")),
+     ("patch", "orthography2ipa#2218; docs/leads.md § coda l")),
     # An exception part makes an exception, and only its citations remain.
     ("adoxa", "ɐˈdɔʃɐ", "ɐˈdoksɐ", "stressed mid vowel+⟨x⟩ as [ks]",
      ("exception", f"{CC_40}; AO90 Base III; Ciberdúvidas 4068")),
@@ -321,3 +321,18 @@ def test_a_name_in_the_source_is_a_proper_noun():
     assert ek.pt_reason("pt-BR", "teodoro", "unclassified", "exception", True) == "proper_noun"
     assert ek.pt_reason("pt-BR", "teodoro", "unclassified", "exception") == "irregular"
     assert ek.pt_reason("pt-BR", "nato", "acronym", "exception", True) == "acronym"
+
+
+def test_each_leads_section_that_a_gap_names_is_on_the_page():
+    import json
+    import re
+
+    import o2i_lexicons
+    root = Path(__file__).resolve().parent.parent
+    headings = set(re.findall(r"^#+ (.+)$", (root / ek.LEADS).read_text(encoding="utf-8"), re.M))
+    named = {"word-initial e", "coda l", "learned words", *ek.ENDING_SECTIONS.values()}
+    for code in o2i_lexicons.available_codes("patch"):
+        gaps = json.loads(o2i_lexicons.patch_meta_path(code).read_text(encoding="utf-8"))["gaps"]
+        named |= {m for g in gaps.values() for m in re.findall(rf"{re.escape(ek.LEADS)} § ([^;]+)", g)}
+    assert ek.LEADS == "docs/leads.md"
+    assert named - headings == set()
