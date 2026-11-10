@@ -82,27 +82,34 @@ def packaged(tmp_path, monkeypatch):
     monkeypatch.setattr(o2i_lexicons, "DATA_DIR", tmp_path)
     monkeypatch.setattr(prune_check.o2i_harness, "load_benchmark", lambda cache: BENCH)
 
-    def make(exceptions, patches, code="en-GB", stress="rules"):
+    def make(exceptions, patches, code="en-GB", stress="rules", patch_meta=None):
         write_file(tmp_path / code, code, "".join(f"{w}\t{i}\n" for w, i in exceptions.items()),
-                   {"kind": "exception", "o2i_version": "1.0.0", "stress": stress,
-                    "reasons": dict.fromkeys(exceptions, "unclassified"), "reason_basis": {},
+                   {**SIDECAR, "kind": "exception", "code": code, "stress": stress,
+                    "reasons": dict.fromkeys(exceptions, "unclassified"),
                     "citations": dict.fromkeys(exceptions, "a cited source")})
         write_file(tmp_path / "patches" / code, code,
                    "".join(f"{w}\t{i}\n" for w, i in patches.items()),
-                   {"kind": "patch", "o2i_version": "1.0.0", "stress": stress,
-                    "reasons": dict.fromkeys(patches, "unclassified"), "reason_basis": {},
-                    "gaps": dict.fromkeys(patches, "lead: x")})
+                   {**SIDECAR, "kind": "patch", "code": code, "stress": stress,
+                    "reasons": dict.fromkeys(patches, "unclassified"),
+                    "gaps": dict.fromkeys(patches, "lead: x"), **(patch_meta or {})})
         return tmp_path
     return make
 
 
+#: The fields of a valid en-GB sidecar that a prune leaves as they are.
+SIDECAR = {"code": "en-GB", "source": "wikipron", "source_url": "https://example.org/en.tsv",
+           "tier": "crowd-scraped", "licence": "CC-BY-SA-4.0",
+           "build_command": "python scripts/build_lexicon.py en-GB", "o2i_version": "1.0.0",
+           "stress": "rules", "reason_basis": {}}
+
+
 def test_write_prunes_a_stale_patch(packaged):
     # The rules read cat /kæt/; colonel stays wrong.
-    root = packaged({"colonel": "ˈkɜːnəl"}, {"cat": "kæt", "colonel": "ˈkɜːnəl"})
+    root = packaged({"colonel": "kɜːnəl"}, {"cat": "kæt", "colonel": "kɜːnəl"})
     assert prune_check.main(["--cache", str(root)]) == 1
     assert prune_check.main(["--cache", str(root), "--write"]) == 0
     patches = root / "patches" / "en-GB"
-    assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "colonel\tˈkɜːnəl\n"
+    assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "colonel\tkɜːnəl\n"
     meta = json.loads((patches / "wikipron.meta.json").read_text(encoding="utf-8"))
     assert (meta["gaps"], meta["reasons"]) == ({"colonel": "lead: x"}, {"colonel": "unclassified"})
     assert meta["o2i_version"] == orthography2ipa.version.VERSION_STR
@@ -119,12 +126,30 @@ def test_a_stale_exception_fails_and_stays(packaged):
 
 
 def test_an_empty_patch_file_is_checked(packaged):
-    root = packaged({"colonel": "ˈkɜːnəl"}, {})
+    root = packaged({"colonel": "kɜːnəl"}, {})
     report = root / "report.json"
     assert prune_check.main(["--cache", str(root), "--write", "--report", str(report)]) == 0
     assert json.loads(report.read_text(encoding="utf-8"))["codes"] == {"en-GB": {
         "exception": {"entries": 1, "stale": []}, "patch": {"entries": 0, "stale": []}}}
     assert (root / "patches" / "en-GB" / "wikipron.tsv").read_text(encoding="utf-8") == ""
+
+
+def test_write_stops_when_a_written_file_fails_the_schema(packaged):
+    # The prune keeps colonel, whose reading holds a digit, which is not IPA.
+    root = packaged({"colonel": "kɜːnəl"}, {"cat": "kæt", "colonel": "kɜːn3l"})
+    report = root / "report.json"
+    with pytest.raises(SystemExit, match=r"wikipron.tsv line 1: IPA not NFC / not IPA-only: 'kɜːn3l'"):
+        prune_check.main(["--cache", str(root), "--write", "--report", str(report)])
+    assert not report.exists()
+
+
+def test_write_stops_when_a_written_sidecar_fails_the_schema(packaged):
+    root = packaged({"colonel": "kɜːnəl"}, {"cat": "kæt", "colonel": "kɜːnəl"},
+                    patch_meta={"tier": "llm-generated"})
+    report = root / "report.json"
+    with pytest.raises(SystemExit, match="tier 'llm-generated' cannot supply entries"):
+        prune_check.main(["--cache", str(root), "--write", "--report", str(report)])
+    assert not report.exists()
 
 
 def rules_reading(code, word):

@@ -631,6 +631,16 @@ SOURCES = {
     "nilc": (load_nilc, "CC-BY-SA-4.0", "nilc", screen_nilc, nilc_norm, nilc_residual),
 }
 
+#: dataset -> the board datasets that its build reads besides the one that
+#: holds it: WikiPron corroborates a pt-PT or pt-BR entry
+#: (``infopedia_references``, ``nilc_references``), and portuguese_unified
+#: gives the pt.wiktionary readings of pt-BR. No measure is independent of them.
+SECOND_SOURCES = {
+    "wikipron": frozenset(),
+    "infopedia": frozenset({"wikipron"}),
+    "nilc": frozenset({"portuguese_unified", "wikipron"}),
+}
+
 #: code -> the screens of its gold readings, in order. Each screen is a test
 #: of ``(headword, reading)`` that is true when the accent of the code's spec
 #: does not have the reading, and the reason a word leaves when no reading
