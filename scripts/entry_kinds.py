@@ -69,6 +69,20 @@ CC_STRESSED_MID = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
 X_VALUE = "AO90 Base III; Ciberdúvidas 4068"
 QU_GU = "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
 LOAN = "AO90 Base I 2.º-3.º"
+#: The citations of an unstressed initial vowel whose value the dictionary
+#: gives. The pages state the class or the variation; a rule that follows them
+#: gives [i] for ⟨e⟩, so the value of the word is a fact of the dictionary.
+INITIAL_E_OPEN = ("Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels "
+                  "of cultismos unreduced, and give the initial [e] of enorme, erguer as "
+                  "'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. "
+                  "No page read gives the value of this word")
+INITIAL_E_R = ("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 26 (c) state variation "
+               "between [i], [e] and [ɛ] before a coda /R/, and Cunha & Cintra p. 53 "
+               "give the initial [e] of erguer as 'geralmente [i]'. No page read gives the value "
+               "of this word")
+INITIAL_O = ("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 27 state variation "
+             "between [o] and [ɔ] for a word-initial unstressed /o ɔ/. No page read gives the "
+             "value of this word")
 CODA_STOP = "orthography2ipa#2218"
 CODA_STOP_A = "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out"
 CODA_STOP_REDUCED = ("lead: the source reduces a vowel before a coda stop that "
@@ -162,13 +176,13 @@ def _pt_pt_part(word: str, rules: str, entry: str, name: str) -> tuple[str, str]
         if coda == "stop or other" and word.lstrip("h")[1:2] in "pbtdcgk":
             return "patch", _pt_pt_coda_stop(rules, entry)
         if coda == "/R/":
-            return "exception", "Mateus & d'Andrade 1998 p. 26 (c)"
+            return "exception", INITIAL_E_R
         if coda == "open":
-            return "exception", "Cunha & Cintra p. 53; Mateus & d'Andrade 1998 p. 26 (b)"
+            return "exception", INITIAL_E_OPEN
         return "patch", "Mateus & d'Andrade 1998 p. 26 (a, b, d)"
     if name == "unstressed initial ⟨o⟩":
         if {_plain(rules)[0], _plain(entry)[0]} == {"o", "ɔ"}:
-            return "exception", "Mateus & d'Andrade 1998 p. 27"
+            return "exception", INITIAL_O
         return "patch", "lead: the stems honest- and honor- take an initial [u]"
     if name == "unstressed vowel before a coda stop":
         return "patch", _pt_pt_coda_stop(rules, entry)

@@ -38,16 +38,16 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
     # Initial ⟨e⟩: open syllable of a learned word, before /R/, a learned first
     # element, before /S/.
     ("ebanite", "ibɐˈnitɨ", "ɛbɐˈnitɨ", "unstressed initial ⟨e⟩",
-     ("exception", "Cunha & Cintra p. 53; Mateus & d'Andrade 1998 p. 26 (b)")),
+     ("exception", ek.INITIAL_E_OPEN)),
     ("erguer", "ɛɾˈɡeɾ", "eɾˈɡeɾ", "unstressed initial ⟨e⟩",
-     ("exception", "Mateus & d'Andrade 1998 p. 26 (c)")),
+     ("exception", ek.INITIAL_E_R)),
     ("ecográfico", "ikuˈɡɾafiku", "ɛkuˈɡɾafiku", "unstressed initial ⟨e⟩",
      ("patch", "rule-leads.md § word-initial e")),
     ("essonite", "isuˈnitɨ", "ɛsuˈnitɨ", "unstressed initial ⟨e⟩",
      ("patch", "Mateus & d'Andrade 1998 p. 26 (a, b, d)")),
     # Initial ⟨o⟩: [o] against [ɔ] is lexical; [u] in honesto is a stem lead.
     ("homana", "ɔˈmɐnɐ", "oˈmɐnɐ", "unstressed initial ⟨o⟩",
-     ("exception", "Mateus & d'Andrade 1998 p. 27")),
+     ("exception", ek.INITIAL_O)),
     ("honesto", "ɔˈnɛʃtu", "uˈnɛʃtu", "unstressed initial ⟨o⟩",
      ("patch", "lead: the stems honest- and honor- take an initial [u]")),
     # orthography2ipa#2218 opens an ⟨e o⟩ before a coda stop and leaves ⟨a⟩
@@ -174,3 +174,16 @@ def test_nilc_verb_tenses_keeps_only_words_tagged_as_verbs(tmp_path):
 def test_a_code_with_no_kind_rules_is_refused():
     with pytest.raises(SystemExit, match="no rules for fr-FR"):
         bl.entry_kinds("fr-FR", None, {"chat": "ʃa"}, {}, {}, frozenset(), {})
+
+
+def test_the_initial_vowel_citations_name_infopedia_for_the_reading():
+    # Cunha & Cintra p. 53 give the initial [e] as "geralmente [i]", and
+    # Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda: the pages do not
+    # give the [e] or [ɛ] of an entry, so the reading is cited to Infopédia.
+    for citation in (ek.INITIAL_E_OPEN, ek.INITIAL_E_R, ek.INITIAL_O):
+        assert citation.startswith("Infopédia gives the reading.")
+        assert citation.endswith("No page read gives the value of this word")
+    assert "'geralmente [i]'" in ek.INITIAL_E_OPEN
+    assert "p. 26 (b) give [i] with no coda" in ek.INITIAL_E_OPEN
+    assert "variation between [i], [e] and [ɛ] before a coda /R/" in ek.INITIAL_E_R
+    assert "variation between [o] and [ɔ]" in ek.INITIAL_O
