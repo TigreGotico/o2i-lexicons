@@ -43,7 +43,7 @@ The sidecar is a JSON object. `schema.validate_meta` requires these keys:
 
 The allowed tiers are `expert-human`, `lexicon-derived`, `crowd-scraped` and `machine-generated`. These are the o2i tiers that can gate a quality decision. A silver set, such as LLM output, cannot supply entries, and neither can the output of a system that o2i benchmarks against.
 
-The reason classes are `loanword`, `proper_noun`, `lexical_stress`, `irregular`, `acronym`, `homograph_default` and `unclassified`. The build assigns only `acronym` and `proper_noun`, from the capital letters of the source headword, and gives every other word `unclassified`. So for most entries the reason class carries no information. The kind and its note in `citations` or `gaps` carry the reason.
+The reason classes are `loanword`, `proper_noun`, `lexical_stress`, `irregular`, `acronym`, `homograph_default` and `unclassified`. The build assigns `acronym` and `proper_noun` from the capital letters of the source headword. In the `pt-PT` and `pt-BR` files it also assigns three classes from other evidence. A word with a loan spelling, such as ⟨k w y⟩ or a final ⟨t⟩, is `loanword`. A `pt-BR` word that the NILC file tags `N+Pr` on every line is `proper_noun`. Any other `pt-PT` exception is `irregular`, because its citation names a source that states its class ([kinds](kinds.md)). The build gives every other word `unclassified`. For an `unclassified` entry, the kind and its note in `citations` or `gaps` carry the reason.
 
 A sidecar can hold more keys, and the schema does not check them. The `en-GB` files have these:
 

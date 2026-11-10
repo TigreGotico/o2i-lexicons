@@ -35,6 +35,36 @@ REASON_BASIS = {
                    "language (English, French), takes this class.",
 }
 
+#: The evidence for the reason classes that a code's kind rules assign
+#: (``entry_kinds.pt_reason``), and that replace the basis above for that code.
+_LOANWORD_BASIS = ("The spelling of the word is outside the native system "
+                   "(entry_kinds.LOAN_SPELLING): it has ⟨k⟩, ⟨w⟩ or ⟨y⟩, a doubled ⟨b g p t "
+                   "z⟩, ⟨ee⟩ not before ⟨m⟩, ⟨sh⟩, an initial ⟨s⟩ before a consonant, a final "
+                   "⟨ng⟩, or a final ⟨b c d f g k p t⟩.")
+REASON_BASIS_BY_CODE = {
+    "pt-PT": {
+        "loanword": _LOANWORD_BASIS,
+        "proper_noun": "The Infopédia headword starts with a capital letter and is not "
+                       "written in capitals only. The class rests on the capital.",
+        "irregular": "The entry is an exception: its citation names the page or section "
+                     "of a source that states its class (docs/kinds.md). The spelling "
+                     "does not show the reading in that class: the height of a stressed "
+                     "mid vowel, the value of ⟨x⟩, ⟨qu gu⟩ with [w], or an unstressed "
+                     "initial ⟨e⟩ or ⟨o⟩.",
+    },
+    "pt-BR": {
+        "loanword": _LOANWORD_BASIS,
+        "proper_noun": "Every line of the word in the NILC file carries the DELAF tag "
+                       "N+Pr, a proper noun.",
+    },
+}
+
+
+def reason_basis(code: str, reason: str) -> str:
+    """The evidence for *reason* in a file of *code*."""
+    return REASON_BASIS_BY_CODE.get(code, {}).get(reason) or REASON_BASIS[reason]
+
+
 #: The English pronoun I and its contractions. Each is written with a capital
 #: and is no name.
 PRONOUN_I_RE = re.compile(r"I(?:['’][a-z]+)*")

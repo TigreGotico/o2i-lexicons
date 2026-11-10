@@ -78,7 +78,9 @@
  "kind": "exception",
  "licence": "CC-BY-SA-4.0",
  "o2i_version": "7.119.3a1",
- "reason_basis": {},
+ "reason_basis": {
+  "proper_noun": "Every line of the word in the NILC file carries the DELAF tag N+Pr, a proper noun."
+ },
  "reasons": {
   "adepto": "unclassified",
   "afeto": "unclassified",
@@ -108,9 +110,9 @@
   "formosa": "unclassified",
   "foto": "unclassified",
   "foz": "unclassified",
-  "félix": "unclassified",
+  "félix": "proper_noun",
   "gesto": "unclassified",
-  "humberto": "unclassified",
+  "humberto": "proper_noun",
   "inflexão": "unclassified",
   "inflexível": "unclassified",
   "inoxidável": "unclassified",
@@ -142,7 +144,7 @@
   "sueco": "unclassified",
   "tarefa": "unclassified",
   "taxista": "unclassified",
-  "teodoro": "unclassified",
+  "teodoro": "proper_noun",
   "tuberculose": "unclassified",
   "táxi": "unclassified",
   "tórax": "unclassified",

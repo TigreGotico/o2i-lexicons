@@ -268,3 +268,55 @@ def test_the_initial_e_lead_states_what_the_page_gives():
     assert "(a) [ɛ] before a coda /L/" in ek.INITIAL_E_L_S
     assert "(d) deleted before a coda /S/" in ek.INITIAL_E_L_S
     assert ek.INITIAL_E_L_S.startswith("lead: ")
+
+
+def test_nilc_proper_nouns_keeps_only_words_tagged_as_names_on_every_line(tmp_path):
+    # Lines of the NILC file. praga is a proper noun on one line and a common
+    # noun on the other.
+    nilc = tmp_path / "nilc.txt"
+    nilc.write_text("teodoro,teodoro.N+Pr:;TÊ-Ô-@DÓ-ŔU\nhumberto,humberto.N+Pr:;Ũ-@BÉH-TU\n"
+                    "félix,félix.N+Pr:ms;@FÉ-LÍQ\npraga,praga.N:fs;@PŔÁ-G6\n"
+                    "praga,praga.N+Pr:;@PŔÁ-G6\nbola,bola.N:fs;@BÓ-L6\n", encoding="utf-8")
+    assert bl.nilc_proper_nouns(nilc) == {"teodoro", "humberto", "félix"}
+
+
+def test_pt_reasons_class_each_word_of_the_build(tmp_path):
+    nilc = tmp_path / "nilc.txt"
+    nilc.write_text("teodoro,teodoro.N+Pr:;TÊ-Ô-@DÓ-ŔU\n", encoding="utf-8")
+    reasons = dict.fromkeys(["teodoro", "sexy", "abelota"], "unclassified")
+    kinds = {"teodoro": ("exception", CC_40), "sexy": ("patch", "lead"),
+             "abelota": ("exception", CC_40)}
+    assert bl.pt_reasons("pt-BR", reasons, kinds, {"nilc": nilc}) == {
+        "teodoro": "proper_noun", "sexy": "loanword", "abelota": "unclassified"}
+    # The NILC file transcribes Brazilian Portuguese, so pt-PT takes no class
+    # from it: teodoro is an exception like abelota.
+    assert bl.pt_reasons("pt-PT", reasons, kinds, {"nilc": nilc}) == {
+        "teodoro": "irregular", "sexy": "loanword", "abelota": "irregular"}
+
+
+@pytest.mark.parametrize("code, word, reason, kind, expected", [
+    # AO90 Base I 2.º keeps ⟨k w y⟩ for foreign names, their derivatives and
+    # units such as "kW-kilowatt"; a common word that has them is a loan.
+    ("pt-PT", "kilowatt", "unclassified", "exception", "loanword"),
+    ("pt-PT", "show", "unclassified", "exception", "loanword"),
+    ("pt-BR", "sexy", "unclassified", "patch", "loanword"),
+    # Portuguese writes no ⟨bb⟩ and starts no word with ⟨s⟩ and a consonant.
+    ("pt-PT", "lobby", "unclassified", "patch", "loanword"),
+    ("pt-PT", "snobismo", "unclassified", "patch", "loanword"),
+    # A pt-PT exception cites a source that states its class.
+    ("pt-PT", "abelota", "unclassified", "exception", "irregular"),
+    ("pt-PT", "acaroide", "unclassified", "patch", "unclassified"),
+    ("pt-BR", "abelota", "unclassified", "exception", "unclassified"),
+    # The class that the source spelling supports stays.
+    ("pt-PT", "cheuas", "proper_noun", "exception", "proper_noun"),
+    ("pt-PT", "evangelho", "proper_noun", "patch", "proper_noun"),
+])
+def test_pt_reason(code, word, reason, kind, expected):
+    assert ek.pt_reason(code, word, reason, kind) == expected
+
+
+def test_a_name_in_the_source_is_a_proper_noun():
+    # The NILC file tags teodoro N+Pr; the capital class of the headword stays.
+    assert ek.pt_reason("pt-BR", "teodoro", "unclassified", "exception", True) == "proper_noun"
+    assert ek.pt_reason("pt-BR", "teodoro", "unclassified", "exception") == "unclassified"
+    assert ek.pt_reason("pt-BR", "nato", "acronym", "exception", True) == "acronym"
