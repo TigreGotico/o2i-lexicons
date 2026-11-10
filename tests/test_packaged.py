@@ -330,7 +330,7 @@ def test_an_entry_puts_its_stress_mark_before_the_onset_of_the_stressed_syllable
     # The onset is one consonant or an obstruent + liquid cluster of Cunha &
     # Cintra (p. 64); a consonant before it has an empty nucleus of its own
     # (Mateus & d'Andrade 1998, pp. 17-18). Infopédia writes agnelo ɐˈɡnelu,
-    # afixar ɐfiˈksaɾ, axioma ɐˈksjomɐ and atloide ɐˈtlɔjdɨ.
+    # afixar ɐfiˈksaɾ, axioma ɐˈksjomɐ and epiblasto ɛpiˈblaʃtu.
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -341,7 +341,7 @@ def test_an_entry_puts_its_stress_mark_before_the_onset_of_the_stressed_syllable
     assert entries["agalactia"] == "ɐɡɐlakˈtiɐ"
     assert entries["afixar"] == "ɐfikˈsaɾ"
     assert entries["axioma"] == "ɐkˈsjomɐ"
-    assert entries["atloide"] == "ɐˈtlɔjdɨ"
+    assert entries["epiblasto"] == "ɛpiˈblaʃtu"
     assert entries["anguífero"] == "ɐ̃ˈɡwifɨɾu"
     text = all_text("pt-BR")
     assert dict(line.split("\t") for line in text.splitlines())["flexão"] == "flekˈsɐ̃w̃"
@@ -410,13 +410,13 @@ def test_each_pt_patch_names_its_gap():
 def test_the_pt_pt_kinds_follow_their_class():
     # The spelling does not show the value of ⟨x⟩ (AO90 Base III), ⟨qu⟩ with
     # [w] (AO90 Base XIV 1.º) or the open initial ⟨o⟩ of orelhado (Mateus &
-    # d'Andrade 1998 p. 27). ⟨-oide⟩, the coda ⟨l⟩ and a learned vowel are
-    # rule leads.
+    # d'Andrade 1998 p. 27). A word-initial ⟨e⟩, the coda ⟨l⟩ and a learned
+    # vowel are rule leads.
     exceptions, patches = notes("pt-PT", "exception"), notes("pt-PT", "patch")
     assert exceptions["táxi"] == "AO90 Base III; Ciberdúvidas 4068"
     assert exceptions["cinquenta"] == "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
     assert exceptions["orelhado"] == "Mateus & d'Andrade 1998 p. 27"
-    assert patches["atloide"] == "rule-leads.md § Entries in ⟨-oide⟩"
+    assert patches["eritroide"] == "rule-leads.md § word-initial e"
     assert patches["golpada"] == "rule-leads.md § coda l"
     assert patches["ativo"] == "rule-leads.md § learned words"
 
@@ -425,6 +425,16 @@ def test_the_coda_stop_rule_took_its_patches():
     # orthography2ipa#2218 keeps a full vowel before a stop and a consonant,
     # so the rules read advectar ɐdvɛkˈtaɾ and acatalepsia ɐkɐtɐlɛpˈsiɐ.
     assert pt_pt_entries().keys() & {"advectar", "acatalepsia"} == set()
+
+
+def test_the_oide_and_dora_rules_took_their_entries():
+    # orthography2ipa#2250 gives the open [ɔj] of ⟨-oide⟩ and #2251 the close
+    # [o] of ⟨-dora -tora -sora⟩, so the rules read asteroide ɐʃtɨˈɾɔjdɨ,
+    # atloide ɐtˈlɔjdɨ, calculadora kaɫkulɐˈdoɾɐ and impressora ĩpɾɨˈsoɾɐ.
+    assert pt_pt_entries().keys() & {"asteroide", "atloide", "calculadora",
+                                     "impressora"} == set()
+    patches = notes("pt-PT", "patch")
+    assert {w for w, g in patches.items() if "⟨-oide⟩" in g or "⟨-dora⟩" in g} == set()
 
 
 def test_a_pt_br_verb_form_is_a_patch():
