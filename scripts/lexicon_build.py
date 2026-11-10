@@ -5,6 +5,7 @@ that and passes the results in, so each step can be tested on its own.
 """
 from __future__ import annotations
 
+import functools
 import json
 import re
 import unicodedata
@@ -14,7 +15,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
-from o2i_lexicons.schema import STRESS_MARKS
+from o2i_lexicons.schema import STRESS_MARKS, outside_inventory
 
 #: A headword the lexicon can hold: letters, with optional internal apostrophes.
 #: A space, a hyphen, a digit or an edge apostrophe makes the source entry a
@@ -25,9 +26,18 @@ WORD_RE = re.compile(r"^[^\W\d_]+(?:['’][^\W\d_]+)*$")
 #: word is ``unclassified``: the data alone claims no linguistic fact.
 REASON_BASIS = {
     "acronym": "The source headword is written in capitals only.",
-    "proper_noun": "The source headword starts with a capital letter and is "
-                   "not written in capitals only.",
+    "proper_noun": "The source headword starts with a capital letter, is not "
+                   "written in capitals only, and is not the English pronoun I "
+                   "or a contraction of it (I'm, I'll, I'd, I've). Neither "
+                   "WikiPron nor Britfone gives a part of speech, so the class "
+                   "rests on the capital. Known misses: a capitalised word that "
+                   "is not a name, such as a proper adjective or the name of a "
+                   "language (English, French), takes this class.",
 }
+
+#: The English pronoun I and its contractions. Each is written with a capital
+#: and is no name.
+PRONOUN_I_RE = re.compile(r"I(?:['’][a-z]+)*")
 
 
 @dataclass(frozen=True)
@@ -64,8 +74,9 @@ def lexicon_key(headword: str) -> str:
 #: The vowel letters of the IPA chart, with the r-coloured vowels.
 IPA_VOWELS = frozenset("iyɨʉɯuɪʏʊeøɘɵɤoəɛœɜɞʌɔæɐaɶɑɒᵻᵿɚɝ")
 
-#: The /r/ sounds of a reading, and the marks of an r-coloured vowel.
-R_SOUNDS = frozenset("ɹɻr")
+#: The /r/ sounds of a reading, the tap among them, and the marks of an
+#: r-coloured vowel.
+R_SOUNDS = frozenset("ɹɻrɾ")
 R_COLOUR = frozenset("ɚɝ˞ʴ")
 
 
@@ -102,11 +113,13 @@ def storage_ipa(gold: str) -> str:
     return unicodedata.normalize("NFC", "".join(gold.split()))
 
 
-def storage_forms(gold: str) -> list[str]:
-    """The storage form of *gold*, then the same form without tie bars."""
+def storage_forms(gold: str, notation: str = TIE_BARS) -> list[str]:
+    """The storage form of *gold*, then the same form without the marks of
+    *notation*: the tie bars, and any mark that the source of a code writes
+    as notation only."""
     ipa = storage_ipa(gold)
-    untied = "".join(c for c in ipa if c not in TIE_BARS)
-    return [ipa] if untied == ipa else [ipa, untied]
+    plain = "".join(c for c in ipa if c not in notation)
+    return [ipa] if plain == ipa else [ipa, plain]
 
 
 def reason_for(headword: str) -> str:
@@ -114,9 +127,182 @@ def reason_for(headword: str) -> str:
     letters = [c for c in headword if c.isalpha()]
     if len(letters) >= 2 and all(c.isupper() for c in letters):
         return "acronym"
-    if headword[:1].isupper():
+    if headword[:1].isupper() and not PRONOUN_I_RE.fullmatch(headword):
         return "proper_noun"
     return "unclassified"
+
+
+#: The vowels of Received Pronunciation (Roach 2004, JIPA 34(2), p. 243):
+#: the short vowels, the long vowels, the diphthongs, and the weak close
+#: vowels [i] (happy) and [u] (throughout). DRESS is [e] there; a reading that
+#: writes [ɛ] is folded to [e] by ``rp_form`` before this test.
+RP_VOWELS = ("eɪ", "aɪ", "ɔɪ", "əʊ", "aʊ", "ɪə", "eə", "ʊə",
+             "iː", "ɑː", "ɔː", "uː", "ɜː",
+             "ɪ", "e", "æ", "ʌ", "ɒ", "ʊ", "ə", "i", "u")
+
+#: The syllabic mark, and the mark of a non-syllabic vowel.
+SYLLABIC = "\u0329"
+NON_SYLLABIC = "\u032f"
+
+#: The marks that ``rp_form`` drops: stress, syllable break, tie bars and the
+#: non-syllabic mark. A diphthong is one vowel whether or not its second part
+#: carries the mark (WikiPron writes [a ɪ̯] and [a ɪ]).
+_RP_FORM_DROP = set("ˈˌ. ") | set(TIE_BARS) | {NON_SYLLABIC}
+
+_SYLLABIC_RE = re.compile(f"(.){SYLLABIC}")
+
+
+def rp_form(reading: str) -> str:
+    """*reading* in one RP phonemic notation, to compare two sources.
+
+    The form drops the stress marks, the spaces between phones, the tie bars
+    and the non-syllabic mark. It writes DRESS and the start of SQUARE as [e],
+    as Roach (2004, p. 243) does, where WikiPron and Britfone write [ɛ]. It
+    writes a syllabic consonant as [ə] and the consonant: Roach (p. 241) says
+    that /m n ŋ l r/ "may be pronounced as syllabic consonants in place of a
+    weak syllable containing a vowel", so [bɒtl̩] and [bɒtəl] are one word.
+    It writes the ASCII ⟨g⟩ of Britfone as [ɡ]. It keeps every other symbol,
+    so a length mark, a weak [i] and a vowel outside RP still tell readings
+    apart.
+    """
+    text = unicodedata.normalize("NFD", reading)
+    text = "".join(c for c in text if c not in _RP_FORM_DROP)
+    text = _SYLLABIC_RE.sub(r"ə\1", text)
+    text = text.replace("ɛ", "e").replace("g", "ɡ")
+    return unicodedata.normalize("NFC", text)
+
+
+def rp_vowel_outside(reading: str) -> Optional[str]:
+    """The first vowel of *reading* that is not an RP vowel (``RP_VOWELS``),
+    or ``None``.
+
+    The test reads ``rp_form(reading)``. A short [ɑ] (default [diːfɑlt]), a
+    monophthong [ɛː] or [a], a nasal vowel or a vowel with any other mark is
+    outside RP.
+    """
+    text = unicodedata.normalize("NFD", rp_form(reading))
+    i = 0
+    while i < len(text):
+        if text[i] not in IPA_VOWELS:
+            i += 1
+            continue
+        match = next((v for v in RP_VOWELS if text.startswith(v, i)), None)
+        end = i + len(match) if match else i + 1
+        if match is None or (end < len(text) and unicodedata.combining(text[end])
+                             or text.startswith("ː", end)):
+            while end < len(text) and (unicodedata.combining(text[end]) or text[end] == "ː"):
+                end += 1
+            return unicodedata.normalize("NFC", text[i:end])
+        i = end
+    return None
+
+
+#: The most letters per phone that a reading may have. Britfone 3.0.1 has no
+#: single word above 4: heir [ˈɛə] has four letters and one phone, and the
+#: next words (though, owe, eye) have three letters per phone.
+MAX_LETTERS_PER_PHONE = 4
+
+#: The phones of length two or more, as ``rp_form`` writes them.
+_LONG_PHONES = sorted({*RP_VOWELS, "tʃ", "dʒ"}, key=len, reverse=True)
+
+
+def phones(reading: str) -> list[str]:
+    """The phones of *reading*, in ``rp_form``: a diphthong, a long vowel and
+    an affricate count as one phone."""
+    text = unicodedata.normalize("NFD", rp_form(reading))
+    out: list[str] = []
+    i = 0
+    while i < len(text):
+        unit = next((p for p in _LONG_PHONES if text.startswith(p, i)), text[i])
+        if out and len(unit) == 1 and (unicodedata.combining(unit) or unit == "ː"):
+            out[-1] += unit
+        else:
+            out.append(unit)
+        i += len(unit)
+    return out
+
+
+def truncated(headword: str, reading: str) -> bool:
+    """True when *reading* has too few phones for the letters of *headword*:
+    more than ``MAX_LETTERS_PER_PHONE`` letters per phone (aussie [s])."""
+    letters = sum(c.isalpha() for c in headword)
+    return letters > MAX_LETTERS_PER_PHONE * len(phones(reading))
+
+
+def britfone_readings(text: str) -> dict[str, list[str]]:
+    """word -> the readings of the word in a Britfone main file, in file order.
+
+    A line is ``WORD, p h o n e s`` or ``WORD(2), ...``. A multi-word entry
+    (``COSTA_RICA``) is left out. A reading with no primary stress mark is a
+    weak form (you [jə], into [ɪntə]) and is left out: a lexicon entry is the
+    reading of the word said on its own, and Britfone marks the primary
+    stress of every other reading. A word that has only weak forms maps to an
+    empty list, so the word still counts as one that Britfone holds. Britfone
+    writes STRUT as [ɐ] "instead of traditional /ʌ/" (its README), so the
+    reading takes [ʌ], the symbol of Roach (2004, p. 243) and of WikiPron.
+    """
+    out: dict[str, list[str]] = {}
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        head, _, reading = line.partition(", ")
+        word = re.sub(r"\(\d+\)$", "", head.strip())
+        if "_" in word:
+            continue
+        readings = out.setdefault(lexicon_key(word), [])
+        if "ˈ" in reading:
+            readings.append(reading.strip().replace("ɐ", "ʌ"))
+    return out
+
+
+#: The weak vowels that a reading may write for an unstressed weak vowel of
+#: Britfone. Britfone says of its weak vowels that "there's some
+#: inconsistency in how weak vowels are transcribed, though in most cases /ɪ/
+#: is used", and that it writes happy with [i] where most dictionaries write
+#: [ɪ] (README, Issues and remarks). Roach (2004, p. 243) writes the weak
+#: close vowels [i] (happy) and [u] (throughout), and [ə] in India [ˈɪndiə],
+#: where Britfone writes an unstressed [ɪə]. A full vowel, a stressed vowel
+#: and a consonant must match.
+WEAK_VOWELS = {"ɪ": ("ɪ", "ə", "i"), "ə": ("ə", "ɪ"), "i": ("i", "ɪ"), "ʊ": ("ʊ", "u"),
+               "ɪə": ("ɪə", "iə")}
+
+
+@functools.lru_cache(maxsize=None)
+def britfone_pattern(reference: str) -> re.Pattern:
+    """The ``rp_form`` readings that agree with the Britfone *reference*, a
+    reading with one space between phones and the stress mark on its vowel.
+    An unstressed weak vowel of *reference* takes any of its ``WEAK_VOWELS``."""
+    parts = []
+    for phone in reference.split():
+        core = rp_form(phone)
+        if phone[0] not in "ˈˌ" and core in WEAK_VOWELS:
+            parts.append("(?:" + "|".join(map(re.escape, WEAK_VOWELS[core])) + ")")
+        else:
+            parts.append(re.escape(core))
+    return re.compile("".join(parts))
+
+
+def agrees(reading: str, reference: str) -> bool:
+    """True when *reading* is the Britfone *reference* in ``rp_form``, up to
+    the ``WEAK_VOWELS`` of its unstressed weak vowels."""
+    return britfone_pattern(reference).fullmatch(rp_form(reading)) is not None
+
+
+def agreeing_reading(readings: list[str], references: list[str],
+                     usable: Callable[[str], Optional[str]]) -> Optional[str]:
+    """The storage form of the first reading of *readings* that ``agrees``
+    with a reference reading, or ``None``.
+
+    The references are tried in their own order, so the order of the second
+    source decides between two readings that both agree, and the code-point
+    order of the first source never does. *usable* returns the storage form
+    of a reading, or ``None`` to refuse it.
+    """
+    for reference in references:
+        for reading in readings:
+            if agrees(reading, reference) and (ipa := usable(reading)) is not None:
+                return ipa
+    return None
 
 
 def error_chunks(gold: str, hyp: str, align: Callable) -> list[tuple[str, str, float, float]]:
@@ -1051,26 +1237,8 @@ def full_form_first(readings: list[str]) -> list[str]:
 #: non-syllabic mark follows it.
 VOWELS = frozenset("aɐeɛəɨioɔuʊɪæyøœɑɒʌɜɘɯ")
 GLIDES = frozenset("jwɥ")
-NASAL = "\u0303"
 
 
-def outside_inventory(tokens: list[str], inventory: frozenset[str]) -> list[str]:
-    """The tokens of a reading that are not in the spec's token *inventory*.
-
-    A spec emits a nasal glide only as the second half of a nasal diphthong
-    (pt-PT mãe ˈmɐ̃j̃, pão ˈpɐ̃w̃, põe ˈpõj̃), so the glide is not a token of its
-    own. A nasal glide is inside the inventory only after a nasal vowel, and
-    only when an inventory token ends in that glide: muito ˈmũj̃tu tokenises as
-    ũ j̃. A spec that lists the bare glide changes neither condition.
-    """
-    nasal_glides = {t[-2:] for t in inventory
-                    if len(t) > 2 and t.endswith(NASAL) and t[-2] in GLIDES}
-    def after_nasal_vowel(i: int) -> bool:
-        return i > 0 and unicodedata.normalize("NFD", tokens[i - 1]).endswith(NASAL)
-
-    return [t for i, t in enumerate(tokens)
-            if not (after_nasal_vowel(i) if t in nasal_glides else t in inventory)]
-NON_SYLLABIC = "̯"
 #: The vowels that European Portuguese deletes ([ɨ], [u]) or turns into a
 #: glide ([i], [u]) in unstressed syllables.
 REDUCIBLE = frozenset("ɨəiu")
@@ -1308,6 +1476,18 @@ HOMOGRAPHS = {
     "pt-PT": {
         "pola": "the archaic contraction of por + a [pulɐ] and the noun [ˈpɔlɐ] "
                 "(pt.wiktionary: Contração (ô), Substantivo 2 (ó))",
+    },
+    "en-GB": {
+        "axes": "the plural of axe [ˈæksɪz] and of axis [ˈæksiːz] "
+                "(en.wiktionary: Etymology 1, Etymology 3)",
+        "bases": "the plural of base [ˈbeɪsɪz] and of basis [ˈbeɪsiːz] "
+                 "(en.wiktionary: Etymology 1, Etymology 2)",
+        "closer": "the comparative of close [ˈkləʊsə] and one that closes [ˈkləʊzə] "
+                  "(en.wiktionary: Etymology 1, Etymology 2)",
+        "corps": "the singular [kɔː] and the plural [kɔːz] (en.wiktionary: RP)",
+        "drawer": "the box [dɹɔː] and one who draws [ˈdɹɔːə] (en.wiktionary: box, person)",
+        "duplicate": "the noun and adjective [ˈdjuːplɪkət] and the verb [ˈdjuːplɪkeɪt] "
+                     "(en.wiktionary: RP)",
     },
 }
 

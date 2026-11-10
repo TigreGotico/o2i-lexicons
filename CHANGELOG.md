@@ -1,5 +1,98 @@
 # Changelog
 
+## [0.7.9a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.9a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a4...0.7.9a1)
+
+**Merged pull requests:**
+
+- fix\(pt-PT\): drop the stressed-vowel class of the seven -oide entries [\#43](https://github.com/TigreGotico/o2i-lexicons/pull/43) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.8a4](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.8a4) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a3...0.7.8a4)
+
+**Merged pull requests:**
+
+- docs\(scripts\): state why the build compares readings without stress [\#65](https://github.com/TigreGotico/o2i-lexicons/pull/65) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.8a3](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.8a3) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a2...0.7.8a3)
+
+**Merged pull requests:**
+
+- docs\(en-GB\): describe the Britfone selection and the confirmation field [\#64](https://github.com/TigreGotico/o2i-lexicons/pull/64) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.8a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.8a2) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.8a1...0.7.8a2)
+
+**Merged pull requests:**
+
+- docs: name the private dataset that holds the Michaelis snapshot [\#62](https://github.com/TigreGotico/o2i-lexicons/pull/62) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.8a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.8a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.7a2...0.7.8a1)
+
+**Merged pull requests:**
+
+- fix\(en-GB\): take each entry from a reading that Britfone confirms [\#51](https://github.com/TigreGotico/o2i-lexicons/pull/51) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.7a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.7a2) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.7a1...0.7.7a2)
+
+**Merged pull requests:**
+
+- docs: shorten the README and move the detail to docs/ [\#52](https://github.com/TigreGotico/o2i-lexicons/pull/52) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.7a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.7a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.6a1...0.7.7a1)
+
+**Merged pull requests:**
+
+- fix: inventory check, code check, sdist scripts, shadowed entries [\#50](https://github.com/TigreGotico/o2i-lexicons/pull/50) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.6a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.6a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.5a2...0.7.6a1)
+
+**Merged pull requests:**
+
+- fix\(scripts\): measure the patches, refuse every gold the build read [\#49](https://github.com/TigreGotico/o2i-lexicons/pull/49) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.5a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.5a2) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.5a1...0.7.5a2)
+
+**Merged pull requests:**
+
+- ci: check the weekly prune before it opens a pull request [\#46](https://github.com/TigreGotico/o2i-lexicons/pull/46) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.5a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.5a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.4a1...0.7.5a1)
+
+**Merged pull requests:**
+
+- fix\(scripts\): keep an entry whose stress the rules miss [\#48](https://github.com/TigreGotico/o2i-lexicons/pull/48) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.4a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.4a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.3a2...0.7.4a1)
+
+## [0.7.3a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.3a2) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.3a1...0.7.3a2)
+
+**Merged pull requests:**
+
+- fix\(scripts\): build each lexicon against the rules alone [\#47](https://github.com/TigreGotico/o2i-lexicons/pull/47) ([JarbasAl](https://github.com/JarbasAl))
+- ci: test the installed wheel, not only the source tree [\#45](https://github.com/TigreGotico/o2i-lexicons/pull/45) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.3a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.3a1) (2026-11-10)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.2a1...0.7.3a1)

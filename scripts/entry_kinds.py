@@ -240,8 +240,12 @@ def pt_br_kind(word: str, rules: str, entry: str,
 
 #: The citation of an en-GB proper noun or acronym. No rule of English
 #: spelling gives the reading of a name or of an acronym, so the class is the
-#: ground, and the reading is the one WikiPron scraped from Wiktionary.
-EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
+#: ground. The reading is the one WikiPron scraped from Wiktionary.
+#: EN_GB_CITATION is for a reading that agrees with Britfone;
+#: EN_GB_UNCHECKED_CITATION is for the one reading of a word that Britfone
+#: does not hold.
+EN_GB_CITATION = "Wiktionary via WikiPron (en-GB); the reading agrees with Britfone 3.0.1"
+EN_GB_UNCHECKED_CITATION = "Wiktionary via WikiPron (en-GB); not checked against a dictionary"
 
 #: The en-GB reason classes whose entries are exceptions.
 EN_GB_EXCEPTION_REASONS = frozenset({"proper_noun", "acronym"})
@@ -274,16 +278,17 @@ def en_gb_bases(word: str):
 
 
 def en_gb_kind(word: str, reason: str, headwords: frozenset[str],
-               entries: frozenset[str]) -> tuple[str, str]:
+               entries: frozenset[str], confirmed: bool) -> tuple[str, str]:
     """The kind of an en-GB entry. A proper noun or an acronym is an
     exception, because no spelling rule gives the reading of a name or of an
     acronym. Every other entry is a patch, because nothing shows that a rule
     cannot reach it. An inflection of a source headword that is not an entry
     names its own gap: the rules read that base right, and a morphology rule
-    could read the inflection.
+    could read the inflection. The citation of an exception says whether
+    Britfone *confirmed* the reading.
     """
     if reason in EN_GB_EXCEPTION_REASONS:
-        return "exception", EN_GB_CITATION
+        return "exception", EN_GB_CITATION if confirmed else EN_GB_UNCHECKED_CITATION
     if any(len(base) >= 2 and base in headwords and base not in entries
            for base in en_gb_bases(word)):
         return "patch", EN_GB_INFLECTION
@@ -291,7 +296,7 @@ def en_gb_kind(word: str, reason: str, headwords: frozenset[str],
 
 
 #: The sidecar fields that hold one record per word.
-PER_WORD_FIELDS = ("reasons", "lexical_classes")
+PER_WORD_FIELDS = ("reasons", "lexical_classes", "confirmation")
 
 
 def split(entries: dict[str, str], meta: dict,
@@ -312,9 +317,9 @@ def split(entries: dict[str, str], meta: dict,
         part["reasons"] = {w: meta["reasons"][w] for w in words}
         used = set(part["reasons"].values())
         part["reason_basis"] = {r: b for r, b in meta["reason_basis"].items() if r in used}
-        if "lexical_classes" in meta:
-            part["lexical_classes"] = {w: meta["lexical_classes"][w] for w in words
-                                       if w in meta["lexical_classes"]}
+        for field in ("lexical_classes", "confirmation"):
+            if field in meta:
+                part[field] = {w: meta[field][w] for w in words if w in meta[field]}
         if "wiktionary_readings" in meta:
             part["wiktionary_readings"] = [w for w in meta["wiktionary_readings"]
                                            if kinds[w][0] == kind]
