@@ -28,6 +28,18 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
      ("patch", "rule-leads.md § Entries in ⟨-dora⟩")),
     ("abertona", "ɐbɨɾˈtɔnɐ", "ɐbɨɾˈtonɐ", "stressed mid vowel",
      ("patch", "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words")),
+    # ⟨-reta -queta -ueta -eso⟩ are [e], ⟨-eca⟩ is [ɛ] and ⟨-ose⟩ is [ɔ] in at
+    # least 90% of at least 25 Infopédia words. A word of the family with the
+    # other height stays an exception (secreta is a made-up row).
+    ("careta", "kɐˈɾɛtɐ", "kɐˈɾetɐ", "stressed mid vowel",
+     ("patch", "lead: ⟨-reta⟩ takes [e] in at least 90% of the Infopédia words")),
+    ("etiqueta", "itiˈkɛtɐ", "itiˈketɐ", "stressed mid vowel",
+     ("patch", "lead: ⟨-queta⟩ takes [e] in at least 90% of the Infopédia words")),
+    ("malagueta", "mɐlɐˈɡɛtɐ", "mɐlɐˈɡetɐ", "stressed mid vowel",
+     ("patch", "lead: ⟨-ueta⟩ takes [e] in at least 90% of the Infopédia words")),
+    ("obeso", "ɔˈbɛzu", "ɔˈbezu", "stressed mid vowel",
+     ("patch", "lead: ⟨-eso⟩ takes [e] in at least 90% of the Infopédia words")),
+    ("secreta", "sɨˈkɾetɐ", "sɨˈkɾɛtɐ", "stressed mid vowel", ("exception", CC_40)),
     # Cunha & Cintra p. 431 name frechar among the verbs with [ɛ] before a
     # palatal; any other such [ɛ] is a misfire of the prepalatal rule.
     ("frecha", "ˈfɾeʃɐ", "ˈfɾɛʃɐ", "stressed mid vowel", ("exception", "Cunha & Cintra p. 431")),

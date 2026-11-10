@@ -466,3 +466,25 @@ def test_a_pt_br_verb_form_is_a_patch():
     assert patches["melo"].startswith("Cunha & Cintra pp. 429-433")
     assert patches["deram"] == "lead: the stem vowel of a pt-BR preterite or imperfect form"
     assert "foto" in notes("pt-BR", "exception")
+
+
+# Infopédia gives [e] in 92% of the 51 words in ⟨-reta⟩, 93% of the 29 in
+# ⟨-queta⟩, 93% of the 45 in ⟨-ueta⟩ and 93% of the 28 in ⟨-eso⟩, so the
+# spelling shows the vowel and a rule could take it. No source read states the
+# height of these endings, so each entry is a patch with the family as its lead.
+@pytest.mark.parametrize("word, ending, value", [
+    ("careta", "reta", "e"), ("etiqueta", "queta", "e"), ("malagueta", "ueta", "e"),
+    ("obeso", "eso", "e"), ("aceso", "eso", "e"), ("eca", "eca", "ɛ"), ("ose", "ose", "ɔ"),
+])
+def test_an_ending_family_entry_is_a_patch_with_its_lead(word, ending, value):
+    assert word in file_entries("pt-PT", "patch")
+    assert word not in file_entries("pt-PT", "exception")
+    assert notes("pt-PT", "patch")[word] == (
+        f"lead: ⟨-{ending}⟩ takes [{value}] in at least 90% of the Infopédia words")
+
+
+@pytest.mark.parametrize("word", ["algueta", "gueta", "lingueta", "equeso"])
+def test_a_family_word_with_another_exception_part_cites_only_that_part(word):
+    citation = notes("pt-PT", "exception")[word]
+    assert "Cunha & Cintra p. 40" not in citation
+
