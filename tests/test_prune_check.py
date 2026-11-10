@@ -17,7 +17,7 @@ STRESS = "ˈˌ"
 
 
 def board_like_normalize(ipa, strip_stress, broad, extra_strip=""):
-    return "".join(c for c in ipa if c not in STRESS)
+    return "".join(c for c in ipa if c not in STRESS) if strip_stress else ipa
 
 
 BENCH = SimpleNamespace(normalize=board_like_normalize, _prosody_marks=lambda code: "")
@@ -27,7 +27,7 @@ def test_an_entry_the_rules_reach_is_stale():
     # English ⟨cat⟩ is /kæt/; ⟨colonel⟩ is /ˈkɜːnəl/, which no letter-by-letter
     # reading gives.
     entries = {"cat": "kæt", "colonel": "ˈkɜːnəl"}
-    assert prune_check.stale_entries("en-GB", entries, BENCH) == ["cat"]
+    assert prune_check.stale_entries("en-GB", entries, BENCH, "rules") == ["cat"]
 
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
@@ -40,7 +40,7 @@ def test_a_process_wide_lexicon_does_not_reach_the_check(tmp_path):
     orthography2ipa.register_lexicon("en-GB", str(source))
     try:
         assert orthography2ipa.G2P("en-GB").transcribe_word("colonel") == entries["colonel"]
-        assert prune_check.stale_entries("en-GB", entries, BENCH) == []
+        assert prune_check.stale_entries("en-GB", entries, BENCH, "rules") == []
     finally:
         orthography2ipa.clear_lexicons()
 
@@ -82,27 +82,34 @@ def packaged(tmp_path, monkeypatch):
     monkeypatch.setattr(o2i_lexicons, "DATA_DIR", tmp_path)
     monkeypatch.setattr(prune_check.o2i_harness, "load_benchmark", lambda cache: BENCH)
 
-    def make(exceptions, patches):
-        write_file(tmp_path / "en-GB", "en-GB", "".join(f"{w}\t{i}\n" for w, i in exceptions.items()),
-                   {"kind": "exception", "o2i_version": "1.0.0",
-                    "reasons": dict.fromkeys(exceptions, "unclassified"), "reason_basis": {},
+    def make(exceptions, patches, code="en-GB", stress="rules", patch_meta=None):
+        write_file(tmp_path / code, code, "".join(f"{w}\t{i}\n" for w, i in exceptions.items()),
+                   {**SIDECAR, "kind": "exception", "code": code, "stress": stress,
+                    "reasons": dict.fromkeys(exceptions, "unclassified"),
                     "citations": dict.fromkeys(exceptions, "a cited source")})
-        write_file(tmp_path / "patches" / "en-GB", "en-GB",
+        write_file(tmp_path / "patches" / code, code,
                    "".join(f"{w}\t{i}\n" for w, i in patches.items()),
-                   {"kind": "patch", "o2i_version": "1.0.0",
-                    "reasons": dict.fromkeys(patches, "unclassified"), "reason_basis": {},
-                    "gaps": dict.fromkeys(patches, "lead: x")})
+                   {**SIDECAR, "kind": "patch", "code": code, "stress": stress,
+                    "reasons": dict.fromkeys(patches, "unclassified"),
+                    "gaps": dict.fromkeys(patches, "lead: x"), **(patch_meta or {})})
         return tmp_path
     return make
 
 
+#: The fields of a valid en-GB sidecar that a prune leaves as they are.
+SIDECAR = {"code": "en-GB", "source": "wikipron", "source_url": "https://example.org/en.tsv",
+           "tier": "crowd-scraped", "licence": "CC-BY-SA-4.0",
+           "build_command": "python scripts/build_lexicon.py en-GB", "o2i_version": "1.0.0",
+           "stress": "rules", "reason_basis": {}}
+
+
 def test_write_prunes_a_stale_patch(packaged):
     # The rules read cat /kæt/; colonel stays wrong.
-    root = packaged({"colonel": "ˈkɜːnəl"}, {"cat": "kæt", "colonel": "ˈkɜːnəl"})
+    root = packaged({"colonel": "kɜːnəl"}, {"cat": "kæt", "colonel": "kɜːnəl"})
     assert prune_check.main(["--cache", str(root)]) == 1
     assert prune_check.main(["--cache", str(root), "--write"]) == 0
     patches = root / "patches" / "en-GB"
-    assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "colonel\tˈkɜːnəl\n"
+    assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "colonel\tkɜːnəl\n"
     meta = json.loads((patches / "wikipron.meta.json").read_text(encoding="utf-8"))
     assert (meta["gaps"], meta["reasons"]) == ({"colonel": "lead: x"}, {"colonel": "unclassified"})
     assert meta["o2i_version"] == orthography2ipa.version.VERSION_STR
@@ -119,9 +126,79 @@ def test_a_stale_exception_fails_and_stays(packaged):
 
 
 def test_an_empty_patch_file_is_checked(packaged):
-    root = packaged({"colonel": "ˈkɜːnəl"}, {})
+    root = packaged({"colonel": "kɜːnəl"}, {})
     report = root / "report.json"
     assert prune_check.main(["--cache", str(root), "--write", "--report", str(report)]) == 0
     assert json.loads(report.read_text(encoding="utf-8"))["codes"] == {"en-GB": {
         "exception": {"entries": 1, "stale": []}, "patch": {"entries": 0, "stale": []}}}
     assert (root / "patches" / "en-GB" / "wikipron.tsv").read_text(encoding="utf-8") == ""
+
+
+def test_write_stops_when_a_written_file_fails_the_schema(packaged):
+    # The prune keeps colonel, whose reading holds a digit, which is not IPA.
+    root = packaged({"colonel": "kɜːnəl"}, {"cat": "kæt", "colonel": "kɜːn3l"})
+    report = root / "report.json"
+    with pytest.raises(SystemExit, match=r"wikipron.tsv line 1: IPA not NFC / not IPA-only: 'kɜːn3l'"):
+        prune_check.main(["--cache", str(root), "--write", "--report", str(report)])
+    assert not report.exists()
+
+
+def test_write_stops_when_a_written_sidecar_fails_the_schema(packaged):
+    root = packaged({"colonel": "kɜːnəl"}, {"cat": "kæt", "colonel": "kɜːnəl"},
+                    patch_meta={"tier": "llm-generated"})
+    report = root / "report.json"
+    with pytest.raises(SystemExit, match="tier 'llm-generated' cannot supply entries"):
+        prune_check.main(["--cache", str(root), "--write", "--report", str(report)])
+    assert not report.exists()
+
+
+def rules_reading(code, word):
+    engine = orthography2ipa.G2P(code, expose_ambiguous_endings=False,
+                                 pipeline=orthography2ipa.Pipeline(lexicon={}))
+    return engine.transcribe_word(word)
+
+
+def first_syllable_stress(code, word):
+    """The rules' reading of *word* with the stress moved to the first sound."""
+    rules = rules_reading(code, word)
+    assert rules.index("ˈ") > 0
+    return "ˈ" + rules.replace("ˈ", "")
+
+
+def test_a_source_entry_that_differs_only_in_stress_is_not_stale():
+    # The rules stress taoismo on ⟨o⟩; this entry stresses ⟨a⟩. The rules would
+    # read it with the wrong stress, so the entry stays.
+    moved = first_syllable_stress("pt-PT", "taoismo")
+    assert prune_check.stale_entries("pt-PT", {"taoismo": moved}, BENCH, "source") == []
+    rules = rules_reading("pt-PT", "taoismo")
+    assert prune_check.stale_entries("pt-PT", {"taoismo": rules}, BENCH, "source") == ["taoismo"]
+
+
+def test_a_rules_entry_takes_its_stress_from_the_rules():
+    # A rules file holds no stress mark: the rules place the stress on output.
+    entry = rules_reading("pt-PT", "taoismo").replace("ˈ", "")
+    assert prune_check.stale_entries("pt-PT", {"taoismo": entry}, BENCH, "rules") == ["taoismo"]
+
+
+def test_a_mark_after_the_onset_stresses_the_same_vowel():
+    # cavalo: the rules write the mark before [v], the entry after it. Both
+    # stress the same [a].
+    rules = rules_reading("pt-PT", "cavalo")
+    mark = rules.index("ˈ")
+    assert rules[mark + 1] not in "aɐeɛiɨoɔu"
+    entry = rules[:mark] + rules[mark + 1] + "ˈ" + rules[mark + 2:]
+    assert prune_check.stale_entries("pt-PT", {"cavalo": entry}, BENCH, "source") == ["cavalo"]
+
+
+def test_write_keeps_a_patch_whose_stress_the_rules_miss(packaged):
+    moved = first_syllable_stress("pt-PT", "taoismo")
+    root = packaged({}, {"taoismo": moved}, code="pt-PT", stress="source")
+    assert prune_check.main(["--cache", str(root), "--write"]) == 0
+    patches = root / "patches" / "pt-PT" / "wikipron.tsv"
+    assert patches.read_text(encoding="utf-8") == f"taoismo\t{moved}\n"
+
+
+def test_an_exception_whose_stress_the_rules_miss_is_not_stale(packaged):
+    moved = first_syllable_stress("pt-PT", "taoismo")
+    root = packaged({"taoismo": moved}, {}, code="pt-PT", stress="source")
+    assert prune_check.main(["--cache", str(root)]) == 0

@@ -617,6 +617,16 @@ SOURCES = {
     "nilc": (load_nilc, "CC-BY-SA-4.0", "nilc", screen_nilc, nilc_norm, nilc_residual),
 }
 
+#: dataset -> the board datasets that its build reads besides the one that
+#: holds it: WikiPron corroborates a pt-PT or pt-BR entry
+#: (``infopedia_references``, ``nilc_references``), and portuguese_unified
+#: gives the pt.wiktionary readings of pt-BR. No measure is independent of them.
+SECOND_SOURCES = {
+    "wikipron": frozenset(),
+    "infopedia": frozenset({"wikipron"}),
+    "nilc": frozenset({"portuguese_unified", "wikipron"}),
+}
+
 #: code -> (the test that names the segment of a gold reading that the
 #: accent of the code's spec does not have, or ``None``, and the reason a
 #: word leaves when no reading passes). The en-GB spec models Received
@@ -728,7 +738,10 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
     for headword in golds:
         casings.setdefault(lb.lexicon_key(headword), set()).add(headword)
 
-    engine = orthography2ipa.G2P(code, expose_ambiguous_endings=False)
+    # An empty lexicon, not None: None reads the process-wide lexicon, and
+    # the build must compare each gold reading with the rules alone.
+    engine = orthography2ipa.G2P(code, expose_ambiguous_endings=False,
+                                 pipeline=orthography2ipa.Pipeline(lexicon={}))
     spec = engine.spec
     inventory = phoneme_inventory(spec)
     extra = bench._prosody_marks(code)
