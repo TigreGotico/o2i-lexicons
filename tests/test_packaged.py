@@ -592,3 +592,19 @@ def test_a_pt_br_verb_form_is_a_patch():
     assert patches["melo"].startswith("Cunha & Cintra pp. 429-433")
     assert patches["deram"] == "lead: the stem vowel of a pt-BR preterite or imperfect form"
     assert "foto" in notes("pt-BR", "exception")
+
+
+# Infopédia gives the open diphthong [ɔj] in each of these ⟨-oide⟩ words, and
+# orthography2ipa reads that ending as [ɔj] (PT_SUFFIX_OIDE_OPEN). The stressed
+# vowel is no longer what separates the entry from the rules, so the class
+# names only the part that still differs: the [ks] of ⟨x⟩, the [w] of ⟨gu⟩,
+# or the full initial ⟨e⟩ of a learned word.
+@pytest.mark.parametrize("word, cls", [
+    ("anguiloide", "⟨qu gu⟩ with [w]"),
+    ("axoide", "⟨x⟩ as [ks]"), ("prefixoide", "⟨x⟩ as [ks]"), ("sufixoide", "⟨x⟩ as [ks]"),
+    ("epicicloide", "unstressed initial ⟨e⟩"), ("epileptoide", "unstressed initial ⟨e⟩"),
+    ("eritroide", "unstressed initial ⟨e⟩"),
+])
+def test_an_oide_entry_has_no_stressed_vowel_class(word, cls):
+    assert "ɔj" in pt_pt_entries()[word]
+    assert lexical_classes("pt-PT")[word]["class"] == cls
