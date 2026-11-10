@@ -227,15 +227,15 @@ def pt_reason(code: str, word: str, reason: str, kind: str, name: bool = False) 
     """The reason class of a pt-PT or pt-BR entry of *kind*. A class that the
     source spelling supports stays. A word that the source tags as a name
     (*name*) is a ``proper_noun``, and a word with a loan spelling is a
-    ``loanword``. Any other pt-PT exception cites a source that states its
-    class, so it is ``irregular``."""
+    ``loanword``. Any other exception cites a source that states its class,
+    so it is ``irregular``."""
     if reason != "unclassified":
         return reason
     if name:
         return "proper_noun"
     if LOAN_SPELLING.search(word):
         return "loanword"
-    if code == "pt-PT" and kind == "exception":
+    if kind == "exception":
         return "irregular"
     return reason
 

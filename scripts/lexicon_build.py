@@ -56,6 +56,11 @@ REASON_BASIS_BY_CODE = {
         "loanword": _LOANWORD_BASIS,
         "proper_noun": "Every line of the word in the NILC file carries the DELAF tag "
                        "N+Pr, a proper noun.",
+        "irregular": "The entry is an exception: its citation names a source that states "
+                     "its class (docs/kinds.md). Cunha & Cintra p. 40 covers the height of "
+                     "a stressed mid vowel, and AO90 Base III with Ciberdúvidas 4068 covers "
+                     "the value of ⟨x⟩. The spelling does not show the reading in that "
+                     "class.",
     },
 }
 

@@ -287,7 +287,7 @@ def test_pt_reasons_class_each_word_of_the_build(tmp_path):
     kinds = {"teodoro": ("exception", CC_40), "sexy": ("patch", "lead"),
              "abelota": ("exception", CC_40)}
     assert bl.pt_reasons("pt-BR", reasons, kinds, {"nilc": nilc}) == {
-        "teodoro": "proper_noun", "sexy": "loanword", "abelota": "unclassified"}
+        "teodoro": "proper_noun", "sexy": "loanword", "abelota": "irregular"}
     # The NILC file transcribes Brazilian Portuguese, so pt-PT takes no class
     # from it: teodoro is an exception like abelota.
     assert bl.pt_reasons("pt-PT", reasons, kinds, {"nilc": nilc}) == {
@@ -303,10 +303,11 @@ def test_pt_reasons_class_each_word_of_the_build(tmp_path):
     # Portuguese writes no ⟨bb⟩ and starts no word with ⟨s⟩ and a consonant.
     ("pt-PT", "lobby", "unclassified", "patch", "loanword"),
     ("pt-PT", "snobismo", "unclassified", "patch", "loanword"),
-    # A pt-PT exception cites a source that states its class.
+    # An exception cites a source that states its class; a patch has a gap.
     ("pt-PT", "abelota", "unclassified", "exception", "irregular"),
     ("pt-PT", "acaroide", "unclassified", "patch", "unclassified"),
-    ("pt-BR", "abelota", "unclassified", "exception", "unclassified"),
+    ("pt-BR", "abelota", "unclassified", "exception", "irregular"),
+    ("pt-BR", "abelota", "unclassified", "patch", "unclassified"),
     # The class that the source spelling supports stays.
     ("pt-PT", "cheuas", "proper_noun", "exception", "proper_noun"),
     ("pt-PT", "evangelho", "proper_noun", "patch", "proper_noun"),
@@ -318,5 +319,5 @@ def test_pt_reason(code, word, reason, kind, expected):
 def test_a_name_in_the_source_is_a_proper_noun():
     # The NILC file tags teodoro N+Pr; the capital class of the headword stays.
     assert ek.pt_reason("pt-BR", "teodoro", "unclassified", "exception", True) == "proper_noun"
-    assert ek.pt_reason("pt-BR", "teodoro", "unclassified", "exception") == "unclassified"
+    assert ek.pt_reason("pt-BR", "teodoro", "unclassified", "exception") == "irregular"
     assert ek.pt_reason("pt-BR", "nato", "acronym", "exception", True) == "acronym"

@@ -801,7 +801,12 @@ def test_the_pt_br_names_and_loan():
     # The NILC file tags each line of these words N+Pr: "teodoro,teodoro.N+Pr:",
     # "humberto,humberto.N+Pr:", "félix,félix.N+Pr:ms".
     assert words_of_class("pt-BR", "exception", "proper_noun") == {"félix", "humberto", "teodoro"}
-    assert set(reasons("pt-BR", "exception").values()) == {"unclassified", "proper_noun"}
+    # Every other pt-BR exception cites Cunha & Cintra p. 40 or AO90 Base III.
+    assert set(reasons("pt-BR", "exception").values()) == {"irregular", "proper_noun"}
+    assert len(words_of_class("pt-BR", "exception", "irregular")) == 69
+    for word in words_of_class("pt-BR", "exception", "irregular"):
+        citation = notes("pt-BR", "exception")[word]
+        assert "Cunha & Cintra p. 40" in citation or "AO90 Base III" in citation, word
     assert words_of_class("pt-BR", "patch", "loanword") == {"sexy"}
     assert set(reasons("pt-BR", "patch").values()) == {"unclassified", "loanword"}
 
@@ -812,6 +817,8 @@ def test_the_pt_br_names_and_loan():
     ("pt-PT", "exception", "proper_noun", "The Infopédia headword starts with a capital"),
     ("pt-PT", "patch", "proper_noun", "The Infopédia headword starts with a capital"),
     ("pt-BR", "exception", "proper_noun", "the DELAF tag N+Pr"),
+    ("pt-BR", "exception", "irregular", "Cunha & Cintra p. 40 covers the height of a stressed"),
+    ("pt-BR", "exception", "irregular", "AO90 Base III with Ciberdúvidas 4068 covers the value"),
     ("pt-BR", "patch", "loanword", "outside the native system"),
 ])
 def test_a_pt_reason_basis_names_its_own_evidence(code, kind, reason, needle):
