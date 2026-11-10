@@ -29,10 +29,11 @@ The sidecar field `build_command` holds the command that built each packaged fil
 python -c "import o2i_lexicons; print(o2i_lexicons.load_meta('pt-PT')['build_command'])"
 ```
 
-The `pt-PT` and `pt-BR` builds need input files that the harness does not fetch:
+The builds need input files that the harness does not fetch:
 
 | Option | File | Where to get it |
 | :--- | :--- | :--- |
+| `--britfone` | `britfone.main.3.0.1.csv` | the file of [Britfone](https://github.com/JoseLlarena/Britfone) at the commit that the en-GB `agreement_source` names. The build checks its sha256. |
 | `--homographs` | `heterophonic_homographs.csv` | `bifonia/data/heterophonic_homographs.csv` of [bifonia](https://github.com/TigreGotico/bifonia) |
 | `--preao` | `preao_words.txt` | a word list of the aspell `pt_PT-preao` dictionary, the European Portuguese spelling before AO90, one word per line |
 | `--nilc` | `unitex_sample_transcribed.txt` | `etc/unitex_sample_transcribed.txt` of [aeiouado_g2p](https://github.com/dash219/aeiouado_g2p), at the commit that the pt-BR `source_url` names |
@@ -85,7 +86,7 @@ Run the test suite with `python -m pytest -q tests`. It validates every packaged
 
 ## Known limits
 
-The sidecar records only the base name of each input file, with no version or hash. The pt-PT `source_url` names the main branch of the dataset, not a revision. The Michaelis snapshot is in a private dataset, so only project members can rebuild the pt-BR files.
+The pt-PT and pt-BR sidecars record only the base name of each input file, with no version or hash. The en-GB sidecars record the sha256 of the WikiPron file and the Britfone file. The pt-PT `source_url` names the main branch of the dataset, not a revision. The Michaelis snapshot is in a private dataset, so only project members can rebuild the pt-BR files.
 
 ---
 [← pt-PT](languages/pt-PT.md) · [Home](index.md) · [Contributing →](contributing.md)

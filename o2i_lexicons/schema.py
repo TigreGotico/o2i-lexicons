@@ -21,7 +21,9 @@ A ``<source>.meta.json`` sidecar is a JSON object with these keys:
 ``build_command``
     The command that rebuilds the file.
 ``o2i_version``
-    The orthography2ipa version whose rules got each entry wrong.
+    The orthography2ipa version whose rules got each entry wrong: the version
+    of the build, or of the last ``prune_check.py --write`` that removed an
+    entry from the file.
 ``stress``
     Where the stress of the entries comes from: ``source`` when the entries
     carry the stress marks of the source, ``rules`` when the source has no

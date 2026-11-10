@@ -34,7 +34,7 @@ The sidecar is a JSON object. `schema.validate_meta` requires these keys:
 | `tier` | the reliability tier of the dataset in the o2i ladder |
 | `licence` | the SPDX id of the license of the dataset. The file keeps that license. |
 | `build_command` | the command that built the file |
-| `o2i_version` | the o2i version whose rules got each entry wrong |
+| `o2i_version` | the o2i version whose rules got each entry wrong: the version of the build, or of the last `prune_check.py --write` that removed an entry from the file |
 | `stress` | `source` or `rules`, as above |
 | `reasons` | a map from each word of the TSV file to its reason class |
 | `reason_basis` | a map from each reason class in use, other than `unclassified`, to the evidence for it |
@@ -45,7 +45,18 @@ The allowed tiers are `expert-human`, `lexicon-derived`, `crowd-scraped` and `ma
 
 The reason classes are `loanword`, `proper_noun`, `lexical_stress`, `irregular`, `acronym`, `homograph_default` and `unclassified`. The build assigns only `acronym` and `proper_noun`, from the capital letters of the source headword, and gives every other word `unclassified`. So for most entries the reason class carries no information. The kind and its note in `citations` or `gaps` carry the reason.
 
-A sidecar can hold more keys, and the schema does not check them. The `pt-PT` files have `lexical_classes`. It gives the class of each word whose only difference from the rules is lexical, and the second sources that agree with its reading. The `pt-BR` files have `wiktionary_readings`, which lists the words whose reading comes from pt.wiktionary and not from the NILC file.
+A sidecar can hold more keys, and the schema does not check them. The `en-GB` files have these:
+
+| Key | Content |
+| :--- | :--- |
+| `source_sha256` | the sha256 of the source file that `source_url` names |
+| `agreement_source` | the second source that chooses among the readings of a word: its name, version, URL, sha256, licence, accent, and the comparison that decides agreement |
+| `confirmation` | a map from each word of the TSV file to the basis of its entry: `second_source` or `single_reading` |
+| `confirmation_basis` | a map from each value of `confirmation` to what it states |
+
+A `second_source` entry agrees with a stressed reading of the second source. A `single_reading` entry is the one reading that the source gives for the word, the second source has no line for the word, and no second source checked the reading. [en-GB](languages/en-GB.md) states the selection.
+
+The `pt-PT` files have `lexical_classes`. It gives the class of each word whose only difference from the rules is lexical, and the second sources that agree with its reading. The `pt-BR` files have `wiktionary_readings`, which lists the words whose reading comes from pt.wiktionary and not from the NILC file.
 
 ## Entry points
 
