@@ -1,0 +1,95 @@
+name: Prune Stale Entries
+
+# Weekly: remove the patches that the latest orthography2ipa alpha now gets
+# right, and open a draft pull request with the pruned files. An exception
+# that the rules get right fails the job and stays: a person moves it.
+#
+# A pull request that GITHUB_TOKEN opens starts no pull_request workflow, so
+# this job runs the checks itself before it opens one: prune_check.py checks
+# each file it writes against the schema, and the full test suite runs on the
+# pruned tree. After the pull request opens, the job dispatches Build Tests
+# on its branch, because a workflow_dispatch event from GITHUB_TOKEN does
+# start a run.
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+
+env:
+  BRANCH: fix/prune-stale-entries
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - uses: astral-sh/setup-uv@v5
+      - name: Install the package, its tests and the latest orthography2ipa alpha
+        run: |
+          uv venv --python 3.11 .venv
+          uv pip install --python .venv --prerelease=allow --upgrade -e '.[test]' orthography2ipa
+      - name: Remove stale patches and check the written files
+        id: prune
+        run: |
+          # Exit 1 with a report means stale exceptions, which a person moves.
+          # Exit 1 with no report means a crash or a written file that fails
+          # the schema, and no pull request may open.
+          rm -f "$RUNNER_TEMP/prune.json"
+          status=0
+          .venv/bin/python scripts/prune_check.py --write --report "$RUNNER_TEMP/prune.json" || status=$?
+          test -f "$RUNNER_TEMP/prune.json"
+          if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then exit "$status"; fi
+          .venv/bin/python - "$RUNNER_TEMP/prune.json" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          codes = json.load(open(sys.argv[1]))["codes"]
+          stale = {kind: sorted(f"{code} {word}" for code, files in codes.items()
+                                for word in files.get(kind, {}).get("stale", []))
+                   for kind in ("exception", "patch")}
+          print(f"patches={len(stale['patch'])}")
+          print(f"exceptions={', '.join(stale['exception']) or 'none'}")
+          PY
+      - name: Run the full test suite on the pruned tree
+        id: tests
+        run: |
+          .venv/bin/python -m pytest tests -q -p no:cacheprovider | tee "$RUNNER_TEMP/pytest.log"
+          echo "summary=$(tail -n 1 "$RUNNER_TEMP/pytest.log")" >> "$GITHUB_OUTPUT"
+      - uses: peter-evans/create-pull-request@v7
+        id: cpr
+        with:
+          base: dev
+          branch: ${{ env.BRANCH }}
+          draft: true
+          add-paths: o2i_lexicons/data
+          commit-message: "fix: prune patches the rules now get right"
+          title: "fix: prune patches the rules now get right"
+          body: |
+            The latest orthography2ipa alpha gets ${{ steps.prune.outputs.patches }} patches right with its rules alone, so the lexicon no longer holds them. The job log of `scripts/prune_check.py` lists each removed word.
+
+            Exceptions that the rules now get right, which a person must move: ${{ steps.prune.outputs.exceptions }}.
+
+            GITHUB_TOKEN opened this pull request, so no pull_request workflow runs on it. The job that opened it ran these checks first:
+
+            | Check | Result |
+            | --- | --- |
+            | `prune_check.py --write` reads each written file back and runs `validate_tsv` and `validate_meta` on it | passed |
+            | Full test suite on the pruned tree | ${{ steps.tests.outputs.summary }} |
+            | Build Tests, dispatched on `${{ env.BRANCH }}` after this pull request opened | see the run on the head commit |
+      - name: Run Build Tests on the pull request branch
+        if: ${{ steps.cpr.outputs.pull-request-operation == 'created' || steps.cpr.outputs.pull-request-operation == 'updated' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run build-tests.yml --ref "$BRANCH"
+      - name: Fail on exceptions that the rules now get right
+        if: ${{ steps.prune.outputs.exceptions != 'none' }}
+        env:
+          STALE: ${{ steps.prune.outputs.exceptions }}
+        run: |
+          echo "::error::the rules now get these exceptions right; move each one by hand: $STALE"
+          exit 1

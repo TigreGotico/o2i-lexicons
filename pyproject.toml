@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "o2i-lexicons"
+dynamic = ["version"]
+description = "Pronunciation lexicons for orthography2ipa: exceptions that no spelling rule reaches, and opt-in patches for words that the rules still miss"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "JarbasAi", email = "jarbasai@mailfence.com" }]
+requires-python = ">=3.11"
+dependencies = ["orthography2ipa>=7.122.23a2"]
+keywords = ["ipa", "lexicon", "g2p", "phonetics", "orthography2ipa"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Developers",
+    "Topic :: Text Processing :: Linguistic",
+]
+
+[project.optional-dependencies]
+# The build scripts read the prefix seams of silabificador.morphology, and a
+# test builds the sdist with the build backend.
+test = ["pytest", "silabificador>=2.1.2a1", "setuptools>=68"]
+
+[project.urls]
+Homepage = "https://github.com/TigreGotico/o2i-lexicons"
+Repository = "https://github.com/TigreGotico/o2i-lexicons"
+
+# One entry point per packaged language code in each group. orthography2ipa
+# calls the provider with the entry point's name. The exceptions load
+# tsv_path, and the patches, which a caller reads only on request, load
+# patch_tsv_path.
+[project.entry-points."orthography2ipa.lexicons"]
+"en-GB" = "o2i_lexicons:tsv_path"
+"pt-PT" = "o2i_lexicons:tsv_path"
+"pt-BR" = "o2i_lexicons:tsv_path"
+
+[project.entry-points."orthography2ipa.lexicon_patches"]
+"en-GB" = "o2i_lexicons:patch_tsv_path"
+"pt-PT" = "o2i_lexicons:patch_tsv_path"
+"pt-BR" = "o2i_lexicons:patch_tsv_path"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["o2i_lexicons*"]
+
+[tool.setuptools.package-data]
+o2i_lexicons = ["data/*/*.tsv", "data/*/*.meta.json", "data/*/LICENSE.*",
+                "data/patches/*/*.tsv", "data/patches/*/*.meta.json",
+                "data/patches/*/LICENSE.*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "o2i_lexicons.version.VERSION_STR" }

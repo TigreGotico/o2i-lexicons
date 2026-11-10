@@ -1,0 +1,75 @@
+name: Build Tests
+
+on:
+  pull_request:
+    branches: [dev, master, main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: OpenVoiceOS/gh-automations/.github/workflows/build-tests.yml@dev
+    with:
+      python_versions: '["3.11", "3.12", "3.13", "3.14"]'
+      install_extras: 'test'
+      test_path: 'tests'
+
+  # The build job runs pytest in the checkout, so the tests import the source
+  # tree and pass on a wheel that holds no data. This job installs the wheel
+  # in a clean venv and runs everything from outside the checkout.
+  installed_wheel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Build the wheel
+        run: uv build --wheel --out-dir "$RUNNER_TEMP/dist"
+      - name: Install the wheel in a clean venv
+        run: |
+          uv venv --python 3.11 "$RUNNER_TEMP/venv"
+          uv pip install --python "$RUNNER_TEMP/venv" --prerelease=allow "$(ls "$RUNNER_TEMP"/dist/*.whl)[test]"
+      - name: Check that the installed package ships every data file
+        working-directory: ${{ runner.temp }}
+        run: |
+          "$RUNNER_TEMP/venv/bin/python" -I - <<'PY'
+          import os
+          import sysconfig
+          from pathlib import Path
+
+          import o2i_lexicons
+          from orthography2ipa import packaged_lexicon, packaged_lexicon_sources
+          from orthography2ipa.lexicon import parse_lexicon_text
+
+          site = Path(sysconfig.get_paths()["purelib"])
+          checkout = Path(os.environ["GITHUB_WORKSPACE"]) / "o2i_lexicons" / "data"
+          assert Path(o2i_lexicons.__file__).is_relative_to(site), o2i_lexicons.__file__
+
+          def data_files(root):
+              return {p.relative_to(root): p.read_bytes() for p in root.rglob("*")
+                      if p.is_file() and p.name != ".gitkeep"}
+
+          shipped, expected = data_files(o2i_lexicons.DATA_DIR), data_files(checkout)
+          assert shipped.keys() == expected.keys(), sorted(shipped.keys() ^ expected.keys())
+          assert shipped == expected, [str(p) for p in shipped if shipped[p] != expected[p]]
+
+          codes = sorted(d.name for d in checkout.iterdir() if d.is_dir() and d.name != "patches")
+          for patches, root in ((False, checkout), (True, checkout / "patches")):
+              sources = packaged_lexicon_sources(patches=patches)
+              assert sorted(sources) == codes, (patches, sources)
+              assert all(path.is_relative_to(site) for path in sources.values()), sources
+          for code in codes:
+              exceptions = parse_lexicon_text(next((checkout / code).glob("*.tsv")).read_text(encoding="utf-8"))
+              patch_file = next((checkout / "patches" / code).glob("*.tsv")).read_text(encoding="utf-8")
+              both = {**parse_lexicon_text(patch_file), **exceptions}
+              assert packaged_lexicon(code) == exceptions, code
+              assert packaged_lexicon(code, patches=True) == both, code
+              print(f"{code}: {len(exceptions)} exceptions, {len(both) - len(exceptions)} patches")
+          PY
+      - name: Run the package tests against the installed package
+        working-directory: ${{ runner.temp }}
+        run: |
+          # importlib mode puts no directory of the checkout on sys.path, so
+          # each import of o2i_lexicons resolves to the installed wheel.
+          "$RUNNER_TEMP/venv/bin/pytest" --import-mode=importlib -p no:cacheprovider \
+            "$GITHUB_WORKSPACE/tests/test_loader.py" \
+            "$GITHUB_WORKSPACE/tests/test_schema.py" \
+            "$GITHUB_WORKSPACE/tests/test_packaged.py"
