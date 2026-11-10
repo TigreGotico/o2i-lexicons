@@ -11,9 +11,13 @@
 The script runs the installed orthography2ipa over every word of the gold. It
 keeps a word only when the rules get it wrong under the board's own scoring:
 the PER against every gold reading of the word is above zero, after the
-board's broad, stress-free normalisation. The entry is the first gold reading,
-in the order the loader of the source gives, that is IPA-only and inside the
-spec's phoneme inventory.
+board's broad, stress-free normalisation. The comparison ignores stress on
+purpose: some source stress marks contradict the spelling (Infopédia câmera
+[kɐˈmɨɾɐ], NILC caiu [ˈkaiw]), and WikiPron, the second source of most such
+words, writes no stress, so a source stress mark alone never overrides the
+rules (``prune_check.py`` still compares the stress of an entry). The entry is
+the first gold reading, in the order the loader of the source gives, that is
+IPA-only and inside the spec's phoneme inventory.
 
 A spec that models one accent takes its entry only from a reading in that
 accent (``ACCENT_SCREENS``). The en-GB spec models Received Pronunciation. An

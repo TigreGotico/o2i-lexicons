@@ -38,7 +38,7 @@ The `pt-PT` and `pt-BR` builds need input files that the harness does not fetch:
 | `--nilc` | `unitex_sample_transcribed.txt` | `etc/unitex_sample_transcribed.txt` of [aeiouado_g2p](https://github.com/dash219/aeiouado_g2p), at the commit that the pt-BR `source_url` names |
 | `--michaelis` | `michaelis-snapshot.jsonl` | `raw/entries.jsonl` of the private dataset [TigreGotico/michaelis-brazilian-portuguese-transcriptions](https://huggingface.co/datasets/TigreGotico/michaelis-brazilian-portuguese-transcriptions), at revision `d8e5e0e4`; the Michaelis readings are all rights reserved |
 
-The build keeps a word only when the rules read it wrong under the board's scoring. Words that share a spelling pattern and the same error at that pattern form a lead. A lead is a question for the linguistic literature, not a rule. Its words stay out of the lexicon until a cited source states a rule for the pattern, or states that the pattern is lexical. `--min-lead` sets the smallest group that is a lead, and its default is 10.
+The build keeps a word only when the rules read it wrong under the board's scoring. The comparison ignores stress, because some source stress marks contradict the spelling (Infopédia câmera [kɐˈmɨɾɐ]) and WikiPron writes no stress to check them. Words that share a spelling pattern and the same error at that pattern form a lead. A lead is a question for the linguistic literature, not a rule. Its words stay out of the lexicon until a cited source states a rule for the pattern, or states that the pattern is lexical. `--min-lead` sets the smallest group that is a lead, and its default is 10.
 
 The build writes the exception file and the patch file of the code under `--out`, which defaults to `o2i_lexicons/data`. These options write reports:
 
