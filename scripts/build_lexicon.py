@@ -5,7 +5,7 @@
     python scripts/build_lexicon.py pt-PT infopedia --homographs heterophonic_homographs.csv \\
         --preao preao_words.txt --report build-report.json
     python scripts/build_lexicon.py pt-BR nilc --nilc unitex_sample_transcribed.txt \\
-        --michaelis entries.jsonl --homographs heterophonic_homographs.csv \\
+        --michaelis michaelis-snapshot.jsonl --homographs heterophonic_homographs.csv \\
         --report build-report.json
 
 The script runs the installed orthography2ipa over every word of the gold. It
@@ -1046,7 +1046,7 @@ def main(argv=None) -> None:
     ap.add_argument("--screened", type=Path,
                     help="write each word that the source's screen tests, and its result, here")
     ap.add_argument("--nilc", type=Path, help="the NILC unitex_sample_transcribed.txt")
-    ap.add_argument("--michaelis", type=Path, help="the entries.jsonl of the Michaelis crawl")
+    ap.add_argument("--michaelis", type=Path, help="the michaelis-snapshot.jsonl of the Michaelis crawl")
     ap.add_argument("--homographs", type=Path, help="the heterophonic_homographs.csv of bifonia")
     ap.add_argument("--preao", type=Path,
                     help="a pt-PT word list in the spelling before AO90, one word per line")

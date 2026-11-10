@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "o2i-lexicons"
 dynamic = ["version"]
-description = "Default residual lexicons for orthography2ipa: only the words its rules cannot reach"
+description = "Pronunciation lexicons for orthography2ipa: exceptions that no spelling rule reaches, and opt-in patches for words that the rules still miss"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [{ name = "JarbasAi", email = "jarbasai@mailfence.com" }]
