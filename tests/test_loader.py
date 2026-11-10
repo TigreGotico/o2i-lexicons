@@ -88,3 +88,15 @@ def test_two_patch_files_for_one_code_are_ambiguous(data_dir):
 def test_an_unknown_kind_is_refused(data_dir):
     with pytest.raises(ValueError, match="kind must be one of"):
         o2i_lexicons.available_codes("patches")
+
+
+@pytest.mark.parametrize("code", ["patches/en-GB", "../en-GB", "en-GB/", "."])
+def test_a_code_names_one_directory(data_dir, code):
+    # patches/en-GB names the patch file and ../en-GB, from the patch tree,
+    # the exception file; neither is a code.
+    write_lexicon(data_dir, "en-GB", "wikipron")
+    write_lexicon(data_dir / "patches", "en-GB", "wikipron", body="cats\tkæts\n")
+    with pytest.raises(LookupError, match=f"no packaged lexicon for {code!r}"):
+        o2i_lexicons.tsv_path(code)
+    with pytest.raises(LookupError, match=f"no packaged patch for {code!r}"):
+        o2i_lexicons.patch_tsv_path(code)

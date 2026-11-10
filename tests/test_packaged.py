@@ -41,11 +41,41 @@ def test_packaged_files_are_valid(kind):
     for code in o2i_lexicons.available_codes(kind):
         text = tsv_of(code).read_text(encoding="utf-8")
         entries = {w: ipa for w, _, ipa in (line.partition("\t") for line in text.splitlines() if line)}
-        found = [f"tsv line {n}: {r}" for n, r in validate_tsv(text)]
+        found = [f"tsv line {n}: {r}" for n, r in validate_tsv(text, code)]
         found += validate_meta(meta_of(code), code, entries, kind)
         if found:
             problems[code] = found
     assert problems == {}
+
+
+@pytest.mark.parametrize("kind", FILES)
+def test_no_packaged_entry_is_shadowed_by_the_spec(kind):
+    # The spec's word_exceptions win over a lexicon, so such an entry never applies.
+    import orthography2ipa
+    shadowed = {code: sorted(file_entries(code, kind).keys()
+                             & orthography2ipa.get(code).word_exceptions.keys())
+                for code in o2i_lexicons.available_codes(kind)}
+    assert {code: words for code, words in shadowed.items() if words} == {}
+
+
+def test_the_sdist_holds_the_scripts_that_its_tests_import(tmp_path):
+    import shutil
+    import subprocess
+    import sys
+    import tarfile
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent
+    tree = tmp_path / "tree"
+    shutil.copytree(root, tree, ignore=shutil.ignore_patterns(
+        ".git", ".venv", ".cache", "build", "dist", "*.egg-info", "__pycache__", ".pytest_cache"))
+    name = subprocess.run(
+        [sys.executable, "-c", "from setuptools import build_meta; print(build_meta.build_sdist('dist'))"],
+        cwd=tree, capture_output=True, text=True, check=True).stdout.split()[-1]
+    with tarfile.open(tree / "dist" / name) as sdist:
+        members = {Path(m).relative_to(Path(m).parts[0]).as_posix() for m in sdist.getnames()}
+    for folder in ("scripts", "tests"):
+        expected = {f"{folder}/{p.name}" for p in (root / folder).glob("*.py")}
+        assert {m for m in members if m.startswith(f"{folder}/")} == expected, folder
 
 
 def test_each_meta_sits_next_to_its_tsv():
