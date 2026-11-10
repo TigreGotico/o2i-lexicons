@@ -50,7 +50,7 @@ The stem vowel of a rhizotonic present form follows the model verbs of Cunha & C
 
 The sidecars do not record which second source agreed with each entry.
 
-The build reads a Michaelis snapshot that is all rights reserved. The snapshot is not in this repository, so nobody outside the project can rebuild the pt-BR files.
+The build reads a Michaelis snapshot that is all rights reserved. The snapshot is not in this repository. It is `raw/entries.jsonl` of the private dataset [TigreGotico/michaelis-brazilian-portuguese-transcriptions](https://huggingface.co/datasets/TigreGotico/michaelis-brazilian-portuguese-transcriptions), so only project members can rebuild the pt-BR files.
 
 A lexicon on `pt-BR` does not reach a child lect such as `pt-BR-x-sp`.
 
