@@ -15,6 +15,12 @@ board's broad, stress-free normalisation. The entry is the first gold reading,
 in the order the loader of the source gives, that is IPA-only and inside the
 spec's phoneme inventory.
 
+A spec that models one accent takes its entry only from a reading in that
+accent (``ACCENT_SCREENS``). The en-GB spec models Received Pronunciation,
+which is non-rhotic, so an en-GB entry is never a rhotic reading
+(``lexicon_build.rhotic_segment``). A word whose every reading is rhotic
+leaves the lexicon, and ``--excluded`` lists it with its readings.
+
 Words that share a spelling pattern and the same error at it form a lead. A
 lead is a question for the linguistic literature, not a rule. Its words stay
 out of the lexicon until a cited source settles the pattern, and the build
@@ -611,6 +617,13 @@ SOURCES = {
     "nilc": (load_nilc, "CC-BY-SA-4.0", "nilc", screen_nilc, nilc_norm, nilc_residual),
 }
 
+#: code -> (the test that names the segment of a gold reading that the
+#: accent of the code's spec does not have, or ``None``, and the reason a
+#: word leaves when no reading passes). The en-GB spec models Received
+#: Pronunciation, which is non-rhotic (``lexicon_build.rhotic_segment``).
+#: The test chooses among the readings of the source and never edits one.
+ACCENT_SCREENS = {"en-GB": (lb.rhotic_segment, "every gold reading is rhotic")}
+
 #: The tier of a gold that no board dataset holds: dataset -> tier.
 OFF_BOARD_TIERS = {"nilc": "expert-human"}
 
@@ -761,6 +774,13 @@ def build(code: str, dataset: str, cache: Path, min_lead: int, out_root: Path,
         if any(bench.levenshtein(hyp, g) == 0 for g in normed):
             right += 1
             continue
+        if code in ACCENT_SCREENS:
+            accent_segment, accent_reason = ACCENT_SCREENS[code]
+            inside = [g for g in readings if accent_segment(g) is None]
+            if not inside:
+                exclude(headword, accent_reason, ", ".join(readings))
+                continue
+            readings = inside
         placed = [g for g in readings if not lb.misplaced_stress(g)]
         if not placed:
             exclude(headword, "every reading has a stress mark inside an onset",

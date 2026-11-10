@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.2a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.2a1) (2026-11-10)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.1a1...0.7.2a1)
+
+**Merged pull requests:**
+
+- fix\(pt-PT\): remove the entries that the -oide and -dora rules reach [\#39](https://github.com/TigreGotico/o2i-lexicons/pull/39) ([JarbasAl](https://github.com/JarbasAl))
+
+## [0.7.1a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.1a1) (2026-11-09)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.0a1...0.7.1a1)
+
+**Merged pull requests:**
+
+- fix\(en-GB\): take the entry from a non-rhotic WikiPron reading [\#37](https://github.com/TigreGotico/o2i-lexicons/pull/37) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.7.0a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.0a1) (2026-11-09)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.6.2a1...0.7.0a1)

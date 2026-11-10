@@ -22,7 +22,6 @@
   "adeveres": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "adoxa": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩; AO90 Base III; Ciberdúvidas 4068",
   "adrede": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
-  "adutora": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "afazeres": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "afixado": "AO90 Base III; Ciberdúvidas 4068",
   "afixal": "AO90 Base III; Ciberdúvidas 4068",
@@ -597,7 +596,6 @@
   "consequente": "AO90 Base XIV 1.º; Cunha & Cintra p. 79",
   "consequentemente": "AO90 Base XIV 1.º; Cunha & Cintra p. 79",
   "consogro": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
-  "construtora": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "contarelo": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "contiguidade": "AO90 Base XIV 1.º; Cunha & Cintra p. 79",
   "contrafogo": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
@@ -828,7 +826,6 @@
   "emirado": "Cunha & Cintra p. 53; Mateus & d'Andrade 1998 p. 26 (b)",
   "emiral": "Cunha & Cintra p. 53; Mateus & d'Andrade 1998 p. 26 (b)",
   "emirato": "Cunha & Cintra p. 53; Mateus & d'Andrade 1998 p. 26 (b)",
-  "emissora": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "emu": "Cunha & Cintra p. 53; Mateus & d'Andrade 1998 p. 26 (b)",
   "ena": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "enargia": "Cunha & Cintra p. 53; Mateus & d'Andrade 1998 p. 26 (b)",
@@ -1236,7 +1233,6 @@
   "hidróxido": "AO90 Base III; Ciberdúvidas 4068",
   "hinodo": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "hipóxico": "AO90 Base III; Ciberdúvidas 4068",
-  "hoje": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "homana": "Mateus & d'Andrade 1998 p. 27",
   "homoptoto": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "honorificado": "Mateus & d'Andrade 1998 p. 27",
@@ -1249,7 +1245,6 @@
   "ilhoa": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "imoto": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "implexo": "AO90 Base III; Ciberdúvidas 4068",
-  "impressora": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "incomplexo": "AO90 Base III; Ciberdúvidas 4068",
   "inconexo": "AO90 Base III; Ciberdúvidas 4068",
   "inconsequente": "AO90 Base XIV 1.º; Cunha & Cintra p. 79",
@@ -1472,7 +1467,6 @@
   "negra": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "negro": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "negroa": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
-  "nele": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "nervo": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "nesga": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
   "nexo": "AO90 Base III; Ciberdúvidas 4068",
@@ -2034,10 +2028,6 @@
   "adrede": {
    "class": "stressed mid vowel",
    "second_source": "wikipron+portal_lisbon"
-  },
-  "adutora": {
-   "class": "stressed mid vowel",
-   "second_source": "portal_lisbon"
   },
   "afazeres": {
    "class": "stressed mid vowel",
@@ -4331,10 +4321,6 @@
    "class": "stressed mid vowel",
    "second_source": "wikipron"
   },
-  "construtora": {
-   "class": "stressed mid vowel",
-   "second_source": "portal_lisbon"
-  },
   "contarelo": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
@@ -5254,10 +5240,6 @@
   "emirato": {
    "class": "unstressed initial ⟨e⟩",
    "second_source": "portal_lisbon"
-  },
-  "emissora": {
-   "class": "stressed mid vowel",
-   "second_source": "merged+portal_lisbon"
   },
   "emu": {
    "class": "unstressed initial ⟨e⟩",
@@ -6883,10 +6865,6 @@
    "class": "⟨x⟩ as [ks]",
    "second_source": "no second source"
   },
-  "hoje": {
-   "class": "stressed mid vowel",
-   "second_source": "wiktionary+portal_lisbon"
-  },
   "homana": {
    "class": "unstressed initial ⟨o⟩",
    "second_source": "no second source"
@@ -6934,10 +6912,6 @@
   "implexo": {
    "class": "⟨x⟩ as [ks]",
    "second_source": "no second source"
-  },
-  "impressora": {
-   "class": "stressed mid vowel",
-   "second_source": "wikipron+wiktionary+portal_lisbon"
   },
   "incomplexo": {
    "class": "⟨x⟩ as [ks]",
@@ -7810,10 +7784,6 @@
   "negroa": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
-  },
-  "nele": {
-   "class": "stressed mid vowel",
-   "second_source": "portal_lisbon"
   },
   "nervo": {
    "class": "stressed mid vowel",
@@ -9677,7 +9647,7 @@
   }
  },
  "licence": "CC-BY-SA-4.0",
- "o2i_version": "7.122.11a4",
+ "o2i_version": "7.122.19a2",
  "reason_basis": {
   "proper_noun": "The source headword starts with a capital letter and is not written in capitals only."
  },
@@ -9703,7 +9673,6 @@
   "adeveres": "unclassified",
   "adoxa": "unclassified",
   "adrede": "unclassified",
-  "adutora": "unclassified",
   "afazeres": "unclassified",
   "afixado": "unclassified",
   "afixal": "unclassified",
@@ -10278,7 +10247,6 @@
   "consequente": "unclassified",
   "consequentemente": "unclassified",
   "consogro": "unclassified",
-  "construtora": "unclassified",
   "contarelo": "unclassified",
   "contiguidade": "unclassified",
   "contrafogo": "unclassified",
@@ -10509,7 +10477,6 @@
   "emirado": "unclassified",
   "emiral": "unclassified",
   "emirato": "unclassified",
-  "emissora": "unclassified",
   "emu": "unclassified",
   "ena": "unclassified",
   "enargia": "unclassified",
@@ -10917,7 +10884,6 @@
   "hidróxido": "unclassified",
   "hinodo": "unclassified",
   "hipóxico": "unclassified",
-  "hoje": "unclassified",
   "homana": "unclassified",
   "homoptoto": "unclassified",
   "honorificado": "unclassified",
@@ -10930,7 +10896,6 @@
   "ilhoa": "unclassified",
   "imoto": "unclassified",
   "implexo": "unclassified",
-  "impressora": "unclassified",
   "incomplexo": "unclassified",
   "inconexo": "unclassified",
   "inconsequente": "unclassified",
@@ -11153,7 +11118,6 @@
   "negra": "unclassified",
   "negro": "unclassified",
   "negroa": "unclassified",
-  "nele": "unclassified",
   "nervo": "unclassified",
   "nesga": "unclassified",
   "nexo": "unclassified",
