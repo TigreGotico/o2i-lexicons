@@ -499,3 +499,23 @@ def test_no_initial_vowel_citation_offers_a_page_as_the_reading():
         if any(page in citation for page in INITIAL_PAGES):
             assert "Infopédia gives the reading." in citation, word
             assert "No page read gives the value of this word" in citation, word
+
+
+def test_essonite_is_an_open_syllable_exception():
+    # ⟨ss⟩ writes one voiceless sibilant between vowels (AO90 Base III 3.º:
+    # "s, ss, c, ç e x, que representam sibilantes surdas"), so the initial
+    # ⟨e⟩ of essonite stands in an open syllable, where Mateus & d'Andrade
+    # 1998 p. 26 (b) give [i] and Infopédia gives [ɛ].
+    assert "essonite" not in notes("pt-PT", "patch")
+    citation = notes("pt-PT", "exception")["essonite"]
+    assert citation.startswith("Infopédia gives the reading.")
+    assert "p. 26 (b) give [i] with no coda" in citation
+
+
+def test_every_pt_pt_gap_names_a_lead_a_rule_or_no_lead():
+    # A gap names what will reach the word: a lead, a rule-leads.md section,
+    # an orthography2ipa pull request or rule, or that there is no lead. A
+    # page that states a value is a lead only when the gap says so.
+    for word, gap in notes("pt-PT", "patch").items():
+        assert gap.startswith(("lead: ", "no lead: ", "rule-leads.md § ",
+                               "orthography2ipa#", "PT_")), (word, gap)

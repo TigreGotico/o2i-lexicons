@@ -488,7 +488,6 @@
   "eritróptero": "rule-leads.md § word-initial e",
   "eritróptico": "rule-leads.md § word-initial e",
   "ervedo": "lead: ⟨-edo⟩ takes [e] in at least 90% of the Infopédia words",
-  "essonite": "Mateus & d'Andrade 1998 p. 26 (a, b, d)",
   "estro": "no lead: the rules miss the word outside every class and lead",
   "etilamina": "rule-leads.md § word-initial e",
   "etilato": "rule-leads.md § word-initial e",
@@ -2877,10 +2876,6 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
-  "essonite": {
-   "class": "unstressed initial ⟨e⟩",
-   "second_source": "no second source"
-  },
   "etilamina": {
    "class": "unstressed initial ⟨e⟩",
    "second_source": "no second source"
@@ -5214,7 +5209,6 @@
   "eritróptero": "unclassified",
   "eritróptico": "unclassified",
   "ervedo": "unclassified",
-  "essonite": "unclassified",
   "estro": "unclassified",
   "etilamina": "unclassified",
   "etilato": "unclassified",

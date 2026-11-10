@@ -83,6 +83,10 @@ INITIAL_E_R = ("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 26 (c) 
 INITIAL_O = ("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 27 state variation "
              "between [o] and [ɔ] for a word-initial unstressed /o ɔ/. No page read gives the "
              "value of this word")
+#: The gap of an unstressed initial ⟨e⟩ before a coda /L/ or /S/, whose value
+#: the page states.
+INITIAL_E_L_S = ("lead: Mateus & d'Andrade 1998 p. 26 give a word-initial unstressed /e ɛ/ "
+                 "as (a) [ɛ] before a coda /L/ and (d) deleted before a coda /S/")
 CODA_STOP = "orthography2ipa#2218"
 CODA_STOP_A = "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out"
 CODA_STOP_REDUCED = ("lead: the source reduces a vowel before a coda stop that "
@@ -104,6 +108,9 @@ def _plain(ipa: str) -> str:
 def _initial_coda(word: str) -> str:
     """The coda of the word-initial syllable whose nucleus is ⟨e o⟩."""
     after = (word[1:] if word[0] == "h" else word)[1:]
+    if after.startswith("ss"):
+        # ⟨ss⟩ writes one voiceless sibilant between vowels (AO90 Base III 3.º).
+        return "open"
     if len(after) >= 2 and after[0] not in VOWELS and after[1] not in VOWELS + "hlr":
         return {"l": "/L/", "r": "/R/", "s": "/S/", "x": "/S/", "z": "/S/",
                 "m": "nasal", "n": "nasal"}.get(after[0], "stop or other")
@@ -179,7 +186,9 @@ def _pt_pt_part(word: str, rules: str, entry: str, name: str) -> tuple[str, str]
             return "exception", INITIAL_E_R
         if coda == "open":
             return "exception", INITIAL_E_OPEN
-        return "patch", "Mateus & d'Andrade 1998 p. 26 (a, b, d)"
+        if coda in ("/L/", "/S/"):
+            return "patch", INITIAL_E_L_S
+        return "patch", NO_LEAD
     if name == "unstressed initial ⟨o⟩":
         if {_plain(rules)[0], _plain(entry)[0]} == {"o", "ɔ"}:
             return "exception", INITIAL_O

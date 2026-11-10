@@ -985,6 +985,7 @@
   "ervilheira": "Infopédia gives the reading. Mateus & d'Andrade 1998 p. 26 (c) state variation between [i], [e] and [ɛ] before a coda /R/, and Cunha & Cintra p. 53 give the initial [e] of erguer as 'geralmente [i]'. No page read gives the value of this word",
   "erípede": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
   "erógeno": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
+  "essonite": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
   "esurino": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
   "esócidas": "Infopédia gives the reading. Cunha & Cintra p. 53 keep the unstressed vowels of cultismos unreduced, and give the initial [e] of enorme, erguer as 'geralmente [i]'; Mateus & d'Andrade 1998 p. 26 (b) give [i] with no coda. No page read gives the value of this word",
   "eta": "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩",
@@ -5877,6 +5878,10 @@
    "class": "unstressed initial ⟨e⟩",
    "second_source": "portal_lisbon"
   },
+  "essonite": {
+   "class": "unstressed initial ⟨e⟩",
+   "second_source": "no second source"
+  },
   "esurino": {
    "class": "unstressed initial ⟨e⟩",
    "second_source": "no second source"
@@ -10636,6 +10641,7 @@
   "ervilheira": "unclassified",
   "erípede": "unclassified",
   "erógeno": "unclassified",
+  "essonite": "unclassified",
   "esurino": "unclassified",
   "esócidas": "proper_noun",
   "eta": "unclassified",

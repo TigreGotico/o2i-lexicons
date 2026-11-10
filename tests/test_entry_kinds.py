@@ -43,8 +43,14 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
      ("exception", ek.INITIAL_E_R)),
     ("ecográfico", "ikuˈɡɾafiku", "ɛkuˈɡɾafiku", "unstressed initial ⟨e⟩",
      ("patch", "rule-leads.md § word-initial e")),
+    # ⟨ss⟩ writes one voiceless sibilant (AO90 Base III 3.º), so the ⟨e⟩ of
+    # essonite has no coda. Mateus & d'Andrade 1998 p. 26: an initial /e ɛ/ is
+    # "a) [ɛ] when the coda is /L/" and "d) deleted when the coda is an /S/".
     ("essonite", "isuˈnitɨ", "ɛsuˈnitɨ", "unstressed initial ⟨e⟩",
-     ("patch", "Mateus & d'Andrade 1998 p. 26 (a, b, d)")),
+     ("exception", ek.INITIAL_E_OPEN)),
+    ("elvira", "iɫˈviɾɐ", "ɛɫˈviɾɐ", "unstressed initial ⟨e⟩", ("patch", ek.INITIAL_E_L_S)),
+    ("esgotar", "ɨʒɡuˈtaɾ", "ʒɡuˈtaɾ", "unstressed initial ⟨e⟩", ("patch", ek.INITIAL_E_L_S)),
+    ("enviar", "ĩviˈaɾ", "ẽviˈaɾ", "unstressed initial ⟨e⟩", ("patch", ek.NO_LEAD)),
     # Initial ⟨o⟩: [o] against [ɔ] is lexical; [u] in honesto is a stem lead.
     ("homana", "ɔˈmɐnɐ", "oˈmɐnɐ", "unstressed initial ⟨o⟩",
      ("exception", ek.INITIAL_O)),
@@ -187,3 +193,9 @@ def test_the_initial_vowel_citations_name_infopedia_for_the_reading():
     assert "p. 26 (b) give [i] with no coda" in ek.INITIAL_E_OPEN
     assert "variation between [i], [e] and [ɛ] before a coda /R/" in ek.INITIAL_E_R
     assert "variation between [o] and [ɔ]" in ek.INITIAL_O
+
+
+def test_the_initial_e_lead_states_what_the_page_gives():
+    assert "(a) [ɛ] before a coda /L/" in ek.INITIAL_E_L_S
+    assert "(d) deleted before a coda /S/" in ek.INITIAL_E_L_S
+    assert ek.INITIAL_E_L_S.startswith("lead: ")
