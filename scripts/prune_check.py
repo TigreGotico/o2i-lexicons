@@ -14,6 +14,11 @@ records, and records the installed version as the one where the remaining
 patches last failed. A stale exception means that its class is wrong, because
 the spelling does give its reading. The check lists it and exits 1, also with
 ``--write``, and never removes it: a person decides where the word goes.
+
+An entry whose word the spec's ``word_exceptions`` hold never applies, because
+the spec wins over a lexicon. The check lists such a shadowed entry as it lists
+a stale one: ``--write`` removes a shadowed patch, and a shadowed exception
+fails the check.
 """
 from __future__ import annotations
 
@@ -24,7 +29,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from orthography2ipa import G2P, Pipeline
+from orthography2ipa import G2P, Pipeline, get as get_spec
 from orthography2ipa.lexicon import parse_lexicon_text
 from orthography2ipa.version import VERSION_STR
 
@@ -55,6 +60,12 @@ def stale_entries(code: str, entries: dict[str, str], bench) -> list[str]:
     return sorted(stale)
 
 
+def shadowed_entries(code: str, entries: dict[str, str]) -> list[str]:
+    """The words of *entries* that the spec's ``word_exceptions`` hold."""
+    exceptions = get_spec(code).word_exceptions
+    return sorted(w for w in entries if w in exceptions)
+
+
 def forget(meta: dict, words: list[str]) -> None:
     """Remove from the sidecar *meta* each record of *words*."""
     for word in words:
@@ -82,27 +93,31 @@ def main(argv=None) -> int:
             tsv = tsv_of(code)
             entries = parse_lexicon_text(tsv.read_text(encoding="utf-8"))
             stale = stale_entries(code, entries, bench)
+            shadowed = shadowed_entries(code, entries)
             report["codes"].setdefault(code, {})[kind] = {"entries": len(entries),
-                                                          "stale": stale}
+                                                          "stale": stale, "shadowed": shadowed}
             print(f"{code} {kind} file: {len(entries)} entries, {len(stale)} now right under "
-                  f"orthography2ipa {VERSION_STR}")
-            for word in stale:
+                  f"orthography2ipa {VERSION_STR}, {len(shadowed)} shadowed by the spec's "
+                  f"word_exceptions")
+            for word in stale + shadowed:
                 print(f"  {word}\t{entries[word]}")
-            if kind == "patch" and args.write and stale:
+            removed = sorted({*stale, *shadowed})
+            if kind == "patch" and args.write and removed:
                 meta = json.loads(meta_of(code).read_text(encoding="utf-8"))
-                for word in stale:
+                for word in removed:
                     del entries[word]
-                forget(meta, stale)
+                forget(meta, removed)
                 meta["o2i_version"] = VERSION_STR
                 lb.write_lexicon(tsv.parent, tsv.stem, entries, meta)
     if args.report:
         args.report.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n",
                                encoding="utf-8")
-    stale = {kind: sum(len(c[kind]["stale"]) for c in report["codes"].values() if kind in c)
+    stale = {kind: sum(len(c[kind]["stale"]) + len(c[kind]["shadowed"])
+                       for c in report["codes"].values() if kind in c)
              for kind in files}
     if stale["exception"]:
-        print(f"{stale['exception']} exceptions are right under the rules, so their class "
-              f"is wrong; move each one by hand")
+        print(f"{stale['exception']} exceptions are right under the rules or shadowed by the "
+              f"spec, so their class is wrong; move each one by hand")
     return 1 if stale["exception"] or (stale["patch"] and not args.write) else 0
 
 

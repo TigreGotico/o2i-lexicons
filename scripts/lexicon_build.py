@@ -14,7 +14,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable, Iterable, Optional
 
-from o2i_lexicons.schema import STRESS_MARKS
+from o2i_lexicons.schema import STRESS_MARKS, outside_inventory
 
 #: A headword the lexicon can hold: letters, with optional internal apostrophes.
 #: A space, a hyphen, a digit or an edge apostrophe makes the source entry a
@@ -1051,25 +1051,8 @@ def full_form_first(readings: list[str]) -> list[str]:
 #: non-syllabic mark follows it.
 VOWELS = frozenset("aɐeɛəɨioɔuʊɪæyøœɑɒʌɜɘɯ")
 GLIDES = frozenset("jwɥ")
-NASAL = "\u0303"
 
 
-def outside_inventory(tokens: list[str], inventory: frozenset[str]) -> list[str]:
-    """The tokens of a reading that are not in the spec's token *inventory*.
-
-    A spec emits a nasal glide only as the second half of a nasal diphthong
-    (pt-PT mãe ˈmɐ̃j̃, pão ˈpɐ̃w̃, põe ˈpõj̃), so the glide is not a token of its
-    own. A nasal glide is inside the inventory only after a nasal vowel, and
-    only when an inventory token ends in that glide: muito ˈmũj̃tu tokenises as
-    ũ j̃. A spec that lists the bare glide changes neither condition.
-    """
-    nasal_glides = {t[-2:] for t in inventory
-                    if len(t) > 2 and t.endswith(NASAL) and t[-2] in GLIDES}
-    def after_nasal_vowel(i: int) -> bool:
-        return i > 0 and unicodedata.normalize("NFD", tokens[i - 1]).endswith(NASAL)
-
-    return [t for i, t in enumerate(tokens)
-            if not (after_nasal_vowel(i) if t in nasal_glides else t in inventory)]
 NON_SYLLABIC = "̯"
 #: The vowels that European Portuguese deletes ([ɨ], [u]) or turns into a
 #: glide ([i], [u]) in unstressed syllables.

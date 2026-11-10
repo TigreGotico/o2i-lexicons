@@ -123,5 +123,29 @@ def test_an_empty_patch_file_is_checked(packaged):
     report = root / "report.json"
     assert prune_check.main(["--cache", str(root), "--write", "--report", str(report)]) == 0
     assert json.loads(report.read_text(encoding="utf-8"))["codes"] == {"en-GB": {
-        "exception": {"entries": 1, "stale": []}, "patch": {"entries": 0, "stale": []}}}
+        "exception": {"entries": 1, "stale": [], "shadowed": []},
+        "patch": {"entries": 0, "stale": [], "shadowed": []}}}
     assert (root / "patches" / "en-GB" / "wikipron.tsv").read_text(encoding="utf-8") == ""
+
+
+def test_an_entry_that_the_spec_holds_is_shadowed():
+    # The en-GB spec lists prove in word_exceptions, and the spec wins.
+    entries = {"colonel": "kɜːnəl", "prove": "pɹuːv"}
+    assert prune_check.shadowed_entries("en-GB", entries) == ["prove"]
+
+
+def test_write_removes_a_shadowed_patch(packaged):
+    root = packaged({"colonel": "kɜːnəl"}, {"colonel": "kɜːnəl", "prove": "pɹuːv"})
+    report = root / "report.json"
+    assert prune_check.main(["--cache", str(root)]) == 1
+    assert prune_check.main(["--cache", str(root), "--write", "--report", str(report)]) == 0
+    patches = root / "patches" / "en-GB"
+    assert (patches / "wikipron.tsv").read_text(encoding="utf-8") == "colonel\tkɜːnəl\n"
+    assert json.loads(report.read_text(encoding="utf-8"))["codes"]["en-GB"]["patch"] == {
+        "entries": 2, "stale": [], "shadowed": ["prove"]}
+
+
+def test_a_shadowed_exception_fails_and_stays(packaged):
+    root = packaged({"prove": "pɹuːv"}, {})
+    assert prune_check.main(["--cache", str(root), "--write"]) == 1
+    assert (root / "en-GB" / "wikipron.tsv").read_text(encoding="utf-8") == "prove\tpɹuːv\n"
