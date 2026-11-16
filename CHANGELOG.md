@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.18a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.18a1) (2026-11-16)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.17a1...0.7.18a1)
+
+**Merged pull requests:**
+
+- fix\(en-GB\): remove the entries that orthography2ipa 7.123.7a2 reads right [\#89](https://github.com/TigreGotico/o2i-lexicons/pull/89) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.7.17a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.17a1) (2026-11-16)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.16...0.7.17a1)
