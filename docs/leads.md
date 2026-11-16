@@ -148,7 +148,7 @@ Each one waits for a second source that marks stress.
 | pt-BR | the stem vowel of a pt-BR preterite or imperfect form | 7 |
 | pt-BR | the ⟨s⟩ of the prefix trans- before a vowel is [z] | 1 |
 | pt-BR | an English loan spelling (sexy) | 1 |
-| en-GB | en-GB spelling rules not audited | 2,151 |
+| en-GB | en-GB spelling rules not audited | 2,141 |
 | en-GB | en-GB inflection morphology | 188 |
 
 The [pt-BR](languages/pt-BR.md) and [en-GB](languages/en-GB.md) pages give the detail.
