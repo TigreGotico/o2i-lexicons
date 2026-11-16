@@ -1,14 +1,5 @@
 # Changelog
 
-## [0.7.18a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.18a2) (2026-11-16)
-
-[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.18a1...0.7.18a2)
-
-**Merged pull requests:**
-
-- Update actions/checkout action to v7 [\#85](https://github.com/TigreGotico/o2i-lexicons/pull/85) ([renovate[bot]](https://github.com/apps/renovate))
-- docs: sync README and docs with dev [\#84](https://github.com/TigreGotico/o2i-lexicons/pull/84) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
-
 ## [0.7.18a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.18a1) (2026-11-16)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.17a1...0.7.18a1)
