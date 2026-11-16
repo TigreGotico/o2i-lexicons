@@ -11,7 +11,7 @@ uv venv --python 3.11 .venv
 uv pip install --python .venv --prerelease=allow -e '.[test]'
 ```
 
-The `test` extra installs pytest and silabificador. The build reads the prefix seams of `silabificador.morphology`.
+The `test` extra installs pytest, silabificador and setuptools. The sdist test builds the package with setuptools. The build reads the prefix seams of `silabificador.morphology`.
 
 The scripts run the installed o2i. They score with the benchmark harness of o2i at the git tag of that version. `scripts/o2i_harness.py` fetches the harness once into `.cache/o2i-harness/<version>/`, with a sparse, shallow clone that holds no engine code. The harness downloads each gold file into `.cache/gold/` on first use. `--cache` sets another cache directory.
 
@@ -55,6 +55,12 @@ The build writes the exception file and the patch file of the code under `--out`
 ```bash
 python scripts/measure.py en-GB ipadict:en-GB cmudict:en
 python scripts/measure.py pt-PT ep_dialects:pt-PT
+```
+
+The `cmudict` gold needs the `scriptconv` package, which converts ARPABET to IPA. The `test` extra does not install it:
+
+```bash
+uv pip install --python .venv --prerelease=allow scriptconv
 ```
 
 `measure.py` scores the lexicons of a code on a gold from another source. It scores the rules only, then the rules with the exceptions, with the patches, and with both. For each lexicon it also gives the score on the overlap, the gold words that the lexicon holds.
