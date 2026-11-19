@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.20a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.20a1) (2026-11-19)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.19a1...0.7.20a1)
+
+**Merged pull requests:**
+
+- fix\(pt-PT\): admit the open vowel before a dropped c or p as an exception [\#95](https://github.com/TigreGotico/o2i-lexicons/pull/95) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.7.19a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.19a1) (2026-11-19)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.18a4...0.7.19a1)
