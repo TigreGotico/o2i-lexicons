@@ -339,7 +339,9 @@ def test_the_pt_pt_lexicon_holds_no_demonstrative():
 
 def test_the_pt_pt_lexicon_holds_the_unstressed_vowel_classes():
     # The Infopédia rows, in the spec's symbols: orelhado orəˈʎadu, ebó eˈbɔ,
-    # golpada ɡɔɫˈpadɐ, adactilia ɐdaktiˈliɐ, ativo aˈtivu.
+    # golpada ɡɔɫˈpadɐ, adactilia ɐdaktiˈliɐ, ativo aˈtivu, afetar ɐfɛˈtar,
+    # receção ʀəsɛˈsɐ̃w̃, respetivo ʀəʃpɛˈtivu. Infopédia also holds afectar,
+    # recepção and respectivo, the spellings before AO90.
     entries = pt_pt_entries()
     classes = lexical_classes("pt-PT")
     expected = {
@@ -348,6 +350,9 @@ def test_the_pt_pt_lexicon_holds_the_unstressed_vowel_classes():
         "golpada": ("ɡɔɫˈpadɐ", "unstressed vowel before a coda ⟨l⟩"),
         "adactilia": ("ɐdaktiˈliɐ", "unstressed vowel before a coda stop"),
         "ativo": ("aˈtivu", "unreduced learned vowel"),
+        "afetar": ("ɐfɛˈtaɾ", "unreduced learned vowel"),
+        "receção": ("ʁɨsɛˈsɐ̃w̃", "unreduced learned vowel"),
+        "respetivo": ("ʁɨʃpɛˈtivu", "unreduced learned vowel"),
     }
     assert {w: (entries.get(w), classes.get(w, {}).get("class")) for w in expected} == expected
 
@@ -561,15 +566,15 @@ def test_each_pt_patch_names_its_gap():
 def test_the_pt_pt_kinds_follow_their_class():
     # The spelling does not show the value of ⟨x⟩ (AO90 Base III), ⟨qu⟩ with
     # [w] (AO90 Base XIV 1.º) or the open initial ⟨o⟩ of orelhado (Mateus &
-    # d'Andrade 1998 p. 27). A word-initial ⟨e⟩, the coda ⟨l⟩ and a learned
-    # vowel are rule leads.
+    # d'Andrade 1998 p. 27), or the vowel before a mute ⟨c p⟩ (AO90 Nota
+    # Explicativa 4.2 b)). A word-initial ⟨e⟩ and the coda ⟨l⟩ are rule leads.
     exceptions, patches = notes("pt-PT", "exception"), notes("pt-PT", "patch")
     assert exceptions["táxi"] == "AO90 Base III; Ciberdúvidas 4068"
     assert exceptions["cinquenta"] == "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
     assert exceptions["orelhado"].startswith("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 27")
     assert patches["eritroide"] == "docs/leads.md § word-initial e"
     assert patches["golpada"] == "docs/leads.md § coda l"
-    assert patches["ativo"] == "docs/leads.md § learned words"
+    assert exceptions["ativo"] == "AO90 Base IV 1.º b); AO90 Nota Explicativa 4.2 b)"
 
 
 def test_the_coda_stop_rule_took_its_patches():
@@ -801,13 +806,13 @@ def test_the_pt_pt_loans_are_loanwords(kind):
 def test_every_other_pt_pt_exception_is_irregular():
     other = {w for w, r in reasons("pt-PT", "exception").items()
              if w not in PT_PT_LOANS["exception"] and r != "proper_noun"}
-    assert len(other) == 1842
+    assert len(other) == 2135
     assert words_of_class("pt-PT", "exception", "irregular") == other
 
 
 def test_a_pt_pt_patch_keeps_its_gap_as_the_reason():
     assert set(reasons("pt-PT", "patch").values()) == {"unclassified", "loanword", "proper_noun"}
-    assert len(words_of_class("pt-PT", "patch", "unclassified")) == 997
+    assert len(words_of_class("pt-PT", "patch", "unclassified")) == 764
 
 
 def test_the_pt_br_names_and_loan():

@@ -90,8 +90,9 @@ CC_40 = "Cunha & Cintra p. 40; AO90 Base IX 3.º for ⟨ei oi⟩"
     # Under #2218 the coda stop of etmoide is right, so only ⟨-oide⟩ is left.
     ("etmoide", "ɛtˈmojdɨ", "ɛtˈmɔjdɨ", "stressed mid vowel+unstressed vowel before a coda stop",
      ("patch", "docs/leads.md § Entries in ⟨-oide⟩")),
+    # AO90 Nota Explicativa 4.2 b): the vowel before a mute ⟨c p⟩ is lexical.
     ("abjeção", "ɐbʒɨˈsɐ̃w̃", "ɐbʒɛˈsɐ̃w̃", "unreduced learned vowel",
-     ("patch", "docs/leads.md § learned words")),
+     ("exception", "AO90 Base IV 1.º b); AO90 Nota Explicativa 4.2 b)")),
     # Two patch parts give a patch with both gaps.
     ("polpectomia", "poɫpɨktuˈmiɐ", "puɫpɛktuˈmiɐ",
      "unstressed vowel before a coda stop+unstressed vowel before a coda ⟨l⟩",

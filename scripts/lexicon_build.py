@@ -49,8 +49,9 @@ REASON_BASIS_BY_CODE = {
         "irregular": "The entry is an exception: its citation names the page or section "
                      "of a source that states its class (docs/kinds.md). The spelling "
                      "does not show the reading in that class: the height of a stressed "
-                     "mid vowel, the value of ⟨x⟩, ⟨qu gu⟩ with [w], or an unstressed "
-                     "initial ⟨e⟩ or ⟨o⟩.",
+                     "mid vowel, the value of ⟨x⟩, ⟨qu gu⟩ with [w], an unstressed "
+                     "initial ⟨e⟩ or ⟨o⟩, or an unstressed vowel where AO90 dropped a "
+                     "mute ⟨c p⟩.",
     },
     "pt-BR": {
         "loanword": _LOANWORD_BASIS,
@@ -858,18 +859,19 @@ def _consonant_letter(ch: str) -> bool:
     return ch.isalpha() and ch not in VOWEL_LETTERS
 
 
-def ao90_dropped_consonant(word: str, end: int, pre_ao90: frozenset[str],
-                           headwords: frozenset[str]) -> bool:
+def ao90_dropped_consonant(word: str, end: int, pre_ao90: frozenset[str]) -> bool:
     """Whether AO90 dropped a silent ⟨c p⟩ at *end* of *word*.
 
-    The pre-AO90 spelling with the letter put back must be in *pre_ao90*, and
-    it must not be a headword of the source: a headword spells a spoken
-    consonant (pacto beside pato, facto beside fato). *word* itself must not
-    be in *pre_ao90*, where it is a word of its own and not a new spelling.
+    The pre-AO90 spelling with the letter put back must be in *pre_ao90*.
+    *word* itself must not be in *pre_ao90*, where it is a word of its own and
+    not a new spelling (pato beside pacto, fato beside facto). A headword of
+    the source can still spell the letter: Infopédia keeps the pre-AO90
+    spelling of a word as a headword of its own (afectar beside afetar), and
+    AO90 Base IV 1.º b) names afetivo among the words whose ⟨c⟩ is mute.
     """
     if word in pre_ao90 or not _AO90_NEXT_RE.match(word, end):
         return False
-    return any(form in pre_ao90 and form not in headwords
+    return any(form in pre_ao90
                for form in (word[:end] + letter + word[end:] for letter in AO90_SILENT_LETTERS))
 
 

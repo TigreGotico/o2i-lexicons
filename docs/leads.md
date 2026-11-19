@@ -34,15 +34,13 @@ The words in golp- keep the stressed [ɔ] of golpe, and the words in folclor- co
 
 ### learned words
 
-An unstressed vowel of a learned word does not reduce. Cunha & Cintra (p. 53) write: "Também não se reduziram as vogais átonas de cultismos, como o [a] de *actor*; o [ɛ] de *director*; o [ɔ] de *adopção*". Before AO90, a silent ⟨c⟩ or ⟨p⟩ marked the full vowel. AO90 drops that consonant, and pt-PT reads AO90 spelling, so the spelling has no cue left. Each word of this lead is the AO90 form of a word that the aspell pt_PT-preao list spells with ⟨a e o⟩, then a silent ⟨c p⟩, then ⟨c ç t⟩.
+An unstressed vowel before a ⟨c⟩ or ⟨p⟩ that AO90 dropped (ativo from activo, afetar from afectar) is not a lead. The Nota Explicativa of AO90, 4.2 b), states that the mute consonant does not decide that vowel: open pretonic vowels stand with no mark (corar, padeiro), and the vowel of accionar and actual reduces beside the consonant. So no spelling, before or after AO90, gives the vowel, and its entries are exceptions with the citation `AO90 Base IV 1.º b); AO90 Nota Explicativa 4.2 b)`. The files hold no patch with this gap. [pt-PT](languages/pt-PT.md) quotes the clause.
 
 | Rules | Entry | Slots | Examples |
 | :--- | :--- | ---: | :--- |
-| [ɨ] | [ɛ] | 161 | adjetivo, arquitetar, abjeção |
-| [ɐ] | [a] | 66 | ativo, ator, abstração |
-| [u] | [ɔ] | 6 | adotar, adoção, noturno |
-
-The 233 entries need a rule that has the pre-AO90 form of the word.
+| [ɨ] | [ɛ] | 217 | adjetivo, afetar, receção, respetivo |
+| [ɐ] | [a] | 70 | ativo, ator, fratura |
+| [u] | [ɔ] | 6 | adotar, adotivo |
 
 ### Entries in ⟨-oide⟩
 
