@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.19a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.19a1) (2026-11-19)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.18a4...0.7.19a1)
+
+**Merged pull requests:**
+
+- fix: keep a nasal glide after an oral vowel outside the inventory [\#96](https://github.com/TigreGotico/o2i-lexicons/pull/96) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.7.18a4](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.18a4) (2026-11-16)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.18a3...0.7.18a4)
