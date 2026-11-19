@@ -87,6 +87,13 @@ MN_KEPT = ("lead: AO90 Base IV 2.º: 'Conservam-se ou eliminam-se, facultativame
            "indemne, indemnidade, indemnizar'. The entry pronounces the [m]")
 QU_GU = "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
 AO90_UNIT = "AO90 Base I 2.º c) for the spelling; Infopédia gives the reading"
+#: AO90 Base IV 1.º b) drops the mute ⟨c p⟩, and 1.º c) lets a ⟨c p⟩ go where
+#: one cultivated pronunciation drops it (receção, Nota Explicativa 4.1).
+#: Nota Explicativa 4.2 b) states
+#: that the mute consonant does not keep the vowel before it open: open
+#: pretonic vowels stand with no mark (corar, padeiro), and the vowel of
+#: accionar, actual reduces beside the consonant. So the vowel is lexical.
+AO90_LEARNED = "AO90 Base IV 1.º b) c); AO90 Nota Explicativa 4.1, 4.2 b)"
 LOAN_DOUBLED = ("lead: a doubled consonant letter is one consonant in every Infopédia "
                 "word that has one")
 LOAN_INITIAL_S = ("lead: an initial ⟨s⟩ before a consonant is [s] in at least 90% of the "
@@ -293,7 +300,7 @@ def _pt_pt_part(word: str, rules: str, entry: str, name: str) -> tuple[str, str]
     if name == "unstressed vowel before a coda stop":
         return "patch", _pt_pt_coda_stop(rules, entry)
     if name == "unreduced learned vowel":
-        return "patch", f"{LEADS} § learned words"
+        return "exception", AO90_LEARNED
     if name == "unstressed vowel before a coda ⟨l⟩":
         return "patch", f"{LEADS} § coda l"
     raise ValueError(f"unknown lexical class {name!r}")

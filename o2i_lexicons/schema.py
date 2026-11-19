@@ -119,10 +119,11 @@ def outside_inventory(tokens: list[str], inventory: frozenset[str]) -> list[str]
     (pt-PT mãe ˈmɐ̃j̃, pão ˈpɐ̃w̃, põe ˈpõj̃), so the glide is not a token of its
     own. A nasal glide is inside the inventory only after a nasal vowel, and
     only when an inventory token ends in that glide: muito ˈmũj̃tu tokenises as
-    ũ j̃. A spec that lists the bare glide changes neither condition.
+    ũ j̃. An inventory that lists the diphthong ɐ̃j̃ and one that lists its
+    segments ɐ̃ and j̃ give the same answer.
     """
     nasal_glides = {t[-2:] for t in inventory
-                    if len(t) > 2 and t.endswith(_NASAL) and t[-2] in _GLIDES}
+                    if len(t) >= 2 and t.endswith(_NASAL) and t[-2] in _GLIDES}
     def after_nasal_vowel(i: int) -> bool:
         return i > 0 and unicodedata.normalize("NFD", tokens[i - 1]).endswith(_NASAL)
 

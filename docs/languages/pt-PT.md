@@ -49,7 +49,7 @@ A word that differs from the rules only in a fact that the spelling cannot show 
 - the height of a stressed mid vowel
 - the value of ⟨x⟩ before a vowel or at the end of a word ([ʃ] xadrez, [ks] táxi, [z] exame, [s] próximo)
 - ⟨qu gu⟩ with [w] before ⟨e i⟩ (cinquenta)
-- an unstressed vowel in a slot where the rules give a default and a word can take another value: an initial ⟨o ho e he⟩ before a consonant, ⟨a e o⟩ before a coda ⟨l⟩ or a coda stop, and a vowel where AO90 dropped a silent ⟨c p⟩ (ativo from activo)
+- an unstressed vowel in a slot where the rules give a default and a word can take another value: an initial ⟨o ho e he⟩ before a consonant, ⟨a e o⟩ before a coda ⟨l⟩ or a coda stop, and a vowel where AO90 dropped a silent ⟨c p⟩ (ativo from activo, afetar from afectar)
 
 In a vowel slot, the entry may take only a value that the o2i lattice ranks at that letter. A residual word never joins a lead. A residual word with a stressed mid vowel stays a lead when a cited o2i rule decides its height. That is the case for a word that a `PT_LEX_CLOSE_*` or `PT_LEX_OPEN_*` rule lists, a written accent, and a rhizotonic present form of a first or second conjugation verb.
 
@@ -66,8 +66,10 @@ A residual word is out when no second source agrees with it and pt.wiktionary or
 
 | Kind | Classes |
 | :--- | :--- |
-| Exception | the height of a stressed mid vowel, the value of an ⟨x⟩ before a vowel (also beside other differences), ⟨qu gu⟩ with [w], an unstressed initial ⟨e⟩ or ⟨o⟩ in the classes that `entry_kinds.py` names, and kilowatt, a unit that AO90 Base I 2.º c) names |
-| Patch | a stressed vowel in an ending that `entry_kinds.DOMINANT_ENDINGS` lists, a misfire of a `PT_SUFFIX_*` or prepalatal rule, a learned first element under an initial ⟨e⟩, an initial ⟨e⟩ with the value that Mateus & d'Andrade 1998 p. 26 give ([i] with no coda, [ɛ] before a coda /L/, deleted before a coda /S/), a vowel before a coda stop or a coda ⟨l⟩, an unreduced learned vowel, the ⟨m⟩ of ⟨mn⟩ that AO90 Base IV 2.º keeps where it is pronounced, a loan spelled outside the native system, and a word with no class |
+| Exception | the height of a stressed mid vowel, the value of an ⟨x⟩ before a vowel (also beside other differences), ⟨qu gu⟩ with [w], an unstressed initial ⟨e⟩ or ⟨o⟩ in the classes that `entry_kinds.py` names, an unstressed vowel where AO90 dropped a silent ⟨c p⟩, and kilowatt, a unit that AO90 Base I 2.º c) names |
+| Patch | a stressed vowel in an ending that `entry_kinds.DOMINANT_ENDINGS` lists, a misfire of a `PT_SUFFIX_*` or prepalatal rule, a learned first element under an initial ⟨e⟩, an initial ⟨e⟩ with the value that Mateus & d'Andrade 1998 p. 26 give ([i] with no coda, [ɛ] before a coda /L/, deleted before a coda /S/), a vowel before a coda stop or a coda ⟨l⟩, the ⟨m⟩ of ⟨mn⟩ that AO90 Base IV 2.º keeps where it is pronounced, a loan spelled outside the native system, and a word with no class |
+
+AO90 Base IV 1.º b) drops a ⟨c p⟩ that is mute in every cultivated pronunciation (afetivo, direção, adoção). Base IV 1.º c) lets a ⟨c p⟩ go where one cultivated pronunciation drops it, and Nota Explicativa 4.1 gives "receção em Portugal, mas … recepção no Brasil". The Nota Explicativa of AO90, 4.2 b), states that the mute consonant does not decide the vowel before it: "se mantêm na língua palavras com vogal pré-tónica aberta, sem a presença de qualquer sinal diacrítico, como em corar, padeiro, oblação, pregar (= fazer uma prédica), etc., e, por outro, a conservação de tais consoantes não impede a tendência para o ensurdecimento da vogal anterior em casos como accionar, actual, actualidade, exactidão, tactear, etc." So that vowel is lexical, and its entries are exceptions. The vowel slot needs the pre-AO90 spelling of the word in the `--preao` list. Infopédia also keeps the pre-AO90 spelling as a headword of its own (afectar beside afetar), and it can read that headword with the consonant. So a pre-AO90 headword does not stop the vowel slot.
 
 An ending is in `DOMINANT_ENDINGS` when its stressed vowel takes one value in at least 90% of at least 25 single-word Infopédia rows. The spelling then shows the value, so a rule could take it. The sidecars give the exact citation or gap of each word.
 
