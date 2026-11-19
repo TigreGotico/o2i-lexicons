@@ -34,7 +34,7 @@ The words in golp- keep the stressed [ɔ] of golpe, and the words in folclor- co
 
 ### learned words
 
-An unstressed vowel before a ⟨c⟩ or ⟨p⟩ that AO90 dropped (ativo from activo, afetar from afectar) is not a lead. The Nota Explicativa of AO90, 4.2 b), states that the mute consonant does not decide that vowel: open pretonic vowels stand with no mark (corar, padeiro), and the vowel of accionar and actual reduces beside the consonant. So no spelling, before or after AO90, gives the vowel, and its entries are exceptions with the citation `AO90 Base IV 1.º b); AO90 Nota Explicativa 4.2 b)`. The files hold no patch with this gap. [pt-PT](languages/pt-PT.md) quotes the clause.
+An unstressed vowel before a ⟨c⟩ or ⟨p⟩ that AO90 dropped (ativo from activo, afetar from afectar) is not a lead. The Nota Explicativa of AO90, 4.2 b), states that the mute consonant does not decide that vowel: open pretonic vowels stand with no mark (corar, padeiro), and the vowel of accionar and actual reduces beside the consonant. So the AO90 spelling does not show the vowel, and its entries are exceptions with the citation `AO90 Base IV 1.º b) c); AO90 Nota Explicativa 4.1, 4.2 b)`. The files hold no patch with this gap. [pt-PT](languages/pt-PT.md) quotes the clause.
 
 | Rules | Entry | Slots | Examples |
 | :--- | :--- | ---: | :--- |

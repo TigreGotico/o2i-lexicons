@@ -574,7 +574,7 @@ def test_the_pt_pt_kinds_follow_their_class():
     assert exceptions["orelhado"].startswith("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 27")
     assert patches["eritroide"] == "docs/leads.md § word-initial e"
     assert patches["golpada"] == "docs/leads.md § coda l"
-    assert exceptions["ativo"] == "AO90 Base IV 1.º b); AO90 Nota Explicativa 4.2 b)"
+    assert exceptions["ativo"] == "AO90 Base IV 1.º b) c); AO90 Nota Explicativa 4.1, 4.2 b)"
 
 
 def test_the_coda_stop_rule_took_its_patches():

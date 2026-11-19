@@ -867,7 +867,8 @@ def ao90_dropped_consonant(word: str, end: int, pre_ao90: frozenset[str]) -> boo
     not a new spelling (pato beside pacto, fato beside facto). A headword of
     the source can still spell the letter: Infopédia keeps the pre-AO90
     spelling of a word as a headword of its own (afectar beside afetar), and
-    AO90 Base IV 1.º b) names afetivo among the words whose ⟨c⟩ is mute.
+    AO90 Base IV 1.º b) names afetivo among the words whose ⟨c⟩ is mute, and
+    1.º c) names receção among the words whose ⟨p⟩ is optional.
     """
     if word in pre_ao90 or not _AO90_NEXT_RE.match(word, end):
         return False

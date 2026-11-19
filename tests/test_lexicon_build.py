@@ -710,7 +710,8 @@ def test_ao90_dropped_consonant(word, end, pre_ao90, dropped):
 def test_a_pre_ao90_headword_does_not_mark_a_spoken_consonant(word, end, pre_ao90):
     # Infopédia keeps the pre-AO90 spelling as a headword of its own (afectar
     # beside afetar). AO90 Base IV 1.º b) names afetivo among the words whose
-    # ⟨c⟩ is mute, so the vowel before the dropped letter is the learned vowel.
+    # ⟨c⟩ is mute, and 1.º c) names receção among the optional ones, so the
+    # vowel before the dropped letter is the learned vowel.
     assert lb.ao90_dropped_consonant(word, end, frozenset({pre_ao90})) is True
 
 
