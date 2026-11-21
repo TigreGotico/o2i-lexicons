@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.22a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.22a1) (2026-11-21)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.21a1...0.7.22a1)
+
+**Merged pull requests:**
+
+- fix\(pt-PT\): add the para- compounds with the full first vowel as exceptions [\#99](https://github.com/TigreGotico/o2i-lexicons/pull/99) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.7.21a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.21a1) (2026-11-21)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.20a1...0.7.21a1)
