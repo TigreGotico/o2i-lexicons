@@ -4,7 +4,7 @@
 covers: what the package does, how to install it and how to hand a packaged lexicon to an engine
 source: `o2i_lexicons/__init__.py`, `pyproject.toml`, `o2i_lexicons/data/`
 generated: no
-verify: diff <(sed -n '/^```python/,/^```/p' README.md | sed '1d;$d' | python -I -) <(grep -oP 'print\(.*\)\s+# \K.*' README.md)
+verify: diff <(sed -n '/^\x60\x60\x60python/,/^\x60\x60\x60/p' README.md | grep -vP '^\x60{3}' | python -I -) <(grep -oP 'print\(.*\)\s+# \K.*' README.md)
 see: `docs/index.md`, `docs/kinds.md`
 -->
 
