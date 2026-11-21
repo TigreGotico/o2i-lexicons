@@ -541,7 +541,6 @@
   "limoneno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
   "lipoma": "lead: ⟨-oma⟩ takes [o] in at least 90% of the Infopédia words",
   "livedo": "lead: ⟨-edo⟩ takes [e] in at least 90% of the Infopédia words",
-  "lobby": "lead: a doubled consonant letter is one consonant in every Infopédia word that has one",
   "lona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "longirrostro": "lead: ⟨-ostro⟩ takes [o] in at least 90% of the Infopédia words",
   "loreno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
@@ -781,7 +780,6 @@
   "xiloma": "lead: ⟨-oma⟩ takes [o] in at least 90% of the Infopédia words",
   "xona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "zanolho": "lead: ⟨-olho⟩ takes [o] in at least 90% of the Infopédia words",
-  "zapping": "lead: a doubled consonant letter is one consonant in every Infopédia word that has one",
   "zorro": "lead: ⟨-orro⟩ takes [o] in at least 90% of the Infopédia words",
   "êxtase": "no lead: the rules miss the word outside every class and lead"
  },
@@ -3757,7 +3755,7 @@
   }
  },
  "licence": "CC-BY-SA-4.0",
- "o2i_version": "7.122.19a2",
+ "o2i_version": "7.124.30a2",
  "reason_basis": {
   "loanword": "The spelling of the word is outside the native system (entry_kinds.LOAN_SPELLING): it has ⟨k⟩, ⟨w⟩ or ⟨y⟩, a doubled ⟨b g p t z⟩, ⟨ee⟩ not before ⟨m⟩, ⟨sh⟩, an initial ⟨s⟩ before a consonant, a final ⟨ng⟩, or a final ⟨b c d f g k p t⟩.",
   "proper_noun": "The Infopédia headword starts with a capital letter and is not written in capitals only. The class rests on the capital."
@@ -4302,7 +4300,6 @@
   "limoneno": "unclassified",
   "lipoma": "unclassified",
   "livedo": "unclassified",
-  "lobby": "loanword",
   "lona": "unclassified",
   "longirrostro": "unclassified",
   "loreno": "unclassified",
@@ -4542,7 +4539,6 @@
   "xiloma": "unclassified",
   "xona": "unclassified",
   "zanolho": "unclassified",
-  "zapping": "loanword",
   "zorro": "unclassified",
   "êxtase": "unclassified"
  },
