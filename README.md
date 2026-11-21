@@ -1,5 +1,13 @@
 # o2i-lexicons
 
+<!-- agent-hint
+covers: what the package does, how to install it and how to hand a packaged lexicon to an engine
+source: `o2i_lexicons/__init__.py`, `pyproject.toml`, `o2i_lexicons/data/`
+generated: no
+verify: diff <(sed -n '/^```python/,/^```/p' README.md | sed '1d;$d' | python -I -) <(grep -oP 'print\(.*\)\s+# \K.*' README.md)
+see: `docs/index.md`, `docs/kinds.md`
+-->
+
 o2i-lexicons ships pronunciation data for [orthography2ipa](https://github.com/TigreGotico/orthography2ipa) (o2i). Each lexicon holds words that the o2i rules transcribe wrong, with the source of each reading. The package changes no output when you install it. You give a lexicon to an engine in code.
 
 ## Install
@@ -16,11 +24,13 @@ The project publishes alpha releases, so the install needs `--prerelease=allow`.
 from orthography2ipa import G2P, Pipeline, packaged_lexicon
 
 g2p = G2P("pt-BR", pipeline=Pipeline(lexicon=packaged_lexicon("pt-BR")))
-print(g2p.transcribe("afeto"))    # aˈfɛtu, where the rules alone give aˈfetu
+print(g2p.transcribe("afeto"))    # aˈfɛtu
 
 g2p = G2P("pt-BR", pipeline=Pipeline(lexicon=packaged_lexicon("pt-BR", patches=True)))
 print(g2p.transcribe("colocam"))  # koˈlɔkɐ̃w̃
 ```
+
+The rules alone give `aˈfetu` for `afeto`.
 
 ## Exceptions and patches
 

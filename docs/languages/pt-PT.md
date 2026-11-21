@@ -1,5 +1,13 @@
 # pt-PT
 
+<!-- agent-hint
+covers: how the pt-PT lexicon is built from Infopédia and mapped to the pt-PT norm
+source: `scripts/lexicon_build.py`, `o2i_lexicons/data/pt-PT/infopedia.meta.json`
+generated: no
+verify: python -m pytest -q tests/test_lexicon_build.py tests/test_packaged.py
+see: `docs/building.md`, `docs/leads.md`
+-->
+
 The `pt-PT` lexicon serves the o2i `pt-PT` spec. Its file is `infopedia.tsv` in both kind directories.
 
 ## Source

@@ -1,5 +1,13 @@
 # Exceptions and patches
 
+<!-- agent-hint
+covers: the two kinds of entry, which kind wins and how pruning removes a patch
+source: `scripts/entry_kinds.py`, `scripts/prune_check.py`, `o2i_lexicons/__init__.py`
+generated: no
+verify: python -m pytest -q tests/test_entry_kinds.py tests/test_prune_check.py tests/test_packaged.py
+see: `docs/data-format.md`, `docs/building.md`
+-->
+
 Every entry in o2i-lexicons is a word that the o2i rules transcribe wrong. The entry is one of two kinds, and the kind says why the lexicon holds it and when the word leaves.
 
 ## Exceptions
@@ -32,7 +40,7 @@ Use the exceptions alone when the rules must decide every word that a rule could
 
 ## Pruning
 
-`scripts/prune_check.py` transcribes every entry with the rules alone and compares the output with the entry. An entry that the rules now read right is stale. In a file with `"stress": "source"`, the rules must also stress the same vowel as the entry. The module docstring of the script states the exact comparison.
+`scripts/prune_check.py` transcribes every entry with the rules alone and compares the output with the entry. An entry that the rules read right is stale. In a file with `"stress": "source"`, the rules must also stress the same vowel as the entry. The module docstring of the script states the exact comparison.
 
 The check also reports an entry whose word the spec's `word_exceptions` hold. Such an entry never applies, because the spec wins over the lexicon. The check treats it as it treats a stale entry.
 

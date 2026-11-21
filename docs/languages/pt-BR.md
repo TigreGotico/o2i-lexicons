@@ -1,5 +1,13 @@
 # pt-BR
 
+<!-- agent-hint
+covers: how the pt-BR lexicon is built from the NILC data and mapped to the pt-BR norm
+source: `scripts/lexicon_build.py`, `o2i_lexicons/data/pt-BR/nilc.meta.json`
+generated: no
+verify: python -m pytest -q tests/test_lexicon_build.py tests/test_packaged.py
+see: `docs/building.md`, `docs/leads.md`
+-->
+
 The `pt-BR` lexicon serves the o2i `pt-BR` spec. Its file is `nilc.tsv` in both kind directories.
 
 ## Source
@@ -50,7 +58,7 @@ The stem vowel of a rhizotonic present form follows the model verbs of Cunha & C
 
 The sidecars do not record which second source agreed with each entry.
 
-The build reads a Michaelis snapshot that is all rights reserved. The snapshot is not in this repository. It is `raw/entries.jsonl` of the private dataset [TigreGotico/michaelis-brazilian-portuguese-transcriptions](https://huggingface.co/datasets/TigreGotico/michaelis-brazilian-portuguese-transcriptions), so only project members can rebuild the pt-BR files.
+The build reads a Michaelis snapshot that is all rights reserved. The snapshot is not in this repository. It is `raw/entries.jsonl` of the private dataset `TigreGotico/michaelis-brazilian-portuguese-transcriptions`, so only project members can rebuild the pt-BR files.
 
 A lexicon on `pt-BR` does not reach a child lect such as `pt-BR-x-sp`.
 
