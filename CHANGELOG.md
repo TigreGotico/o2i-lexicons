@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.21a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.21a1) (2026-11-21)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.20a1...0.7.21a1)
+
+**Merged pull requests:**
+
+- fix: prune the pt-PT patches lobby and zapping that the rules now read [\#100](https://github.com/TigreGotico/o2i-lexicons/pull/100) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.7.20a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.20a1) (2026-11-19)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.19a1...0.7.20a1)
