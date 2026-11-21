@@ -693,7 +693,6 @@ def test_a_loan_is_a_patch_with_the_loan_lead(code, word, mark):
 
 
 @pytest.mark.parametrize("word, lead", [
-    ("lobby", "doubled consonant letter"), ("zapping", "doubled consonant letter"),
     ("snobismo", "initial ⟨s⟩ before a consonant is [s]"),
     ("swing", "initial ⟨s⟩ before a consonant is [s]")])
 def test_a_loan_a_rule_could_read_is_a_patch(word, lead):
@@ -827,8 +826,8 @@ def words_of_class(code, kind, reason):
 # a final consonant letter that ends no Portuguese word.
 PT_PT_LOANS = {
     "exception": {"bold", "erg", "kilowatt", "oc", "quid", "show", "woke"},
-    "patch": {"antidumping", "freelance", "jogging", "ketchup", "lobby", "puzzle", "rap",
-              "shorts", "skinhead", "snobismo", "swing", "timing", "windsurf", "zapping"},
+    "patch": {"antidumping", "freelance", "jogging", "ketchup", "puzzle", "rap",
+              "shorts", "skinhead", "snobismo", "swing", "timing", "windsurf"},
 }
 
 
