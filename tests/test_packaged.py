@@ -3,8 +3,15 @@ from importlib.metadata import entry_points
 
 import pytest
 
+import sys
+from pathlib import Path
+
 import o2i_lexicons
 from o2i_lexicons.schema import validate_meta, validate_tsv
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+
+import lexicon_build as lb  # noqa: E402
 
 GROUPS = {"exception": "orthography2ipa.lexicons", "patch": "orthography2ipa.lexicon_patches"}
 FILES = {"exception": (o2i_lexicons.tsv_path, o2i_lexicons.load_meta),
@@ -355,6 +362,33 @@ def test_the_pt_pt_lexicon_holds_the_unstressed_vowel_classes():
         "respetivo": ("ʁɨʃpɛˈtivu", "unreduced learned vowel"),
     }
     assert {w: (entries.get(w), classes.get(w, {}).get("class")) for w in expected} == expected
+
+
+def test_the_pt_pt_lexicon_holds_the_para_compounds_with_the_full_first_vowel():
+    # Infopédia gives paraquedas parɐˈkɛdɐʃ, paraquedismo parɐkəˈdiʒmu and
+    # paraquedista parɐkəˈdiʃtɐ. The first ⟨a⟩ is the full vowel of the verb
+    # para, where a prefix para- (paradoxo pɐrɐˈdɔksu) reduces it. pt.wiktionary
+    # gives paɾɐkɨˈdiʒmu and paɾɐkɨˈdiʃtɐ for the two derivatives.
+    from orthography2ipa import G2P, Pipeline, packaged_lexicon
+
+    infopedia = {"paraquedas": "parɐˈkɛdɐʃ", "paraquedismo": "parɐkəˈdiʒmu",
+                 "paraquedista": "parɐkəˈdiʃtɐ"}
+    expected = {w: lb.infopedia_to_spec(ipa) for w, ipa in infopedia.items()}
+    expected["paraquedismos"] = expected["paraquedismo"] + "ʃ"
+    expected["paraquedistas"] = expected["paraquedista"] + "ʃ"
+    assert expected["paraquedas"] == "paɾɐˈkɛdɐʃ"
+    assert expected["paraquedista"] == "paɾɐkɨˈdiʃtɐ"
+    g2p = G2P("pt-PT", pipeline=Pipeline(lexicon=packaged_lexicon("pt-PT")))
+    assert {w: g2p.transcribe(w) for w in expected} == expected
+    assert {w: file_entries("pt-PT", "exception")[w] for w in expected} == expected
+
+
+def test_a_para_compound_entry_cites_infopedia_and_base_xv():
+    cited = notes("pt-PT", "exception")
+    for word in ("paraquedas", "paraquedismo", "paraquedista"):
+        assert cited[word].startswith(
+            f"Infopédia gives the reading (https://www.infopedia.pt/dicionarios/lingua-portuguesa/{word}). "
+            "AO90 Base XV 1.º Obs.")
 
 
 def test_the_pt_pt_lexicon_holds_no_mesmo():
@@ -805,7 +839,7 @@ def test_the_pt_pt_loans_are_loanwords(kind):
 def test_every_other_pt_pt_exception_is_irregular():
     other = {w for w, r in reasons("pt-PT", "exception").items()
              if w not in PT_PT_LOANS["exception"] and r != "proper_noun"}
-    assert len(other) == 2135
+    assert len(other) == 2140
     assert words_of_class("pt-PT", "exception", "irregular") == other
 
 
