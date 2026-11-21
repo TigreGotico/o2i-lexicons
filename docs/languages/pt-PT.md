@@ -81,6 +81,8 @@ No source states that the reading of a loan is lexical, so a loan is a patch. A 
 
 A patch with no class has the gap `no lead: the rules miss the word outside every class and lead`, which names no rule. The [rule leads](../leads.md) page gives the evidence for each lead that a gap names.
 
+The files hold paraquedas, paraquedismo, paraquedista and the plurals of the last two as exceptions that the build does not select. Infopédia reads their first ⟨a⟩ as the full vowel of the verb para (paraquedas [paɾɐˈkɛdɐʃ]), where a prefix para- reduces it (paradoxo [pɐɾɐˈdɔksu]). Infopédia reads para-brisas, para-choque, para-sol and parapente the same way. AO90 Base XV 1.º Obs. names paraquedas and paraquedista among the compounds that lost the sense of composition and take no hyphen. No source read states the vowel of the first element, so the rules cannot reach these words, and each entry is one Infopédia reading. The build has no class for them, so a rebuild does not reproduce these entries. The plural entries are the singular reading with the plural [ʃ], because the lexicon holds no inflected form.
+
 A lexicon on `pt-PT` does not reach a child lect such as `pt-PT-x-lisbon`.
 
 ---
