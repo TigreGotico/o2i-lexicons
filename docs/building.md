@@ -45,7 +45,7 @@ The builds need input files that the harness does not fetch:
 | `--homographs` | `heterophonic_homographs.csv` | `bifonia/data/heterophonic_homographs.csv` of [bifonia](https://github.com/TigreGotico/bifonia) |
 | `--preao` | `preao_words.txt` | a word list of the aspell `pt_PT-preao` dictionary, the European Portuguese spelling before AO90, one word per line |
 | `--nilc` | `unitex_sample_transcribed.txt` | `etc/unitex_sample_transcribed.txt` of [aeiouado_g2p](https://github.com/dash219/aeiouado_g2p), at the commit that the pt-BR `source_url` names |
-| `--michaelis` | `michaelis-snapshot.jsonl` | `raw/entries.jsonl` of the private dataset `TigreGotico/michaelis-brazilian-portuguese-transcriptions`, at revision `d8e5e0e4`; the Michaelis readings are all rights reserved |
+| `--michaelis` | `michaelis-snapshot.jsonl` | `raw/entries.jsonl` of the dataset [TigreGotico/michaelis-brazilian-portuguese-transcriptions](https://huggingface.co/datasets/TigreGotico/michaelis-brazilian-portuguese-transcriptions), at revision `d8e5e0e4`; the Michaelis readings are all rights reserved |
 
 The build keeps a word only when the rules read it wrong under the board's scoring. The comparison ignores stress, because some source stress marks contradict the spelling (Infopédia câmera [kɐˈmɨɾɐ]) and WikiPron writes no stress to check them. Words that share a spelling pattern and the same error at that pattern form a lead. A lead is a question for the linguistic literature, not a rule. Its words stay out of the lexicon until a cited source states a rule for the pattern, or states that the pattern is lexical. `--min-lead` sets the smallest group that is a lead, and its default is 10.
 
@@ -100,7 +100,7 @@ Run the test suite with `python -m pytest -q tests`. It validates every packaged
 
 ## Known limits
 
-The pt-PT and pt-BR sidecars record only the base name of each input file, with no version or hash. The en-GB sidecars record the sha256 of the WikiPron file and the Britfone file. The pt-PT `source_url` names the main branch of the dataset, not a revision. The Michaelis snapshot is in a private dataset, so only project members can rebuild the pt-BR files.
+The pt-PT and pt-BR sidecars record only the base name of each input file, with no version or hash. The en-GB sidecars record the sha256 of the WikiPron file and the Britfone file. The pt-PT `source_url` names the main branch of the dataset, not a revision. The Michaelis snapshot is revision `d8e5e0e4` of its dataset. The pt-BR sidecar does not record that revision.
 
 ---
 [← pt-PT](languages/pt-PT.md) · [Home](index.md) · [Rule leads →](leads.md)
