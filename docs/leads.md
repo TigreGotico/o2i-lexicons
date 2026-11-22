@@ -1,5 +1,13 @@
 # Rule leads
 
+<!-- agent-hint
+covers: the spelling patterns that patch gaps name and the leads that wait for a source
+source: `o2i_lexicons/data/patches/*/*.meta.json`, `scripts/entry_kinds.py`
+generated: no
+verify: python scripts/prune_check.py
+see: `docs/kinds.md`, `docs/contributing.md`
+-->
+
 A lead is a spelling pattern that a group of words shares, together with one error of the o2i rules at that pattern. A lead is a candidate for an o2i rule. When a rule with a cited source lands, `prune_check.py` finds the patches that the rules now read right, and they leave the package ([kinds](kinds.md)).
 
 A patch states its lead in its gap. A long lead has a section on this page, and the gap names it as `docs/leads.md § <section>`. A short lead is written into the gap itself. The last part of this page lists the leads that no entry carries yet, because each one waits for a source or for a change in the build.
@@ -150,3 +158,6 @@ Each one waits for a second source that marks stress.
 | en-GB | en-GB inflection morphology | 188 |
 
 The [pt-BR](languages/pt-BR.md) and [en-GB](languages/en-GB.md) pages give the detail.
+
+---
+[← Building and pruning](building.md) · [Home](index.md) · [Contributing →](contributing.md)

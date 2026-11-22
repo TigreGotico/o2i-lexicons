@@ -1,5 +1,13 @@
 # en-GB
 
+<!-- agent-hint
+covers: how the en-GB lexicon is built from WikiPron and checked against Britfone
+source: `scripts/lexicon_build.py`, `o2i_lexicons/data/en-GB/wikipron.meta.json`
+generated: no
+verify: python -m pytest -q tests/test_lexicon_build.py tests/test_packaged.py
+see: `docs/building.md`, `docs/leads.md`
+-->
+
 The `en-GB` lexicon serves the o2i `en-GB` spec, which models Received Pronunciation (RP). Its file is `wikipron.tsv` in both kind directories.
 
 ## Sources
