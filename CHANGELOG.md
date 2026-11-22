@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.22a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.22a2) (2026-11-22)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.22a1...0.7.22a2)
+
+**Merged pull requests:**
+
+- docs: README, docs index, navigation and agent hints [\#103](https://github.com/TigreGotico/o2i-lexicons/pull/103) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.7.22a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.22a1) (2026-11-21)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.21a1...0.7.22a1)
