@@ -691,17 +691,18 @@ def test_a_lattice_that_does_not_spell_the_rules_places_no_slot(word, rules, rea
                           pt_pt_form, never_learned) == []
 
 
-@pytest.mark.parametrize("word, end, pre_ao90, headwords, dropped", [
-    ("ativo", 1, {"activo"}, set(), True),           # activo
-    ("adoção", 3, {"adopção"}, set(), True),         # adopção
-    ("direção", 4, {"direcção"}, set(), True),       # direcção
-    ("pato", 2, {"pacto"}, {"pacto"}, False),        # pacto is a word of its own
-    ("pato", 2, {"pacto", "pato"}, set(), False),    # so is pato
-    ("apagar", 1, {"acpagar"}, set(), False),        # no AO90 drop before ⟨p⟩
+@pytest.mark.parametrize("word, end, pre_ao90, dropped", [
+    ("ativo", 1, {"activo"}, True),                  # activo
+    ("adoção", 3, {"adopção"}, True),                # adopção
+    ("direção", 4, {"direcção"}, True),              # direcção
+    ("afetar", 3, {"afectar"}, True),                # Infopédia has afectar and afetar
+    ("receção", 4, {"recepção"}, True),              # Infopédia has recepção and receção
+    ("pato", 2, {"pacto", "pato"}, False),           # pato is a word of its own
+    ("fato", 2, {"facto", "fato"}, False),           # so is fato
+    ("apagar", 1, {"acpagar"}, False),               # no AO90 drop before ⟨p⟩
 ])
-def test_ao90_dropped_consonant(word, end, pre_ao90, headwords, dropped):
-    assert lb.ao90_dropped_consonant(word, end, frozenset(pre_ao90),
-                                     frozenset(headwords)) is dropped
+def test_ao90_dropped_consonant(word, end, pre_ao90, dropped):
+    assert lb.ao90_dropped_consonant(word, end, frozenset(pre_ao90)) is dropped
 
 
 def test_a_reading_with_two_primary_stresses_has_no_class():

@@ -365,10 +365,10 @@ def infopedia_residual(bench, engine, c: lb.Candidate, listed: frozenset[str],
 
     if "preao" not in inputs:
         raise SystemExit("the pt-PT build needs --preao, a word list in the spelling before AO90")
-    pre_ao90, headwords = read_pre_ao90(inputs["preao"]), pt_pt_headwords(bench)
+    pre_ao90 = read_pre_ao90(inputs["preao"])
 
     def learned(word: str, end: int) -> bool:
-        return lb.ao90_dropped_consonant(word, end, pre_ao90, headwords)
+        return lb.ao90_dropped_consonant(word, end, pre_ao90)
 
     rules = engine.transcribe_word(c.headword)
     lattice = [(slot.span[0], slot.span[1], [cand.ipa for cand in slot.candidates])

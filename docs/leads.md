@@ -34,15 +34,15 @@ The words in golp- keep the stressed [ɔ] of golpe, and the words in folclor- co
 
 ### learned words
 
-An unstressed vowel of a learned word does not reduce. Cunha & Cintra (p. 53) write: "Também não se reduziram as vogais átonas de cultismos, como o [a] de *actor*; o [ɛ] de *director*; o [ɔ] de *adopção*". Before AO90, a silent ⟨c⟩ or ⟨p⟩ marked the full vowel. AO90 drops that consonant, and pt-PT reads AO90 spelling, so the spelling has no cue left. Each word of this lead is the AO90 form of a word that the aspell pt_PT-preao list spells with ⟨a e o⟩, then a silent ⟨c p⟩, then ⟨c ç t⟩.
+An unstressed vowel of a learned word does not reduce. Cunha & Cintra (p. 53) write: "Também não se reduziram as vogais átonas de cultismos, como o [a] de *actor*; o [ɛ] de *director*; o [ɔ] de *adopção*". Before AO90, a silent ⟨c⟩ or ⟨p⟩ marked the full vowel. AO90 drops that consonant, and pt-PT reads AO90 spelling, so the spelling has no cue left. Each word of this lead is the AO90 form of a word that the aspell pt_PT-preao list spells with ⟨a e o⟩, then a silent ⟨c p⟩, then ⟨c ç t⟩. Infopédia lists some pre-AO90 spellings as headwords too, such as afectar beside afetar and recepção beside receção. Such a headword does not keep the AO90 form out of this lead.
 
 | Rules | Entry | Slots | Examples |
 | :--- | :--- | ---: | :--- |
-| [ɨ] | [ɛ] | 161 | adjetivo, arquitetar, abjeção |
-| [ɐ] | [a] | 66 | ativo, ator, abstração |
+| [ɨ] | [ɛ] | 217 | adjetivo, arquitetar, abjeção |
+| [ɐ] | [a] | 70 | ativo, ator, abstração |
 | [u] | [ɔ] | 6 | adotar, adoção, noturno |
 
-The 233 entries need a rule that has the pre-AO90 form of the word.
+The 293 entries need a rule that has the pre-AO90 form of the word.
 
 ### Entries in ⟨-oide⟩
 

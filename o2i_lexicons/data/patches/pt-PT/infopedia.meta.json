@@ -16,6 +16,7 @@
   "acetaminofeno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
   "acetileno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
   "acetona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
+  "aceção": "docs/leads.md § learned words",
   "acnegénico": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
   "acolpado": "docs/leads.md § coda l",
   "acufeno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
@@ -37,6 +38,12 @@
   "adoção": "docs/leads.md § learned words",
   "adramiteno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
   "aduncirrostro": "lead: ⟨-ostro⟩ takes [o] in at least 90% of the Infopédia words",
+  "afetado": "docs/leads.md § learned words",
+  "afetante": "docs/leads.md § learned words",
+  "afetar": "docs/leads.md § learned words",
+  "afetação": "docs/leads.md § learned words",
+  "afetivo": "docs/leads.md § learned words",
+  "afeção": "docs/leads.md § learned words",
   "agalactia": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
   "agareno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
   "agelena": "lead: ⟨-ena⟩ takes [e] in at least 90% of the Infopédia words",
@@ -281,10 +288,24 @@
   "comichona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "compactamente": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
   "cona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
+  "concetibilidade": "docs/leads.md § learned words",
   "concetismo": "docs/leads.md § learned words",
+  "concetista": "docs/leads.md § learned words",
   "concetiva": "docs/leads.md § learned words",
+  "concetivo": "docs/leads.md § learned words",
+  "concetáculo": "docs/leads.md § learned words",
+  "concetível": "docs/leads.md § learned words",
   "conceção": "docs/leads.md § learned words",
   "condiloma": "lead: ⟨-oma⟩ takes [o] in at least 90% of the Infopédia words",
+  "conetado": "docs/leads.md § learned words",
+  "conetar": "docs/leads.md § learned words",
+  "conetividade": "docs/leads.md § learned words",
+  "conetivo": "docs/leads.md § learned words",
+  "conetor": "docs/leads.md § learned words",
+  "conjetura": "docs/leads.md § learned words",
+  "conjetural": "docs/leads.md § learned words",
+  "conjeturar": "docs/leads.md § learned words",
+  "conjeturável": "docs/leads.md § learned words",
   "conspeção": "docs/leads.md § learned words",
   "contracetivo": "docs/leads.md § learned words",
   "contraceção": "docs/leads.md § learned words",
@@ -294,8 +315,10 @@
   "contrafação": "docs/leads.md § learned words",
   "contragosto": "lead: ⟨-osto⟩ takes [o] in at least 90% of the Infopédia words",
   "contramezena": "lead: ⟨-ena⟩ takes [e] in at least 90% of the Infopédia words",
+  "contrativo": "docs/leads.md § learned words",
   "contraveneno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
   "contração": "docs/leads.md § learned words",
+  "convetor": "docs/leads.md § learned words",
   "corifena": "lead: ⟨-ena⟩ takes [e] in at least 90% of the Infopédia words",
   "corona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "corretamente": "docs/leads.md § learned words",
@@ -317,9 +340,17 @@
   "dacomas": "lead: ⟨-oma⟩ takes [o] in at least 90% of the Infopédia words",
   "damasceno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
   "decetivo": "docs/leads.md § learned words",
+  "deceção": "docs/leads.md § learned words",
   "dedo": "lead: ⟨-edo⟩ takes [e] in at least 90% of the Infopédia words",
   "defeso": "lead: ⟨-eso⟩ takes [e] in at least 90% of the Infopédia words",
+  "defetibilidade": "docs/leads.md § learned words",
+  "defetividade": "docs/leads.md § learned words",
+  "defetivo": "docs/leads.md § learned words",
+  "defetível": "docs/leads.md § learned words",
   "defeção": "docs/leads.md § learned words",
+  "defletido": "docs/leads.md § learned words",
+  "defletir": "docs/leads.md § learned words",
+  "defletor": "docs/leads.md § learned words",
   "dejetar": "docs/leads.md § learned words",
   "dejeção": "docs/leads.md § learned words",
   "dentoma": "lead: ⟨-oma⟩ takes [o] in at least 90% of the Infopédia words",
@@ -337,8 +368,18 @@
   "desfragmentar": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
   "desfragmentação": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
   "desimpregnar": "lead: the source reduces a vowel before a coda stop that orthography2ipa#2218 keeps full",
+  "desinfetador": "docs/leads.md § learned words",
+  "desinfetante": "docs/leads.md § learned words",
+  "desinfetar": "docs/leads.md § learned words",
+  "desinfeção": "docs/leads.md § learned words",
   "desproteção": "docs/leads.md § learned words",
   "desvolvado": "docs/leads.md § coda l",
+  "detetar": "docs/leads.md § learned words",
+  "detetiva": "docs/leads.md § learned words",
+  "detetive": "docs/leads.md § learned words",
+  "detetor": "docs/leads.md § learned words",
+  "detetável": "docs/leads.md § learned words",
+  "deteção": "docs/leads.md § learned words",
   "detrativo": "docs/leads.md § learned words",
   "detrator": "docs/leads.md § learned words",
   "detração": "docs/leads.md § learned words",
@@ -492,6 +533,7 @@
   "equimose": "docs/leads.md § word-initial e",
   "equimótico": "docs/leads.md § word-initial e",
   "equino": "docs/leads.md § word-initial e",
+  "eretilidade": "docs/leads.md § learned words",
   "eretor": "docs/leads.md § learned words",
   "eritralgia": "docs/leads.md § word-initial e",
   "eritrina": "docs/leads.md § word-initial e",
@@ -584,6 +626,8 @@
   "fragmentável": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
   "fraguedo": "lead: ⟨-edo⟩ takes [e] in at least 90% of the Infopédia words",
   "frangolho": "lead: ⟨-olho⟩ takes [o] in at least 90% of the Infopédia words",
+  "fratura": "docs/leads.md § learned words",
+  "fraturar": "docs/leads.md § learned words",
   "fração": "docs/leads.md § learned words",
   "freelance": "lead: pt-PT English loan spelling; Infopédia gives the reading",
   "fregona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
@@ -644,6 +688,7 @@
   "inativo": "docs/leads.md § learned words",
   "inação": "docs/leads.md § learned words",
   "incapturável": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
+  "inconcetível": "docs/leads.md § learned words",
   "incorreção": "docs/leads.md § learned words",
   "indecomposto": "lead: ⟨-osto⟩ takes [o] in at least 90% of the Infopédia words",
   "indefeso": "lead: ⟨-eso⟩ takes [e] in at least 90% of the Infopédia words",
@@ -664,12 +709,14 @@
   "injeção": "docs/leads.md § learned words",
   "inolvidável": "docs/leads.md § coda l",
   "inseticida": "docs/leads.md § learned words",
+  "insetívoro": "docs/leads.md § learned words",
   "inspetar": "docs/leads.md § learned words",
   "inspetor": "docs/leads.md § learned words",
   "inspeção": "docs/leads.md § learned words",
   "inteleção": "docs/leads.md § learned words",
   "intentona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "intercetado": "docs/leads.md § learned words",
+  "intercetar": "docs/leads.md § learned words",
   "interceção": "docs/leads.md § learned words",
   "interjetivo": "docs/leads.md § learned words",
   "interposto": "lead: ⟨-osto⟩ takes [o] in at least 90% of the Infopédia words",
@@ -818,9 +865,11 @@
   "percetivo": "docs/leads.md § learned words",
   "percetível": "docs/leads.md § learned words",
   "perceção": "docs/leads.md § learned words",
+  "perfetivo": "docs/leads.md § learned words",
   "pernona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "perspetiva": "docs/leads.md § learned words",
   "perspetivação": "docs/leads.md § learned words",
+  "perspetivismo": "docs/leads.md § learned words",
   "peuceno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
   "pichorro": "lead: ⟨-orro⟩ takes [o] in at least 90% of the Infopédia words",
   "picolho": "lead: ⟨-olho⟩ takes [o] in at least 90% of the Infopédia words",
@@ -844,7 +893,9 @@
   "porro": "lead: ⟨-orro⟩ takes [o] in at least 90% of the Infopédia words",
   "porropsia": "lead: the source reduces a vowel before a coda stop that orthography2ipa#2218 keeps full",
   "practor": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
+  "precetor": "docs/leads.md § learned words",
   "precetorado": "docs/leads.md § learned words",
+  "precetoral": "docs/leads.md § learned words",
   "predileção": "docs/leads.md § learned words",
   "predisposto": "lead: ⟨-osto⟩ takes [o] in at least 90% of the Infopédia words",
   "pregnante": "lead: the source reduces a vowel before a coda stop that orthography2ipa#2218 keeps full",
@@ -870,6 +921,7 @@
   "protetorado": "docs/leads.md § learned words",
   "protetoral": "docs/leads.md § learned words",
   "proteção": "docs/leads.md § learned words",
+  "putrefativo": "docs/leads.md § learned words",
   "putrefação": "docs/leads.md § learned words",
   "puzzle": "lead: pt-PT English loan spelling (⟨zz⟩); Infopédia gives the reading",
   "quedo": "lead: ⟨-edo⟩ takes [e] in at least 90% of the Infopédia words",
@@ -893,7 +945,13 @@
   "recetador": "docs/leads.md § learned words",
   "recetar": "docs/leads.md § learned words",
   "recetação": "docs/leads.md § learned words",
+  "recetibilidade": "docs/leads.md § learned words",
+  "recetiva": "docs/leads.md § learned words",
+  "recetivo": "docs/leads.md § learned words",
+  "recetor": "docs/leads.md § learned words",
   "recetáculo": "docs/leads.md § learned words",
+  "recetível": "docs/leads.md § learned words",
+  "receção": "docs/leads.md § learned words",
   "redator": "docs/leads.md § learned words",
   "redação": "docs/leads.md § learned words",
   "redoma": "lead: ⟨-oma⟩ takes [o] in at least 90% of the Infopédia words",
@@ -911,6 +969,7 @@
   "relvedo": "lead: ⟨-edo⟩ takes [e] in at least 90% of the Infopédia words",
   "rena": "lead: ⟨-ena⟩ takes [e] in at least 90% of the Infopédia words",
   "repleno": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
+  "respetivo": "docs/leads.md § learned words",
   "retal": "docs/leads.md § learned words",
   "retamente": "docs/leads.md § learned words",
   "retangularidade": "docs/leads.md § learned words",
@@ -957,6 +1016,7 @@
   "subjetivação": "docs/leads.md § learned words",
   "subjetivismo": "docs/leads.md § learned words",
   "subtração": "docs/leads.md § learned words",
+  "suscetível": "docs/leads.md § learned words",
   "suspense": "no lead: the rules miss the word outside every class and lead",
   "swing": "lead: an initial ⟨s⟩ before a consonant is [s] in at least 90% of the Infopédia words",
   "tactismo": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
@@ -1076,6 +1136,10 @@
    "class": "stressed mid vowel",
    "second_source": "wikipron+portal_lisbon"
   },
+  "aceção": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron"
+  },
   "acnegénico": {
    "class": "unstressed vowel before a coda stop",
    "second_source": "no second source"
@@ -1159,6 +1223,30 @@
   "aduncirrostro": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
+  },
+  "afetado": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron+portal_lisbon"
+  },
+  "afetante": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "afetar": {
+   "class": "unreduced learned vowel",
+   "second_source": "portal_lisbon"
+  },
+  "afetação": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron"
+  },
+  "afetivo": {
+   "class": "unreduced learned vowel",
+   "second_source": "merged+portal_lisbon"
+  },
+  "afeção": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron"
   },
   "agalactia": {
    "class": "unstressed vowel before a coda stop",
@@ -2108,11 +2196,31 @@
    "class": "stressed mid vowel",
    "second_source": "wikipron+wiktionary+portal_lisbon"
   },
+  "concetibilidade": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
   "concetismo": {
    "class": "unreduced learned vowel",
    "second_source": "no second source"
   },
+  "concetista": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
   "concetiva": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "concetivo": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "concetáculo": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "concetível": {
    "class": "unreduced learned vowel",
    "second_source": "no second source"
   },
@@ -2123,6 +2231,42 @@
   "condiloma": {
    "class": "stressed mid vowel",
    "second_source": "portal_lisbon"
+  },
+  "conetado": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "conetar": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "conetividade": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "conetivo": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "conetor": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "conjetura": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron+portal_lisbon"
+  },
+  "conjetural": {
+   "class": "unreduced learned vowel",
+   "second_source": "portal_lisbon"
+  },
+  "conjeturar": {
+   "class": "unreduced learned vowel",
+   "second_source": "merged+portal_lisbon"
+  },
+  "conjeturável": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
   },
   "conspeção": {
    "class": "unreduced learned vowel",
@@ -2160,6 +2304,10 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
+  "contrativo": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
   "contraveneno": {
    "class": "stressed mid vowel",
    "second_source": "portal_lisbon"
@@ -2167,6 +2315,10 @@
   "contração": {
    "class": "unreduced learned vowel",
    "second_source": "wikipron+merged"
+  },
+  "convetor": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
   },
   "corifena": {
    "class": "stressed mid vowel",
@@ -2252,6 +2404,10 @@
    "class": "unreduced learned vowel",
    "second_source": "no second source"
   },
+  "deceção": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron+wiktionary"
+  },
   "dedo": {
    "class": "stressed mid vowel",
    "second_source": "wikipron+portal_lisbon"
@@ -2260,9 +2416,37 @@
    "class": "stressed mid vowel",
    "second_source": "wikipron+portal_lisbon"
   },
+  "defetibilidade": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "defetividade": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "defetivo": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "defetível": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
   "defeção": {
    "class": "unreduced learned vowel",
    "second_source": "wikipron"
+  },
+  "defletido": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "defletir": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "defletor": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
   },
   "dejetar": {
    "class": "unreduced learned vowel",
@@ -2332,6 +2516,22 @@
    "class": "unstressed vowel before a coda stop",
    "second_source": "portal_lisbon"
   },
+  "desinfetador": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "desinfetante": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron+portal_lisbon"
+  },
+  "desinfetar": {
+   "class": "unreduced learned vowel",
+   "second_source": "portal_lisbon"
+  },
+  "desinfeção": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron"
+  },
   "desproteção": {
    "class": "unreduced learned vowel",
    "second_source": "no second source"
@@ -2339,6 +2539,30 @@
   "desvolvado": {
    "class": "unstressed vowel before a coda ⟨l⟩",
    "second_source": "no second source"
+  },
+  "detetar": {
+   "class": "unreduced learned vowel",
+   "second_source": "wiktionary+portal_lisbon"
+  },
+  "detetiva": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "detetive": {
+   "class": "unreduced learned vowel",
+   "second_source": "wiktionary+portal_lisbon"
+  },
+  "detetor": {
+   "class": "unreduced learned vowel",
+   "second_source": "portal_lisbon"
+  },
+  "detetável": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "deteção": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron"
   },
   "detrativo": {
    "class": "unreduced learned vowel",
@@ -2948,6 +3172,10 @@
    "class": "unstressed initial ⟨e⟩",
    "second_source": "portal_lisbon"
   },
+  "eretilidade": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
   "eretor": {
    "class": "unreduced learned vowel",
    "second_source": "no second source"
@@ -3308,6 +3536,14 @@
    "class": "stressed mid vowel",
    "second_source": "no second source"
   },
+  "fratura": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron"
+  },
+  "fraturar": {
+   "class": "unreduced learned vowel",
+   "second_source": "merged"
+  },
   "fração": {
    "class": "unreduced learned vowel",
    "second_source": "wikipron+merged"
@@ -3536,6 +3772,10 @@
    "class": "unstressed vowel before a coda stop",
    "second_source": "no second source"
   },
+  "inconcetível": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
   "incorreção": {
    "class": "unreduced learned vowel",
    "second_source": "no second source"
@@ -3604,6 +3844,10 @@
    "class": "unreduced learned vowel",
    "second_source": "wikipron+wiktionary+portal_lisbon"
   },
+  "insetívoro": {
+   "class": "unreduced learned vowel",
+   "second_source": "wiktionary"
+  },
   "inspetar": {
    "class": "unreduced learned vowel",
    "second_source": "no second source"
@@ -3627,6 +3871,10 @@
   "intercetado": {
    "class": "unreduced learned vowel",
    "second_source": "no second source"
+  },
+  "intercetar": {
+   "class": "unreduced learned vowel",
+   "second_source": "portal_lisbon"
   },
   "interceção": {
    "class": "unreduced learned vowel",
@@ -4200,6 +4448,10 @@
    "class": "unreduced learned vowel",
    "second_source": "wikipron"
   },
+  "perfetivo": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
   "pernona": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
@@ -4211,6 +4463,10 @@
   "perspetivação": {
    "class": "unreduced learned vowel",
    "second_source": "no second source"
+  },
+  "perspetivismo": {
+   "class": "unreduced learned vowel",
+   "second_source": "portal_lisbon"
   },
   "peuceno": {
    "class": "stressed mid vowel",
@@ -4304,7 +4560,15 @@
    "class": "unstressed vowel before a coda stop",
    "second_source": "no second source"
   },
+  "precetor": {
+   "class": "unreduced learned vowel",
+   "second_source": "portal_lisbon"
+  },
   "precetorado": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "precetoral": {
    "class": "unreduced learned vowel",
    "second_source": "no second source"
   },
@@ -4404,6 +4668,10 @@
    "class": "unreduced learned vowel",
    "second_source": "wikipron+merged"
   },
+  "putrefativo": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
   "putrefação": {
    "class": "unreduced learned vowel",
    "second_source": "wikipron+wiktionary"
@@ -4488,7 +4756,31 @@
    "class": "unreduced learned vowel",
    "second_source": "no second source"
   },
+  "recetibilidade": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "recetiva": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "recetivo": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "recetor": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
   "recetáculo": {
+   "class": "unreduced learned vowel",
+   "second_source": "wikipron"
+  },
+  "recetível": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
+  },
+  "receção": {
    "class": "unreduced learned vowel",
    "second_source": "wikipron"
   },
@@ -4554,6 +4846,10 @@
   },
   "repleno": {
    "class": "stressed mid vowel",
+   "second_source": "no second source"
+  },
+  "respetivo": {
+   "class": "unreduced learned vowel",
    "second_source": "no second source"
   },
   "retal": {
@@ -4715,6 +5011,10 @@
   "subtração": {
    "class": "unreduced learned vowel",
    "second_source": "wikipron"
+  },
+  "suscetível": {
+   "class": "unreduced learned vowel",
+   "second_source": "no second source"
   },
   "tactismo": {
    "class": "unstressed vowel before a coda stop",
@@ -4942,6 +5242,7 @@
   "acetaminofeno": "unclassified",
   "acetileno": "unclassified",
   "acetona": "unclassified",
+  "aceção": "unclassified",
   "acnegénico": "unclassified",
   "acolpado": "unclassified",
   "acufeno": "unclassified",
@@ -4963,6 +5264,12 @@
   "adoção": "unclassified",
   "adramiteno": "unclassified",
   "aduncirrostro": "unclassified",
+  "afetado": "unclassified",
+  "afetante": "unclassified",
+  "afetar": "unclassified",
+  "afetação": "unclassified",
+  "afetivo": "unclassified",
+  "afeção": "unclassified",
   "agalactia": "unclassified",
   "agareno": "unclassified",
   "agelena": "unclassified",
@@ -5207,10 +5514,24 @@
   "comichona": "unclassified",
   "compactamente": "unclassified",
   "cona": "unclassified",
+  "concetibilidade": "unclassified",
   "concetismo": "unclassified",
+  "concetista": "unclassified",
   "concetiva": "unclassified",
+  "concetivo": "unclassified",
+  "concetáculo": "unclassified",
+  "concetível": "unclassified",
   "conceção": "unclassified",
   "condiloma": "unclassified",
+  "conetado": "unclassified",
+  "conetar": "unclassified",
+  "conetividade": "unclassified",
+  "conetivo": "unclassified",
+  "conetor": "unclassified",
+  "conjetura": "unclassified",
+  "conjetural": "unclassified",
+  "conjeturar": "unclassified",
+  "conjeturável": "unclassified",
   "conspeção": "unclassified",
   "contracetivo": "unclassified",
   "contraceção": "unclassified",
@@ -5220,8 +5541,10 @@
   "contrafação": "unclassified",
   "contragosto": "unclassified",
   "contramezena": "unclassified",
+  "contrativo": "unclassified",
   "contraveneno": "unclassified",
   "contração": "unclassified",
+  "convetor": "unclassified",
   "corifena": "unclassified",
   "corona": "unclassified",
   "corretamente": "unclassified",
@@ -5243,9 +5566,17 @@
   "dacomas": "unclassified",
   "damasceno": "unclassified",
   "decetivo": "unclassified",
+  "deceção": "unclassified",
   "dedo": "unclassified",
   "defeso": "unclassified",
+  "defetibilidade": "unclassified",
+  "defetividade": "unclassified",
+  "defetivo": "unclassified",
+  "defetível": "unclassified",
   "defeção": "unclassified",
+  "defletido": "unclassified",
+  "defletir": "unclassified",
+  "defletor": "unclassified",
   "dejetar": "unclassified",
   "dejeção": "unclassified",
   "dentoma": "unclassified",
@@ -5263,8 +5594,18 @@
   "desfragmentar": "unclassified",
   "desfragmentação": "unclassified",
   "desimpregnar": "unclassified",
+  "desinfetador": "unclassified",
+  "desinfetante": "unclassified",
+  "desinfetar": "unclassified",
+  "desinfeção": "unclassified",
   "desproteção": "unclassified",
   "desvolvado": "unclassified",
+  "detetar": "unclassified",
+  "detetiva": "unclassified",
+  "detetive": "unclassified",
+  "detetor": "unclassified",
+  "detetável": "unclassified",
+  "deteção": "unclassified",
   "detrativo": "unclassified",
   "detrator": "unclassified",
   "detração": "unclassified",
@@ -5418,6 +5759,7 @@
   "equimose": "unclassified",
   "equimótico": "unclassified",
   "equino": "unclassified",
+  "eretilidade": "unclassified",
   "eretor": "unclassified",
   "eritralgia": "unclassified",
   "eritrina": "unclassified",
@@ -5510,6 +5852,8 @@
   "fragmentável": "unclassified",
   "fraguedo": "unclassified",
   "frangolho": "unclassified",
+  "fratura": "unclassified",
+  "fraturar": "unclassified",
   "fração": "unclassified",
   "freelance": "loanword",
   "fregona": "unclassified",
@@ -5570,6 +5914,7 @@
   "inativo": "unclassified",
   "inação": "unclassified",
   "incapturável": "unclassified",
+  "inconcetível": "unclassified",
   "incorreção": "unclassified",
   "indecomposto": "unclassified",
   "indefeso": "unclassified",
@@ -5590,12 +5935,14 @@
   "injeção": "unclassified",
   "inolvidável": "unclassified",
   "inseticida": "unclassified",
+  "insetívoro": "unclassified",
   "inspetar": "unclassified",
   "inspetor": "unclassified",
   "inspeção": "unclassified",
   "inteleção": "unclassified",
   "intentona": "unclassified",
   "intercetado": "unclassified",
+  "intercetar": "unclassified",
   "interceção": "unclassified",
   "interjetivo": "unclassified",
   "interposto": "unclassified",
@@ -5744,9 +6091,11 @@
   "percetivo": "unclassified",
   "percetível": "unclassified",
   "perceção": "unclassified",
+  "perfetivo": "unclassified",
   "pernona": "unclassified",
   "perspetiva": "unclassified",
   "perspetivação": "unclassified",
+  "perspetivismo": "unclassified",
   "peuceno": "unclassified",
   "pichorro": "unclassified",
   "picolho": "unclassified",
@@ -5770,7 +6119,9 @@
   "porro": "unclassified",
   "porropsia": "unclassified",
   "practor": "unclassified",
+  "precetor": "unclassified",
   "precetorado": "unclassified",
+  "precetoral": "unclassified",
   "predileção": "unclassified",
   "predisposto": "unclassified",
   "pregnante": "unclassified",
@@ -5796,6 +6147,7 @@
   "protetorado": "unclassified",
   "protetoral": "unclassified",
   "proteção": "unclassified",
+  "putrefativo": "unclassified",
   "putrefação": "unclassified",
   "puzzle": "loanword",
   "quedo": "unclassified",
@@ -5819,7 +6171,13 @@
   "recetador": "unclassified",
   "recetar": "unclassified",
   "recetação": "unclassified",
+  "recetibilidade": "unclassified",
+  "recetiva": "unclassified",
+  "recetivo": "unclassified",
+  "recetor": "unclassified",
   "recetáculo": "unclassified",
+  "recetível": "unclassified",
+  "receção": "unclassified",
   "redator": "unclassified",
   "redação": "unclassified",
   "redoma": "unclassified",
@@ -5837,6 +6195,7 @@
   "relvedo": "unclassified",
   "rena": "unclassified",
   "repleno": "unclassified",
+  "respetivo": "unclassified",
   "retal": "unclassified",
   "retamente": "unclassified",
   "retangularidade": "unclassified",
@@ -5883,6 +6242,7 @@
   "subjetivação": "unclassified",
   "subjetivismo": "unclassified",
   "subtração": "unclassified",
+  "suscetível": "unclassified",
   "suspense": "unclassified",
   "swing": "loanword",
   "tactismo": "unclassified",

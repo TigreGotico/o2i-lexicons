@@ -838,3 +838,14 @@ def test_a_pt_reason_basis_names_its_own_evidence(code, kind, reason, needle):
     basis = FILES[kind][1](code)["reason_basis"][reason]
     assert needle in basis
     assert "WikiPron" not in basis and "Britfone" not in basis
+
+
+@pytest.mark.parametrize("word, ipa", [
+    # Infopédia keeps the open vowel where AO90 dropped a silent consonant, and
+    # it also lists the pre-AO90 spelling (afectar, recepção) as a headword.
+    ("afetar", "ɐfɛˈtaɾ"),
+    ("receção", "ʁɨsɛˈsɐ̃w̃"),
+])
+def test_pt_pt_learned_vowel_with_a_pre_ao90_headword(word, ipa):
+    assert all_entries("pt-PT")[word] == ipa
+    assert lexical_classes("pt-PT")[word]["class"] == "unreduced learned vowel"
