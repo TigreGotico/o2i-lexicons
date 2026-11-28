@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.23a2](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.23a2) (2026-11-28)
+
+[Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.23a1...0.7.23a2)
+
+**Merged pull requests:**
+
+- ci: report the docs standard findings on pull requests [\#105](https://github.com/TigreGotico/o2i-lexicons/pull/105) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.7.23a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.23a1) (2026-11-28)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.22a2...0.7.23a1)
@@ -80,10 +88,6 @@
 ## [0.7.17a1](https://github.com/TigreGotico/o2i-lexicons/tree/0.7.17a1) (2026-11-16)
 
 [Full Changelog](https://github.com/TigreGotico/o2i-lexicons/compare/0.7.16...0.7.17a1)
-
-**Merged pull requests:**
-
-- Configure Renovate [\#4](https://github.com/TigreGotico/o2i-lexicons/pull/4) ([renovate[bot]](https://github.com/apps/renovate))
 
 
 
