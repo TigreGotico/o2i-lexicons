@@ -1,11 +1,19 @@
 # Contributing
 
+<!-- agent-hint
+covers: how to add or correct an entry and when an entry is a patch
+source: `scripts/lexicon_build.py`, `scripts/entry_kinds.py`, `o2i_lexicons/schema.py`
+generated: no
+verify: python -m pytest -q tests
+see: `docs/building.md`, `docs/kinds.md`
+-->
+
 The build scripts write every packaged file. A rebuild writes the TSV file and its sidecar again from the source. So a hand edit to a data file does not survive the next build. Make each change in the scripts, then rebuild the files that the change touches.
 
 ## Add or correct an entry
 
 1. Find why the build gives the entry. Run the build with `--screened` and `--excluded`, and read the lines of the word.
-2. Change the rule of the build that decides the word. A reading that a hand check finds wrong goes into `lexicon_build.KNOWN_SOURCE_DEFECTS`, with the reason. A homograph with two readings by sense goes into `lexicon_build.HOMOGRAPHS`. A new class or citation goes into `scripts/entry_kinds.py`.
+2. Change the rule of the build that decides the word. A reading that a hand check finds wrong goes into `lexicon_build.KNOWN_SOURCE_DEFECTS`, with the reason. A homograph with two readings by sense goes into `lexicon_build.HOMOGRAPHS`. A class or citation that the build lacks goes into `scripts/entry_kinds.py`.
 3. Add a test that fails before the change and passes after it.
 4. Rebuild the files of the code with the command in their `build_command` field. [Building and pruning](building.md) lists the input files.
 5. Run `python -m pytest -q tests` and `python scripts/prune_check.py`.
@@ -24,4 +32,4 @@ A patch needs a gap. The gap names what keeps the rules from the word. It is an 
 When a source shows that a rule can reach a whole group of words, the right change is the rule in [orthography2ipa](https://github.com/TigreGotico/orthography2ipa), not more entries. The patches of that group then leave the package through the prune job.
 
 ---
-[← Building and pruning](building.md) · [Home](index.md)
+[← Rule leads](leads.md) · [Home](index.md)

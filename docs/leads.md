@@ -1,5 +1,13 @@
 # Rule leads
 
+<!-- agent-hint
+covers: the spelling patterns that patch gaps name and the leads that wait for a source
+source: `o2i_lexicons/data/patches/*/*.meta.json`, `scripts/entry_kinds.py`
+generated: no
+verify: python scripts/prune_check.py
+see: `docs/kinds.md`, `docs/contributing.md`
+-->
+
 A lead is a spelling pattern that a group of words shares, together with one error of the o2i rules at that pattern. A lead is a candidate for an o2i rule. When a rule with a cited source lands, `prune_check.py` finds the patches that the rules now read right, and they leave the package ([kinds](kinds.md)).
 
 A patch states its lead in its gap. A long lead has a section on this page, and the gap names it as `docs/leads.md § <section>`. A short lead is written into the gap itself. The last part of this page lists the leads that no entry carries yet, because each one waits for a source or for a change in the build.
@@ -34,15 +42,13 @@ The words in golp- keep the stressed [ɔ] of golpe, and the words in folclor- co
 
 ### learned words
 
-An unstressed vowel of a learned word does not reduce. Cunha & Cintra (p. 53) write: "Também não se reduziram as vogais átonas de cultismos, como o [a] de *actor*; o [ɛ] de *director*; o [ɔ] de *adopção*". Before AO90, a silent ⟨c⟩ or ⟨p⟩ marked the full vowel. AO90 drops that consonant, and pt-PT reads AO90 spelling, so the spelling has no cue left. Each word of this lead is the AO90 form of a word that the aspell pt_PT-preao list spells with ⟨a e o⟩, then a silent ⟨c p⟩, then ⟨c ç t⟩.
+An unstressed vowel before a ⟨c⟩ or ⟨p⟩ that AO90 dropped (ativo from activo, afetar from afectar) is not a lead. The Nota Explicativa of AO90, 4.2 b), states that the mute consonant does not decide that vowel: open pretonic vowels stand with no mark (corar, padeiro), and the vowel of accionar and actual reduces beside the consonant. So the AO90 spelling does not show the vowel, and its entries are exceptions with the citation `AO90 Base IV 1.º b) c); AO90 Nota Explicativa 4.1, 4.2 b)`. The files hold no patch with this gap. [pt-PT](languages/pt-PT.md) quotes the clause.
 
 | Rules | Entry | Slots | Examples |
 | :--- | :--- | ---: | :--- |
-| [ɨ] | [ɛ] | 161 | adjetivo, arquitetar, abjeção |
-| [ɐ] | [a] | 66 | ativo, ator, abstração |
-| [u] | [ɔ] | 6 | adotar, adoção, noturno |
-
-The 233 entries need a rule that has the pre-AO90 form of the word.
+| [ɨ] | [ɛ] | 217 | adjetivo, afetar, receção, respetivo |
+| [ɐ] | [a] | 70 | ativo, ator, fratura |
+| [u] | [ɔ] | 6 | adotar, adotivo |
 
 ### Entries in ⟨-oide⟩
 
@@ -148,7 +154,10 @@ Each one waits for a second source that marks stress.
 | pt-BR | the stem vowel of a pt-BR preterite or imperfect form | 7 |
 | pt-BR | the ⟨s⟩ of the prefix trans- before a vowel is [z] | 1 |
 | pt-BR | an English loan spelling (sexy) | 1 |
-| en-GB | en-GB spelling rules not audited | 2,151 |
+| en-GB | en-GB spelling rules not audited | 2,141 |
 | en-GB | en-GB inflection morphology | 188 |
 
 The [pt-BR](languages/pt-BR.md) and [en-GB](languages/en-GB.md) pages give the detail.
+
+---
+[← Building and pruning](building.md) · [Home](index.md) · [Contributing →](contributing.md)

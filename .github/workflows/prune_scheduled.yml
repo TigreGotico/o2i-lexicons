@@ -27,7 +27,7 @@ jobs:
   prune:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: dev
       - uses: astral-sh/setup-uv@v5
@@ -60,7 +60,7 @@ jobs:
         run: |
           .venv/bin/python -m pytest tests -q -p no:cacheprovider | tee "$RUNNER_TEMP/pytest.log"
           echo "summary=$(tail -n 1 "$RUNNER_TEMP/pytest.log")" >> "$GITHUB_OUTPUT"
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         id: cpr
         with:
           base: dev

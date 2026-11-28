@@ -1,5 +1,13 @@
 # o2i-lexicons documentation
 
+<!-- agent-hint
+covers: the reading order of every documentation page
+source: `docs/`
+generated: no
+verify: diff <(ls docs/*.md docs/languages/*.md | sed 's|^docs/||' | grep -v '^index.md$' | sort) <(grep -oP '\]\(\K[^)#]+\.md(?=\))' docs/index.md | grep -v -e '^http' -e '^\.\./' | sort)
+see: `README.md`, `AGENTS.md`
+-->
+
 o2i-lexicons ships per-language lexicons for [orthography2ipa](https://github.com/TigreGotico/orthography2ipa) (o2i). The [README](../README.md) shows how to install the package and give a lexicon to an engine. These pages hold the detail.
 
 Read the pages in this order:

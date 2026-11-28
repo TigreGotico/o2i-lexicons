@@ -3,8 +3,15 @@ from importlib.metadata import entry_points
 
 import pytest
 
+import sys
+from pathlib import Path
+
 import o2i_lexicons
 from o2i_lexicons.schema import validate_meta, validate_tsv
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+
+import lexicon_build as lb  # noqa: E402
 
 GROUPS = {"exception": "orthography2ipa.lexicons", "patch": "orthography2ipa.lexicon_patches"}
 FILES = {"exception": (o2i_lexicons.tsv_path, o2i_lexicons.load_meta),
@@ -293,23 +300,22 @@ def pt_pt_entries():
 
 
 def test_the_pt_pt_lexicon_holds_the_lexical_classes():
-    # The Infopédia rows, in the spec's symbols: acetona ɐsəˈtonɐ, exógamo
-    # eˈzɔɡɐmu, próximo ˈprɔsimu, táxi ˈtaksi, cinquenta sĩˈkwẽtɐ.
+    # The Infopédia rows, in the spec's symbols: acetona ɐsəˈtonɐ,
+    # inexorável inəzuˈɾavɛl, afixo ɐˈfiksu, altiloquente altiluˈkwẽtə.
     entries = pt_pt_entries()
     assert entries["acetona"] == "ɐsɨˈtonɐ"
-    assert entries["exógamo"] == "eˈzɔɡɐmu"
-    assert entries["próximo"] == "ˈpɾɔsimu"
-    assert entries["táxi"] == "ˈtaksi"
-    assert entries["cinquenta"] == "sĩˈkwẽtɐ"
+    assert entries["inexorável"] == "inɨzuˈɾavɛɫ"
+    assert entries["afixo"] == "ɐˈfiksu"
+    assert entries["altiloquente"] == "aɫtiluˈkwẽtɨ"
 
 
 def test_a_pt_pt_class_word_needs_no_second_source():
-    # No WikiPron or pt.wiktionary reading agrees with Infopédia exógamo
-    # eˈzɔɡɐmu or abelota ɐbɨˈlotɐ, and both are entries. The sidecar keeps
+    # No WikiPron or pt.wiktionary reading agrees with Infopédia afixável
+    # ɐfiˈksavɛl or abelota ɐbɨˈlotɐ, and both are entries. The sidecar keeps
     # the class and the result of the second-source test of each such entry.
     entries = pt_pt_entries()
     classes = lexical_classes("pt-PT")
-    assert classes["exógamo"] == {"class": "⟨x⟩ as [z]", "second_source": "no second source"}
+    assert classes["afixável"] == {"class": "⟨x⟩ as [ks]", "second_source": "no second source"}
     assert classes["abelota"] == {"class": "stressed mid vowel",
                                   "second_source": "no second source"}
     assert entries["abelota"] == "ɐbɨˈlotɐ"
@@ -339,7 +345,9 @@ def test_the_pt_pt_lexicon_holds_no_demonstrative():
 
 def test_the_pt_pt_lexicon_holds_the_unstressed_vowel_classes():
     # The Infopédia rows, in the spec's symbols: orelhado orəˈʎadu, ebó eˈbɔ,
-    # golpada ɡɔɫˈpadɐ, adactilia ɐdaktiˈliɐ, ativo aˈtivu.
+    # golpada ɡɔɫˈpadɐ, adactilia ɐdaktiˈliɐ, ativo aˈtivu, afetar ɐfɛˈtar,
+    # receção ʀəsɛˈsɐ̃w̃, respetivo ʀəʃpɛˈtivu. Infopédia also holds afectar,
+    # recepção and respectivo, the spellings before AO90.
     entries = pt_pt_entries()
     classes = lexical_classes("pt-PT")
     expected = {
@@ -348,8 +356,38 @@ def test_the_pt_pt_lexicon_holds_the_unstressed_vowel_classes():
         "golpada": ("ɡɔɫˈpadɐ", "unstressed vowel before a coda ⟨l⟩"),
         "adactilia": ("ɐdaktiˈliɐ", "unstressed vowel before a coda stop"),
         "ativo": ("aˈtivu", "unreduced learned vowel"),
+        "afetar": ("ɐfɛˈtaɾ", "unreduced learned vowel"),
+        "receção": ("ʁɨsɛˈsɐ̃w̃", "unreduced learned vowel"),
+        "respetivo": ("ʁɨʃpɛˈtivu", "unreduced learned vowel"),
     }
     assert {w: (entries.get(w), classes.get(w, {}).get("class")) for w in expected} == expected
+
+
+def test_the_pt_pt_lexicon_holds_the_para_compounds_with_the_full_first_vowel():
+    # Infopédia gives paraquedas parɐˈkɛdɐʃ, paraquedismo parɐkəˈdiʒmu and
+    # paraquedista parɐkəˈdiʃtɐ. The first ⟨a⟩ is the full vowel of the verb
+    # para, where a prefix para- (paradoxo pɐrɐˈdɔksu) reduces it. pt.wiktionary
+    # gives paɾɐkɨˈdiʒmu and paɾɐkɨˈdiʃtɐ for the two derivatives.
+    from orthography2ipa import G2P, Pipeline, packaged_lexicon
+
+    infopedia = {"paraquedas": "parɐˈkɛdɐʃ", "paraquedismo": "parɐkəˈdiʒmu",
+                 "paraquedista": "parɐkəˈdiʃtɐ"}
+    expected = {w: lb.infopedia_to_spec(ipa) for w, ipa in infopedia.items()}
+    expected["paraquedismos"] = expected["paraquedismo"] + "ʃ"
+    expected["paraquedistas"] = expected["paraquedista"] + "ʃ"
+    assert expected["paraquedas"] == "paɾɐˈkɛdɐʃ"
+    assert expected["paraquedista"] == "paɾɐkɨˈdiʃtɐ"
+    g2p = G2P("pt-PT", pipeline=Pipeline(lexicon=packaged_lexicon("pt-PT")))
+    assert {w: g2p.transcribe(w) for w in expected} == expected
+    assert {w: file_entries("pt-PT", "exception")[w] for w in expected} == expected
+
+
+def test_a_para_compound_entry_cites_infopedia_and_base_xv():
+    cited = notes("pt-PT", "exception")
+    for word in ("paraquedas", "paraquedismo", "paraquedista"):
+        assert cited[word].startswith(
+            f"Infopédia gives the reading (https://www.infopedia.pt/dicionarios/lingua-portuguesa/{word}). "
+            "AO90 Base XV 1.º Obs.")
 
 
 def test_the_pt_pt_lexicon_holds_no_mesmo():
@@ -375,7 +413,7 @@ def test_an_entry_puts_its_stress_mark_before_the_onset_of_the_stressed_syllable
     # The onset is one consonant or an obstruent + liquid cluster of Cunha &
     # Cintra (p. 64); a consonant before it has an empty nucleus of its own
     # (Mateus & d'Andrade 1998, pp. 17-18). Infopédia writes agnelo ɐˈɡnelu,
-    # afixar ɐfiˈksaɾ, axioma ɐˈksjomɐ and epiblasto ɛpiˈblaʃtu.
+    # afixável ɐfiˈksavɛl, axioma ɐˈksjomɐ and epiblasto ɛpiˈblaʃtu.
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -384,7 +422,7 @@ def test_an_entry_puts_its_stress_mark_before_the_onset_of_the_stressed_syllable
     entries = pt_pt_entries()
     assert entries["agnelo"] == "ɐɡˈnelu"
     assert entries["agalactia"] == "ɐɡɐlakˈtiɐ"
-    assert entries["afixar"] == "ɐfikˈsaɾ"
+    assert entries["afixável"] == "ɐfikˈsavɛɫ"
     assert entries["axioma"] == "ɐkˈsjomɐ"
     assert entries["epiblasto"] == "ɛpiˈblaʃtu"
     assert entries["anguífero"] == "ɐ̃ˈɡwifɨɾu"
@@ -561,15 +599,15 @@ def test_each_pt_patch_names_its_gap():
 def test_the_pt_pt_kinds_follow_their_class():
     # The spelling does not show the value of ⟨x⟩ (AO90 Base III), ⟨qu⟩ with
     # [w] (AO90 Base XIV 1.º) or the open initial ⟨o⟩ of orelhado (Mateus &
-    # d'Andrade 1998 p. 27). A word-initial ⟨e⟩, the coda ⟨l⟩ and a learned
-    # vowel are rule leads.
+    # d'Andrade 1998 p. 27), or the vowel before a mute ⟨c p⟩ (AO90 Nota
+    # Explicativa 4.2 b)). A word-initial ⟨e⟩ and the coda ⟨l⟩ are rule leads.
     exceptions, patches = notes("pt-PT", "exception"), notes("pt-PT", "patch")
-    assert exceptions["táxi"] == "AO90 Base III; Ciberdúvidas 4068"
-    assert exceptions["cinquenta"] == "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
+    assert exceptions["afixo"] == "AO90 Base III; Ciberdúvidas 4068"
+    assert exceptions["altiloquente"] == "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
     assert exceptions["orelhado"].startswith("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 27")
     assert patches["eritroide"] == "docs/leads.md § word-initial e"
     assert patches["golpada"] == "docs/leads.md § coda l"
-    assert patches["ativo"] == "docs/leads.md § learned words"
+    assert exceptions["ativo"] == "AO90 Base IV 1.º b) c); AO90 Nota Explicativa 4.1, 4.2 b)"
 
 
 def test_the_coda_stop_rule_took_its_patches():
@@ -616,7 +654,7 @@ def test_a_pt_br_verb_form_is_a_patch():
 # or the full initial ⟨e⟩ of a learned word.
 @pytest.mark.parametrize("word, cls", [
     ("anguiloide", "⟨qu gu⟩ with [w]"),
-    ("axoide", "⟨x⟩ as [ks]"), ("prefixoide", "⟨x⟩ as [ks]"), ("sufixoide", "⟨x⟩ as [ks]"),
+    ("axoide", "⟨x⟩ as [ks]"),
     ("epicicloide", "unstressed initial ⟨e⟩"), ("epileptoide", "unstressed initial ⟨e⟩"),
     ("eritroide", "unstressed initial ⟨e⟩"),
 ])
@@ -654,7 +692,6 @@ def test_a_loan_is_a_patch_with_the_loan_lead(code, word, mark):
 
 
 @pytest.mark.parametrize("word, lead", [
-    ("lobby", "doubled consonant letter"), ("zapping", "doubled consonant letter"),
     ("snobismo", "initial ⟨s⟩ before a consonant is [s]"),
     ("swing", "initial ⟨s⟩ before a consonant is [s]")])
 def test_a_loan_a_rule_could_read_is_a_patch(word, lead):
@@ -788,8 +825,8 @@ def words_of_class(code, kind, reason):
 # a final consonant letter that ends no Portuguese word.
 PT_PT_LOANS = {
     "exception": {"bold", "erg", "kilowatt", "oc", "quid", "show", "woke"},
-    "patch": {"antidumping", "freelance", "jogging", "ketchup", "lobby", "puzzle", "rap",
-              "shorts", "skinhead", "snobismo", "swing", "timing", "windsurf", "zapping"},
+    "patch": {"antidumping", "freelance", "jogging", "ketchup", "puzzle", "rap",
+              "shorts", "skinhead", "snobismo", "swing", "timing", "windsurf"},
 }
 
 
@@ -801,13 +838,13 @@ def test_the_pt_pt_loans_are_loanwords(kind):
 def test_every_other_pt_pt_exception_is_irregular():
     other = {w for w, r in reasons("pt-PT", "exception").items()
              if w not in PT_PT_LOANS["exception"] and r != "proper_noun"}
-    assert len(other) == 1842
+    assert len(other) == 2006
     assert words_of_class("pt-PT", "exception", "irregular") == other
 
 
 def test_a_pt_pt_patch_keeps_its_gap_as_the_reason():
     assert set(reasons("pt-PT", "patch").values()) == {"unclassified", "loanword", "proper_noun"}
-    assert len(words_of_class("pt-PT", "patch", "unclassified")) == 997
+    assert len(words_of_class("pt-PT", "patch", "unclassified")) == 762
 
 
 def test_the_pt_br_names_and_loan():
@@ -816,7 +853,7 @@ def test_the_pt_br_names_and_loan():
     assert words_of_class("pt-BR", "exception", "proper_noun") == {"félix", "humberto", "teodoro"}
     # Every other pt-BR exception cites Cunha & Cintra p. 40 or AO90 Base III.
     assert set(reasons("pt-BR", "exception").values()) == {"irregular", "proper_noun"}
-    assert len(words_of_class("pt-BR", "exception", "irregular")) == 69
+    assert len(words_of_class("pt-BR", "exception", "irregular")) == 67
     for word in words_of_class("pt-BR", "exception", "irregular"):
         citation = notes("pt-BR", "exception")[word]
         assert "Cunha & Cintra p. 40" in citation or "AO90 Base III" in citation, word

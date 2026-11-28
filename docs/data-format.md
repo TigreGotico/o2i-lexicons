@@ -1,5 +1,13 @@
 # Data format
 
+<!-- agent-hint
+covers: the TSV and sidecar formats, the entry points and the Python API
+source: `o2i_lexicons/schema.py`, `o2i_lexicons/__init__.py`, `pyproject.toml`
+generated: no
+verify: python -m pytest -q tests/test_schema.py tests/test_loader.py tests/test_packaged.py
+see: `docs/kinds.md`, `docs/building.md`
+-->
+
 Each language code has two directories under `o2i_lexicons/data/`. The exceptions are in `<code>/`, and the patches are in `patches/<code>/`. Each directory holds one `<source>.tsv` file and its `<source>.meta.json` sidecar. `<source>` names the dataset that supplied the readings, such as `wikipron`, `infopedia` or `nilc`.
 
 `o2i_lexicons/schema.py` states the contract, and `tests/test_packaged.py` applies it to every packaged file.
