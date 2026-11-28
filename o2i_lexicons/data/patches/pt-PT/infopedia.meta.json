@@ -77,7 +77,6 @@
   "apotegmatista": "lead: the source reduces a vowel before a coda stop that orthography2ipa#2218 keeps full",
   "apotegmatístico": "lead: the source reduces a vowel before a coda stop that orthography2ipa#2218 keeps full",
   "apotegmático": "lead: the source reduces a vowel before a coda stop that orthography2ipa#2218 keeps full",
-  "aptamente": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
   "argomas": "lead: ⟨-oma⟩ takes [o] in at least 90% of the Infopédia words",
   "ariquena": "lead: ⟨-ena⟩ takes [e] in at least 90% of the Infopédia words",
   "arjamolho": "lead: ⟨-olho⟩ takes [o] in at least 90% of the Infopédia words",
@@ -220,7 +219,6 @@
   "colquicina": "docs/leads.md § coda l",
   "comenos": "lead: ⟨-eno⟩ takes [e] in at least 90% of the Infopédia words",
   "comichona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
-  "compactamente": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
   "cona": "lead: ⟨-ona⟩ takes [o] in at least 90% of the Infopédia words",
   "condiloma": "lead: ⟨-oma⟩ takes [o] in at least 90% of the Infopédia words",
   "contractivo": "lead: an unstressed ⟨a⟩ before a coda stop keeps [a]; orthography2ipa#2218 leaves ⟨a⟩ out",
@@ -1073,10 +1071,6 @@
    "class": "unstressed vowel before a coda stop",
    "second_source": "no second source"
   },
-  "aptamente": {
-   "class": "unstressed vowel before a coda stop",
-   "second_source": "no second source"
-  },
   "argomas": {
    "class": "stressed mid vowel",
    "second_source": "no second source"
@@ -1627,10 +1621,6 @@
   },
   "comichona": {
    "class": "stressed mid vowel",
-   "second_source": "no second source"
-  },
-  "compactamente": {
-   "class": "unstressed vowel before a coda stop",
    "second_source": "no second source"
   },
   "cona": {
@@ -3755,7 +3745,7 @@
   }
  },
  "licence": "CC-BY-SA-4.0",
- "o2i_version": "7.124.30a2",
+ "o2i_version": "7.136.3a2",
  "reason_basis": {
   "loanword": "The spelling of the word is outside the native system (entry_kinds.LOAN_SPELLING): it has ⟨k⟩, ⟨w⟩ or ⟨y⟩, a doubled ⟨b g p t z⟩, ⟨ee⟩ not before ⟨m⟩, ⟨sh⟩, an initial ⟨s⟩ before a consonant, a final ⟨ng⟩, or a final ⟨b c d f g k p t⟩.",
   "proper_noun": "The Infopédia headword starts with a capital letter and is not written in capitals only. The class rests on the capital."
@@ -3836,7 +3826,6 @@
   "apotegmatista": "unclassified",
   "apotegmatístico": "unclassified",
   "apotegmático": "unclassified",
-  "aptamente": "unclassified",
   "argomas": "unclassified",
   "ariquena": "unclassified",
   "arjamolho": "unclassified",
@@ -3979,7 +3968,6 @@
   "colquicina": "unclassified",
   "comenos": "unclassified",
   "comichona": "unclassified",
-  "compactamente": "unclassified",
   "cona": "unclassified",
   "condiloma": "unclassified",
   "contractivo": "unclassified",

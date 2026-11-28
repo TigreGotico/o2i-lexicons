@@ -25,7 +25,7 @@ from types import ModuleType
 from orthography2ipa.version import VERSION_STR
 
 REPO = "https://github.com/TigreGotico/orthography2ipa.git"
-SPARSE_PATHS = ("/scripts/", "/orthography2ipa/data/gold/",
+SPARSE_PATHS = ("/scripts/", "/orthography2ipa/data/gold/", "/benchmarks/gold_sources.json",
                 "/tests/data/ep_dialect_sentences.csv")
 
 

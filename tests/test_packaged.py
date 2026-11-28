@@ -300,23 +300,22 @@ def pt_pt_entries():
 
 
 def test_the_pt_pt_lexicon_holds_the_lexical_classes():
-    # The Infopédia rows, in the spec's symbols: acetona ɐsəˈtonɐ, exógamo
-    # eˈzɔɡɐmu, próximo ˈprɔsimu, táxi ˈtaksi, cinquenta sĩˈkwẽtɐ.
+    # The Infopédia rows, in the spec's symbols: acetona ɐsəˈtonɐ,
+    # inexorável inəzuˈɾavɛl, afixo ɐˈfiksu, altiloquente altiluˈkwẽtə.
     entries = pt_pt_entries()
     assert entries["acetona"] == "ɐsɨˈtonɐ"
-    assert entries["exógamo"] == "eˈzɔɡɐmu"
-    assert entries["próximo"] == "ˈpɾɔsimu"
-    assert entries["táxi"] == "ˈtaksi"
-    assert entries["cinquenta"] == "sĩˈkwẽtɐ"
+    assert entries["inexorável"] == "inɨzuˈɾavɛɫ"
+    assert entries["afixo"] == "ɐˈfiksu"
+    assert entries["altiloquente"] == "aɫtiluˈkwẽtɨ"
 
 
 def test_a_pt_pt_class_word_needs_no_second_source():
-    # No WikiPron or pt.wiktionary reading agrees with Infopédia exógamo
-    # eˈzɔɡɐmu or abelota ɐbɨˈlotɐ, and both are entries. The sidecar keeps
+    # No WikiPron or pt.wiktionary reading agrees with Infopédia afixável
+    # ɐfiˈksavɛl or abelota ɐbɨˈlotɐ, and both are entries. The sidecar keeps
     # the class and the result of the second-source test of each such entry.
     entries = pt_pt_entries()
     classes = lexical_classes("pt-PT")
-    assert classes["exógamo"] == {"class": "⟨x⟩ as [z]", "second_source": "no second source"}
+    assert classes["afixável"] == {"class": "⟨x⟩ as [ks]", "second_source": "no second source"}
     assert classes["abelota"] == {"class": "stressed mid vowel",
                                   "second_source": "no second source"}
     assert entries["abelota"] == "ɐbɨˈlotɐ"
@@ -414,7 +413,7 @@ def test_an_entry_puts_its_stress_mark_before_the_onset_of_the_stressed_syllable
     # The onset is one consonant or an obstruent + liquid cluster of Cunha &
     # Cintra (p. 64); a consonant before it has an empty nucleus of its own
     # (Mateus & d'Andrade 1998, pp. 17-18). Infopédia writes agnelo ɐˈɡnelu,
-    # afixar ɐfiˈksaɾ, axioma ɐˈksjomɐ and epiblasto ɛpiˈblaʃtu.
+    # afixável ɐfiˈksavɛl, axioma ɐˈksjomɐ and epiblasto ɛpiˈblaʃtu.
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
@@ -423,7 +422,7 @@ def test_an_entry_puts_its_stress_mark_before_the_onset_of_the_stressed_syllable
     entries = pt_pt_entries()
     assert entries["agnelo"] == "ɐɡˈnelu"
     assert entries["agalactia"] == "ɐɡɐlakˈtiɐ"
-    assert entries["afixar"] == "ɐfikˈsaɾ"
+    assert entries["afixável"] == "ɐfikˈsavɛɫ"
     assert entries["axioma"] == "ɐkˈsjomɐ"
     assert entries["epiblasto"] == "ɛpiˈblaʃtu"
     assert entries["anguífero"] == "ɐ̃ˈɡwifɨɾu"
@@ -603,8 +602,8 @@ def test_the_pt_pt_kinds_follow_their_class():
     # d'Andrade 1998 p. 27), or the vowel before a mute ⟨c p⟩ (AO90 Nota
     # Explicativa 4.2 b)). A word-initial ⟨e⟩ and the coda ⟨l⟩ are rule leads.
     exceptions, patches = notes("pt-PT", "exception"), notes("pt-PT", "patch")
-    assert exceptions["táxi"] == "AO90 Base III; Ciberdúvidas 4068"
-    assert exceptions["cinquenta"] == "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
+    assert exceptions["afixo"] == "AO90 Base III; Ciberdúvidas 4068"
+    assert exceptions["altiloquente"] == "AO90 Base XIV 1.º; Cunha & Cintra p. 79"
     assert exceptions["orelhado"].startswith("Infopédia gives the reading. Mateus & d'Andrade 1998 p. 27")
     assert patches["eritroide"] == "docs/leads.md § word-initial e"
     assert patches["golpada"] == "docs/leads.md § coda l"
@@ -655,7 +654,7 @@ def test_a_pt_br_verb_form_is_a_patch():
 # or the full initial ⟨e⟩ of a learned word.
 @pytest.mark.parametrize("word, cls", [
     ("anguiloide", "⟨qu gu⟩ with [w]"),
-    ("axoide", "⟨x⟩ as [ks]"), ("prefixoide", "⟨x⟩ as [ks]"), ("sufixoide", "⟨x⟩ as [ks]"),
+    ("axoide", "⟨x⟩ as [ks]"),
     ("epicicloide", "unstressed initial ⟨e⟩"), ("epileptoide", "unstressed initial ⟨e⟩"),
     ("eritroide", "unstressed initial ⟨e⟩"),
 ])
@@ -839,13 +838,13 @@ def test_the_pt_pt_loans_are_loanwords(kind):
 def test_every_other_pt_pt_exception_is_irregular():
     other = {w for w, r in reasons("pt-PT", "exception").items()
              if w not in PT_PT_LOANS["exception"] and r != "proper_noun"}
-    assert len(other) == 2140
+    assert len(other) == 2006
     assert words_of_class("pt-PT", "exception", "irregular") == other
 
 
 def test_a_pt_pt_patch_keeps_its_gap_as_the_reason():
     assert set(reasons("pt-PT", "patch").values()) == {"unclassified", "loanword", "proper_noun"}
-    assert len(words_of_class("pt-PT", "patch", "unclassified")) == 764
+    assert len(words_of_class("pt-PT", "patch", "unclassified")) == 762
 
 
 def test_the_pt_br_names_and_loan():
@@ -854,7 +853,7 @@ def test_the_pt_br_names_and_loan():
     assert words_of_class("pt-BR", "exception", "proper_noun") == {"félix", "humberto", "teodoro"}
     # Every other pt-BR exception cites Cunha & Cintra p. 40 or AO90 Base III.
     assert set(reasons("pt-BR", "exception").values()) == {"irregular", "proper_noun"}
-    assert len(words_of_class("pt-BR", "exception", "irregular")) == 69
+    assert len(words_of_class("pt-BR", "exception", "irregular")) == 67
     for word in words_of_class("pt-BR", "exception", "irregular"):
         citation = notes("pt-BR", "exception")[word]
         assert "Cunha & Cintra p. 40" in citation or "AO90 Base III" in citation, word
